@@ -1,5 +1,17 @@
 # Security regressions
 
+External navigation configuration checks use synthetic configuration and cached
+templates, without runtime credentials or database access:
+
+```sh
+php tests/external-links.php
+node tests/external-links.mjs
+```
+
+They cover URL validation, enabled status, current settings on cached templates,
+script/HTML escaping, and menu filtering with translated labels and icons in all
+six supported JavaScript locales. Both suites run in CI.
+
 ## Continuous integration
 
 [Security tests](../.github/workflows/security-tests.yml) runs the complete suite

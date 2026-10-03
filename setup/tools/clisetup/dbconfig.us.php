@@ -168,6 +168,9 @@ CLISetup::registerUtility(new class extends UtilityScript
                                     foreach ($this->config[$db] as $idx => $charInfo)
                                         $buff .= '$AoWoWconf[\''.$db.'\'][\''.$idx.'\'] = '.var_export($this->config[$db][$idx], true).";\n\n";
                             }
+                            // Preserve site links when rewriting database credentials; include defaults on fresh setup.
+                            $buff .= "// External navigation links: set enabled to false to hide a link.\n";
+                            $buff .= '$AoWoWconf[\'externalLinks\'] = '.var_export($this->config['externalLinks'] ?? ExternalLinks::defaults(), true).";\n\n";
                             $buff .= "?>\n";
                             CLI::write();
                             CLISetup::writeFile(self::CONFIG_FILE, $buff, 0640); // credentials: deployment owner + private PHP group only

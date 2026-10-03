@@ -159,6 +159,7 @@ if (!empty($AoWoWconf['characters']))
         if (!empty($charDBInfo))
             DB::load(DB_CHARACTERS . $realm, $charDBInfo);
 
+ExternalLinks::load($AoWoWconf['externalLinks'] ?? ExternalLinks::defaults());
 $AoWoWconf = null;                                          // empty auths
 
 // Deployment-owned cache keys and operator allowlists must remain outside DB/cache configuration.
