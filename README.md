@@ -268,9 +268,9 @@ and [its regression checks](tests/README.md#redirects-and-operator-administratio
 ## Tests
 
 [Security test CI](.github/workflows/security-tests.yml) runs the complete suite
-on affected source, schema, dependency, policy, test and workflow changes, using
-PHP 8.4/8.5, Node, disposable MySQL, headless Chrome and Apache fixtures. It also
-supports manual runs. See [the test guide](tests/README.md#continuous-integration)
+only on pushes with affected source, schema, dependency, policy, test and workflow
+changes, using PHP 8.4/8.5, Node, disposable MySQL, headless Chrome and Apache
+fixtures. See [the test guide](tests/README.md#continuous-integration)
 for coverage, prerequisites and local commands.
 
 ## Troubleshooting

@@ -21,32 +21,12 @@ on:
       - 'static/**'
       - 'setup/**'
       - 'tests/**'
-  pull_request:
-    paths:
-      - '.github/workflows/**'
-      - '.htaccess'
-      - 'aowow'
-      - 'prQueue'
-      - 'index.php'
-      - 'composer.json'
-      - 'composer.lock'
-      - 'crossdomain.xml'
-      - 'config/**'
-      - 'datasets/**'
-      - 'includes/**'
-      - 'endpoints/**'
-      - 'localization/**'
-      - 'template/**'
-      - 'static/**'
-      - 'setup/**'
-      - 'tests/**'
-  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: security-tests-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  group: security-tests-${{ github.ref }}
   cancel-in-progress: true
 
 defaults:

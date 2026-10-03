@@ -15,12 +15,12 @@ six supported JavaScript locales. Both suites run in CI.
 ## Continuous integration
 
 [Security tests](../.github/workflows/security-tests.yml) runs the complete suite
-on pushes to any branch and pull requests affecting PHP/CLI sources, endpoints,
+only on pushes to any branch affecting PHP/CLI sources, endpoints,
 localization, templates, static assets, setup/schema files, Composer dependencies,
 HTTP/legacy policies, tests or workflows. Root README/review-only changes do not
-start CI. The Actions page also offers **Run workflow** for a complete manual run.
+start CI.
 The [GitHub workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)
-describes these path filters and manual triggers.
+describes these push path filters.
 
 Each PHP 8.4/8.5 matrix job uses Node 24 and its own disposable MySQL 8.4 service.
 It installs `composer.lock` without plugins/scripts, verifies platform requirements,
