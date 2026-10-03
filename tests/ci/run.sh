@@ -35,8 +35,10 @@ PY
       php "tests/security-$suite.php"
     done
     php tests/security-csrf.php --http
+    php tests/external-links.php
     ;;
   javascript)
+    node tests/external-links.mjs
     php tests/security-json.php --fixtures | node tests/security-json.mjs
     node tests/security-private-uploads.mjs
     node tests/security-guide-uploads.mjs

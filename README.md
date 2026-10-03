@@ -16,6 +16,32 @@ I myself take no credit for the clientside scripting, design and layout that the
 Also, this project is not meant to be used for commercial purposes of any kind!
 
 
+## External navigation links
+
+Configure the Community menu links and the homepage GitHub link in
+`config/config.php`, alongside the existing `$AoWoWconf` database settings:
+
+```php
+$AoWoWconf['externalLinks'] = [
+    'forum'    => ['enabled' => true,  'url' => 'https://community.example.com/'],
+    'blog'     => ['enabled' => false, 'url' => ''],
+    'irc'      => ['enabled' => false, 'url' => ''],
+    'facebook' => ['enabled' => true,  'url' => 'https://www.facebook.com/your-page'],
+    'twitter'  => ['enabled' => true,  'url' => 'https://twitter.com/your-account'],
+    'github'   => ['enabled' => true,  'url' => 'https://github.com/your-org/your-project']
+];
+```
+
+Set `enabled` to the PHP boolean `false` to hide a link while keeping its URL.
+Empty or invalid URLs also hide the link; URLs must be absolute HTTP or HTTPS
+addresses without embedded credentials. Omitted links or fields retain their
+original defaults. Fresh database setup writes all six default entries, and
+later database configuration rewrites preserve this section. Existing installs
+can add the section manually. Changes apply on the next page load, including
+cached page templates, without rebuilding JavaScript or editing locale files.
+Labels and icons remain localized. These deployment settings are independent
+of the database-backed `?admin=siteconfig` settings.
+
 ## Requirements
 
 + Webserver running PHP ≥ 8.4 including extensions:
