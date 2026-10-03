@@ -35,6 +35,10 @@ else:
             <div class="text">
 <?=($this->h1 ? '                <h1>'.$this->h1.'</h1>' : '');?>
 
+<?php if ($this->retirementNotice): ?>
+                <p class="notice-box" role="status"><?=$this->escHTML($this->retirementNotice);?></p>
+<?php endif; ?>
+
 <?php
     $this->brick('markup', ['markup' => $this->article]);
 

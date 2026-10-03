@@ -161,7 +161,6 @@ class EmoteBaseResponse extends TemplateResponse implements ICache
 
         $this->redButtons = array(
             BUTTON_LINKS   => ['type' => $this->type, 'typeId' => $this->typeId],
-            BUTTON_WOWHEAD => false
         );
 
 

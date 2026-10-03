@@ -83,6 +83,7 @@ $lang = array(
         )
     ),
     'main' => array(
+        'modelViewerRetired' => 'The legacy 3D viewer has been retired.',
         'name'          => "name",
         'link'          => "Link",
         'signIn'        => "Log in / Register",

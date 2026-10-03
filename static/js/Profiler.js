@@ -1955,10 +1955,6 @@ function Profiler() {
         _updateInfobox();
         _updateSavedChanges();
 
-        if (_profile.race != raceId || _profile.gender != genderId) {
-            _inventory.updateModel(null, 1);
-        }
-
         if (_profile.classs != classId || _profile.race != raceId || _profile.level != level) {
             _statistics.updateModifiers();
         }
@@ -1990,8 +1986,6 @@ function Profiler() {
         if (currentTab == null) {
             currentTab = _tabs.getSelectedTab();
         }
-
-        _inventory.showModel(currentTab == 0);
 
         switch (currentTab) {
             case 0: // Inventory
@@ -4063,13 +4057,10 @@ function ProfilerInventory(_parent) {
         _gemSource,
         _gemColor,
 
-        _mvInited,
         _shiftClick = false,
         _cursorPos = { x: 0, y: 0 },
 
         _container,
-        _divModel,
-        _swfModel,
         _divInventory,
         _lnkPrint,
         _divTipRclk,
@@ -4162,7 +4153,6 @@ function ProfilerInventory(_parent) {
         _talents    = _parentVars.talents;
         _tabs       = _parentVars.tabs;
 
-        _initModel();
         _initCharacter();
         _initListview(tabIndex);
     };
@@ -4202,7 +4192,6 @@ function ProfilerInventory(_parent) {
             }
         }
 
-        _updateModel(-1, 1);
     };
 
     this.equipItem = function (itemId, itemSlotId) {
@@ -4261,14 +4250,6 @@ function ProfilerInventory(_parent) {
 
     this.printSummary = function () {
         _printSummary();
-    };
-
-    this.showModel = function (visible) {
-        _divModel.style.left = (visible ? '' : '-2323px');
-    };
-
-    this.updateModel = function (slotId, refresh) {
-        _updateModel(slotId, refresh);
     };
 
     this.matchGemSocket = function (gemColor, socketColor) {
@@ -4362,7 +4343,6 @@ function ProfilerInventory(_parent) {
             _data[6].nomodel = 1;
         }
 
-        _updateModel();
         _updateAllIcons();
         _updateAllMenus();
         _updateListview();
@@ -4558,194 +4538,6 @@ function ProfilerInventory(_parent) {
         su_addToSaved(items.join(':'), items.length, true, _profile.level);
     }
 
-    function _initModel() {
-        var
-            _  = $WH.ce('div'),
-            __ = _divModel = $WH.ce('div');
-
-        _.className = 'profiler-model-outer';
-        __.className = 'profiler-model';
-
-        _swfModel = $WH.ce('div');
-        _swfModel.id = 'hsae8y8hjidj';
-
-        $WH.ae(__, _swfModel);
-        $WH.ae(_, __);
-
-        _container.parentNode.parentNode.insertBefore(_, _container.parentNode);
-
-        // custom: hide the swfObject, when displaying tooltips only static tooltips with .show are needed
-        (function (){
-            var
-                oldHide = $WH.Tooltip.hide;
-                oldShow = $WH.Tooltip.show;
-
-            $WH.Tooltip.hide = function (){
-                oldHide.apply(this);
-
-                var a = $WH.ge(_swfModel.id);
-                if (a) {
-                    a.style.visibility = "visible"
-                }
-            }
-
-            $WH.Tooltip.show = function (_this, text, paddX, paddY, spanClass, text2) {
-                oldShow.apply(this, [_this, text, paddX, paddY, spanClass, text2]);
-
-                if ($WH.Tooltip.tooltip.style.visibility != "visible") {
-                    return;
-                }
-
-                var w = $WH.ge(_swfModel.id);
-                if (!w) {
-                    return
-                }
-
-                try {
-                    var v = w.getBoundingClientRect();
-                    var u = $WH.Tooltip.tooltip.getBoundingClientRect()
-                }
-                catch (y) {
-                    return
-                }
-
-                var a = true;
-                a &= (u.bottom > v.top && u.top < v.bottom);
-                a &= (u.right > v.left && u.left < v.right);
-
-                var i = a ? "hidden" : "visible";
-                if (i != w.style.visibility) {
-                    w.style.visibility = i
-                }
-            }
-        })(window || {});
-        // !custom
-    }
-
-    function _updateModel(slotId, refresh) {
-        if (g_user.cookies && g_user.cookies['profiler3d'] == false) {
-            if (!_mvInited) {
-                $WH.ee(_swfModel);
-
-                var btn = RedButton.create(LANG.button_viewin3d, true);
-                btn.onclick = function () {
-                    g_user.cookies['profiler3d'] = 1;
-                    _updateModel(-1, 1);
-                };
-                $WH.ae(_swfModel, btn);
-
-                _mvInited = true;
-            }
-
-            return;
-        }
-
-        var
-            origSlotId = slotId,
-            slotId = _getValidSlot(slotId),
-            equipList = [],
-            emptySlots = [];
-
-        for (var i = 0, len = _data.length; i < len; ++i) {
-            if (slotId == -1 || i == slotId) {
-                var itemId = _getSlotItem(i)[0];
-
-                if (!_data[i].nomodel && g_items[itemId]) {
-                    equipList.push((((i == 16 || i == 17) && g_items[itemId].jsonequip.slotbak != 14) ? _data[i].itemslots[0] : g_items[itemId].jsonequip.slotbak));
-                    equipList.push(g_items[itemId].jsonequip.displayid);
-                }
-                else {
-                    emptySlots.push(_data[i].itemslots[0]);
-                }
-            }
-        }
-
-        if (!_mvInited || refresh) {
-            var flashVars = {
-                model: g_file_races[_profile.race] + g_file_genders[_profile.gender],
-                modelType: 16,
-                equipList: equipList,
-                sk: _profile.skincolor,
-                ha: _profile.hairstyle,
-                hc: _profile.haircolor,
-                fa: _profile.facetype,
-                fh: _profile.features,
-                fc: _profile.haircolor,
-                mode: 3,
-                // contentPath: 'http://static.wowhead.com/modelviewer/'
-                contentPath: g_staticUrl + '/modelviewer/'
-            };
-
-            var params = {
-                wmode: 'direct',                            // aowow: was 'opaque'; doesn't draw with this
-                quality: 'high',
-                allowscriptaccess: 'always',
-                allowfullscreen: true,
-                menu: false,
-                bgcolor: '#141414'
-            };
-
-            var attributes = {
-                style: 'outline: none'
-            };
-
-            swfobject.embedSWF(g_staticUrl + '/modelviewer/ZAMviewerfp11.swf', _swfModel.id, '100%', '100%', '10.0.0', g_staticUrl + '/modelviewer/expressInstall.swf', flashVars, params, attributes);
-            // swfobject.embedSWF('http://static.wowhead.com/modelviewer/ZAMviewerfp11.swf', _swfModel.id, '100%', '100%', '10.0.0', 'http://static.wowhead.com/modelviewer/expressInstall.swf', flashVars, params, attributes);
-
-            _mvInited = true;
-        }
-        /*
-            aowow: the idea of this is to directly access the swf.
-            though ZAMviewerfp11.swf is unpredictable af
-
-            custom: try/catch; check for empty equipList
-        */
-        else {
-            _swfModel = $WH.ge(_swfModel.id);
-
-            if (_swfModel.clearSlots) {
-                _swfModel.setAppearance(_profile.hairstyle, _profile.haircolor, _profile.facetype, _profile.skincolor, _profile.features, _profile.haircolor);
-
-                try { _swfModel.clearSlots(emptySlots); } catch (x) { }
-                if (equipList.length)
-                    _swfModel.attachList(equipList);
-            }
-        }
-    }
-
-    function _toggleDisplay(slotId) {
-        var slotId = _getValidSlot(slotId, 1);
-
-        if (_data[slotId].nomodel == 2) {
-            return;
-        }
-
-        _data[slotId].nomodel = !_data[slotId].nomodel;
-        _profile.nomodel ^= 1 << slotId;
-
-        if (!_data[slotId].nomodel) {
-            if ((slotId == 16 || slotId == 17) && _data[18].nomodel != 2) {
-                _data[18].nomodel = 1;
-
-                _updateModel(18);
-                _updateMenu(18);
-            }
-            else if (slotId == 18) {
-                _data[16].nomodel = _data[17].nomodel = 1;
-
-                _updateModel(16);
-                _updateMenu(16);
-
-                _updateModel(17);
-                _updateMenu(17);
-            }
-        }
-
-        _updateModel(slotId);
-        _updateIcon(slotId);
-        _updateMenu(slotId);
-    }
-
     function _initCharacter() {
         var
             _,
@@ -4924,7 +4716,6 @@ function ProfilerInventory(_parent) {
 
         _parent.updateSavedChanges();
 
-        _updateModel(origSlotId);
         _updateAllIcons();
         _updateHeirloom(slotId);
         _updateMenu(slotId);
@@ -4955,7 +4746,6 @@ function ProfilerInventory(_parent) {
 
         _parent.updateSavedChanges();
 
-        _updateModel(slotId);
         _updateAllIcons();
         _updateMenu(slotId);
         _updateListview();
@@ -5429,11 +5219,6 @@ function ProfilerInventory(_parent) {
             }
 
             // Display On Character
-            if (_data[slotId].nomodel != 2) {
-                var _ = [0, LANG.pr_menu_display, _toggleDisplay.bind(this, slotId)];
-                _.checked = !_data[slotId].nomodel;
-                a.menu.push(_);
-            }
 
             a.menu.push([, LANG.pr_menu_links]);
 
@@ -7533,7 +7318,7 @@ function ProfilerCompletion(_parent) {
 
     this.onShow = function () {
         if (_tabs.tabs[_tabIndex].locked) {
-            return window.open('?client');
+            return;
         }
 
         if (_opt.onDemand && !_loading && !_loaded) {
@@ -8877,8 +8662,7 @@ Listview.templates.gallery = {
         Listview.funcBox.ssCreateCb(td, spell);
 
         var a = $WH.ce('a');
-        a.href = 'javascript:;';
-        a.onclick = this.template.modelShow.bind(this.template, spell.npcId, spell.displayId, false);
+        a.href = '?npc=' + spell.npcId;
         a.style.position = 'relative';
 
         var img = $WH.ce('img');
@@ -8889,15 +8673,11 @@ Listview.templates.gallery = {
         img.onmousemove = $WH.Tooltip.cursorUpdate;
         img.onmouseout = $WH.Tooltip.hide;
         img.style.border = 'none';
-        img.style.position = 'absolute';
-        img.style.right = '6px';
-        img.style.bottom = '9px';
+        img.style.marginRight = '6px';
+        img.style.verticalAlign = 'middle';
         $WH.ae(a, img);
 
-        img = $WH.ce('img');
-        img.src = g_staticUrl + '/modelviewer/thumbs/npc/' + spell.displayId + '.png';
-        img.height = img.width = 75;
-        $WH.ae(a, img);
+        $WH.ae(a, $WH.ct(spell.displayName));
 
         $WH.ae(td, a);
 
@@ -8988,7 +8768,6 @@ Listview.templates.gallery = {
             $WH.ae(td, d);
         }
 
-        $WH.aE(td, 'click', this.template.modelShow.bind(this.template, spell.npcId, spell.displayId, true));
     },
 
     getVisibleText: function (spell) {
@@ -9025,31 +8804,6 @@ Listview.templates.gallery = {
         return buff;
     },
 
-    modelShow: function (npcId, displayId, sp, e) {
-        if (sp) {
-            e = $WH.$E(e);
-
-            if (e.shiftKey || e.ctrlKey) {
-                return;
-            }
-
-            var
-                j = 0,
-                el = e._target;
-
-            while (el && j < 3) {
-                if (el.nodeName == 'A') {
-                    return;
-                }
-                if (el.nodeName == 'IMG') {
-                    break;
-                }
-                el = el.parentNode;
-            }
-        }
-
-        ModelViewer.show({ type: 1, typeId: npcId, displayId: displayId, noPound: 1 });
-    }
 };
 
 Listview.templates.itempicker = {

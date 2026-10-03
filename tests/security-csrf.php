@@ -109,6 +109,12 @@ namespace {
             $response = new Aowow\AccountUpdateemailResponse('update-email');
             $message = (new ReflectionMethod($response, 'updateMail'))->invoke($response);
         }
+        else if (($_GET['account'] ?? '') === 'update-general-settings') {
+            require __DIR__.'/../endpoints/account/update-general-settings.php';
+            $response = new Aowow\AccountUpdategeneralsettingsResponse('update-general-settings');
+            (new ReflectionMethod($response, 'generate'))->invoke($response);
+            $message = $_SESSION['msg'];
+        }
         else {
             $command = $_GET['account'];
             // Run real confirmation generation, omitting only unrelated metadata.

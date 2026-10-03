@@ -93,7 +93,6 @@ class AreatriggerBaseResponse extends TemplateResponse implements ICache
 
         $this->redButtons = array(
             BUTTON_LINKS   => false,
-            BUTTON_WOWHEAD => false
         );
 
 

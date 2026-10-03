@@ -167,10 +167,8 @@ class SpellsBaseResponse extends TemplateResponse implements ICache
         $extraCols   = [];
         $tabData     = ['data' => []];
 
-        $this->redButtons[BUTTON_WOWHEAD] = true;
         if ($fiQuery = $this->filter->buildGETParam())
         {
-            $this->wowheadLink .= '&filter='.$fiQuery;
             $this->fiMenuExtension = $fiQuery;              // note: glyphtype 'gl' is propagated outside of the glpyhs subcategory, but no idea how to fix that. Its non-breaking, so.. eh?
         }
 

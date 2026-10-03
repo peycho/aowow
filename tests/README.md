@@ -12,6 +12,35 @@ They cover URL validation, enabled status, current settings on cached templates,
 script/HTML escaping, and menu filtering with translated labels and icons in all
 six supported JavaScript locales. Both suites run in CI.
 
+## Viewer retirement and local assets
+
+```sh
+php tests/retirement.php
+php tests/retirement.php --fixtures | node tests/retirement.mjs
+bash tests/ci/run.sh browser
+```
+
+The PHP suite executes the real `globaljs`/`tooltips` generators with synthetic
+configuration, tests account saves with absent/legacy viewer fields, and renders
+the retained help URL/banner without altering the article in all six locales.
+Node checks the generated asset syntax and real markup parser: local defaults,
+explicit external sources, original post links, configurable forum rules, escaped
+model fallbacks, and menus.
+
+The browser suite serves stock widgets at root and subdirectory URLs with
+Wowhead/ZAM hosts blocked. It exercises lists, comparisons, profiler rendering,
+talent imports, pet calculators, local tooltip hover, standalone embedding,
+renaming/icons, and actual crop-border delivery. Game/character data are synthetic;
+missing operator-extracted images get a local placeholder. These checks do not
+replace acceptance against a configured staging database and its extracted assets.
+Generated fixture bundles are temporary and must not be deployed.
+
+The existing guarded `security-updates.php` SQL suite applies the actual retirement
+migration through the journaled updater to exact-default, customized, empty,
+case/whitespace variants, and missing configuration rows. It compares stored
+article/guide/comment/preference bytes before and after and verifies replay is
+skipped. Run it only in `aowow_security_test_updates`, as documented below.
+
 ## Continuous integration
 
 [Security tests](../.github/workflows/security-tests.yml) runs the complete suite
@@ -25,7 +54,7 @@ describes these push path filters.
 Each PHP 8.4/8.5 matrix job uses Node 24 and its own disposable MySQL 8.4 service.
 It installs `composer.lock` without plugins/scripts, verifies platform requirements,
 and runs PHP/JavaScript/Python/shell syntax, every standalone PHP/HTTP and Node
-suite, all three generated browser fixtures and all six SQL suites. Recovery,
+suite, the generated browser fixtures and all SQL suites. Recovery,
 activation and password-policy tests run sequentially because they rebuild the
 same fixture tables. Screenshots, migrations and contribution/retention tests
 use their separately guarded database names. A one-sample synthetic password

@@ -81,7 +81,6 @@ class EnchantmentsBaseResponse extends TemplateResponse implements ICache
         /* Main Content */
         /****************/
 
-        $this->redButtons[BUTTON_WOWHEAD] = false;
 
         if ($fiQuery = $this->filter->buildGETParam(['ty' => null]))
             $this->fiMenuExtension = $fiQuery;

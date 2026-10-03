@@ -60,9 +60,6 @@ function TalentCalc() {
         _divLower,
             _lblTreePoints = [],
         _divMain,
-        _divModel,
-            swfModel,
-
 
         _encoding          = '0zMcmVokRsaqbdrfwihuGINALpTjnyxtgevElBCDFHJKOPQSUWXYZ123456789',
         _blizzEncoding     = 'aZbYcXdWeVfUgThSiRjQkPlOmNnMoLpKqJrIsHtGuFvEwDxCyBzA0123456789_=+-.',
@@ -375,7 +372,6 @@ function TalentCalc() {
         _createSidebar();
         _createUpper();
         _createMain();
-        _createModel();
         _createLower();
 
     /*
@@ -383,7 +379,6 @@ function TalentCalc() {
         _createUpper();
         _createTreeNames();
         _createMasteries();
-        _createModel();
         _createMain();
         _createLower();
     */
@@ -576,7 +571,6 @@ function TalentCalc() {
     };
 
     this.setPetModel = function(npcId) {
-        _updateModel(_currentClass, npcId); // NYI!
     }
 
     this.showSummary = function (mode) {
@@ -899,27 +893,6 @@ function TalentCalc() {
         $WH.ae(_divMain, clear);
 
         $WH.ae(_divWrapper, _divMain);
-    }
-
-    function _createModel() {
-        if (_mode != MODE_PET) {
-            return;
-        }
-
-        _divModel = $WH.ce('div');
-        _divModel.className = 'talentcalc-model';
-
-        _divModel.style.display = "none";
-
-        _swfModel = $WH.ce('div');
-        _swfModel.id = 'shg09yrhlnk';
-        $WH.ae(_divModel, _swfModel);
-
-        var clear = $WH.ce('div');
-        clear.className = 'clear';
-        $WH.ae(_divModel, clear);
-
-        $WH.ae(_divWrapper, _divModel);
     }
 
     function _createPetTalents(classId) {
@@ -1834,9 +1807,7 @@ function TalentCalc() {
         $WH.st(_lblClass, _referenceArray[_currentClass]);
         if (_mode == MODE_PET) {
             _lblClass.href = '?pet=' + _currentClass;
-            _updateModel(_currentClass);
 
-            _divModel.style.display = '';
         }
         else {
             _lblClass.href = '?class=' + _currentClass;
@@ -2704,69 +2675,6 @@ function TalentCalc() {
         }
     }
 
-    function _updateModel(classId, npcId) {
-        var swfUrl = g_staticUrl;                           // "http://static.wowhead.com"
-
-        if (_mode != MODE_PET){
-            return;
-        }
-
-        var c = _data[classId];
-
-        if (!c) {
-            return;
-        }
-
-        if (g_pets[npcId] && g_pets[npcId].family == classId) {
-            c.npcId = npcId;
-        }
-
-        if (!g_pets[c.npcId] || g_pets[c.npcId].family != classId) {
-            var models = [];
-
-            for (var i in g_pets) {
-                if (g_pets[i].family == classId) {
-                    models.push(g_pets[i].id);
-                }
-            }
-
-            if (!models.length) {
-                return;
-            }
-
-            c.npcId = models[Math.floor(Math.random() * models.length)];
-        }
-
-        var flashVars = {
-            model: g_pets[c.npcId].displayId,
-            modelType: 8,
-            contentPath: swfUrl + '/modelviewer/',
-            blur: ($WH.OS.mac ? '0' : '1')
-        };
-
-        var params = {
-            quality: 'high',
-            allowscriptaccess: 'always',
-            allowfullscreen: true,
-            menu: false,
-            bgcolor: '#181818',
-            wmode: 'direct'
-        };
-
-        var attributes = {};
-
-        swfobject.embedSWF(
-            swfUrl + '/modelviewer/ZAMviewerfp11.swf',
-            _swfModel.id,
-            '100%',
-            '100%',
-            '10.0.0',
-            swfUrl + '/modelviewer/expressInstall.swf',
-            flashVars,
-            params,
-            attributes
-        );
-    }
 }
 
 TalentCalc.MODE_DEFAULT = 0;

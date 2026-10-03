@@ -99,7 +99,6 @@ class CurrencyBaseResponse extends TemplateResponse implements ICache
 
         $this->headIcons  = $hi;
         $this->redButtons = array(
-            BUTTON_WOWHEAD => true,
             BUTTON_LINKS   => true
         );
 

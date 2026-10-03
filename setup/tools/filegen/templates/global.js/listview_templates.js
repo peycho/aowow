@@ -964,7 +964,7 @@ Listview.templates = {
             for (var i = 0, len = this.data.length; i < len; ++i) {
                 var item = this.data[i];
 
-                if ((item.slot > 0 && item.slot != 18) || (item.classs == 3 && item.subclass != 7) || ($WH.in_array(ModelViewer.validSlots, item.slotbak) >= 0 && item.displayid > 0) || item.modelviewer) { // Equippable, and not a bag, or has a model
+                if ((item.slot > 0 && item.slot != 18) || (item.classs == 3 && item.subclass != 7)) { // Comparable equipment; viewer-only models no longer need selection controls.
                     ++nComparable;
                 }
                 else {
@@ -1006,34 +1006,30 @@ Listview.templates = {
 
             var
                 iCompare  = $WH.ce('input'),
-                iViewIn3d = $WH.ce('input'),
                 iEquip    = $WH.ce('input'),
                 iDeselect = $WH.ce('input'),
                 pinnedChr = g_user.characters ? $WH.array_filter(g_user.characters, function(row) {
                     return row.pinned;
                 }) : false;
 
-            iCompare.type = iViewIn3d.type = iEquip.type = iDeselect.type = 'button';
+
+            iCompare.type = iEquip.type = iDeselect.type = 'button';
 
             iCompare.value  = LANG.button_compare;
-            iViewIn3d.value = LANG.button_viewin3d;
             iEquip.value    = LANG.button_equip;
             iDeselect.value = LANG.button_deselect;
 
             iCompare.onclick  = this.template.compareItems.bind(this);
-            iViewIn3d.onclick = this.template.viewIn3d.bind(this);
             iDeselect.onclick = Listview.cbSelect.bind(this, false);
 
             if (this._nComparable == 0 || typeof this._nComparable == 'undefined') {
                 iCompare.disabled  = 'disabled';
-                iViewIn3d.disabled = 'disabled';
                 iEquip.disabled    = 'disabled';
                 iDeselect.disabled = 'disabled';
                 pinnedChr = false;
             }
 
             $WH.ae(div, iCompare);
-            $WH.ae(div, iViewIn3d);
 
             if (pinnedChr && pinnedChr.length) {
                 iEquip.onclick = this.template.equipItems.bind(this, pinnedChr[0]);
@@ -1060,68 +1056,6 @@ Listview.templates = {
             su_addToSaved($WH.rtrim(data, ';'), rows.length);
         },
 
-        viewIn3d: function() {
-            var rows = this.getCheckedRows();
-            if (!rows.length) {
-                return;
-            }
-
-            var
-                hasData = false,
-                repeatData = false,
-                badData = false;
-            var data = {};
-            var model = null;
-            $WH.array_walk(rows, function(x) {
-                if ($WH.in_array(ModelViewer.validSlots, x.slotbak) >= 0 && x.displayid > 0) {
-                    var slot = ModelViewer.slotMap[x.slotbak];
-                    if (data[slot]) {
-                        repeatData = true;
-                    }
-                    data[slot] = x.displayid;
-                    hasData = true;
-                }
-                else if (x.modelviewer) {
-                    model = x.modelviewer;
-                }
-                else {
-                    badData = true;
-                }
-            });
-
-            var message = null;
-            if (model) {
-                if (hasData || badData) {
-                    message = LANG.dialog_cantdisplay;
-                }
-                ModelViewer.show({
-                    type: model.type,
-                    displayId: model.displayid,
-                    slot: model.slot,
-                    message: message
-                });
-            }
-            else {
-                if (repeatData || badData) {
-                    message = LANG.dialog_cantdisplay;
-                }
-                var equipList = [];
-                for (var i in data) {
-                    equipList.push(parseInt(i));
-                    equipList.push(data[i]);
-                }
-                if (equipList.length > 0) {
-                    ModelViewer.show({
-                        type: 4,
-                        equipList: equipList,
-                        message: message
-                    });
-                }
-                else {
-                    alert(LANG.message_nothingtoviewin3d);
-                }
-            }
-        },
 
         equipItems: function(character) {
             var rows = this.getCheckedRows();
@@ -6858,14 +6792,8 @@ Listview.templates = {
             td.vAlign = 'bottom';
 
             var a = $WH.ce('a');
-            a.href = 'javascript:;';
-            // a.className = 'pet-zoom';   // aowow: keep as reference only
-            a.onclick = this.template.modelShow.bind(this.template, model.npcId, model.displayId, false);
-
-            var img = $WH.ce('img');
-            img.src = g_staticUrl + '/modelviewer/thumbs/npc/' + model.displayId + '.png';
-            $WH.ae(a, img);
-
+            a.href = '?npc=' + model.npcId;
+            $WH.ae(a, $WH.ct(LANG.types[1][0] + ' #' + model.npcId));
             $WH.ae(td, a);
 
             var d = $WH.ce('div');
@@ -6894,33 +6822,8 @@ Listview.templates = {
             $WH.ae(d, d2);
             $WH.ae(td, d);
 
-            $WH.aE(td, 'click', this.template.modelShow.bind(this.template, model.npcId, model.displayId, true));
         },
 
-        modelShow: function(npcId, displayId, sp, e) {
-            if (sp) {
-                e = $WH.$E(e);
-
-                if (e.shiftKey || e.ctrlKey) {
-                    return;
-                }
-
-                var
-                    j = 0,
-                    el = e._target;
-                while (el && j < 3) {
-                    if (el.nodeName == 'A') {
-                        return;
-                    }
-                    if (el.nodeName == 'IMG') {
-                        break;
-                    }
-                    el = el.parentNode;
-                }
-            }
-
-            ModelViewer.show({type: 1, typeId: npcId, displayId: displayId, noPound: 1});
-        }
     },
 
     genericmodel: {
@@ -6939,117 +6842,15 @@ Listview.templates = {
             }
         ],
 
+        // Legacy model rows remain usable as local entity links, without viewer assets.
         compute: function (model, td, i) {
             td.className = 'screenshot-cell';
-            td.vAlign    = 'bottom';
-
-            var
-                displayId,
-                type,
-                linkType,
-                slot,
-                typeId;
-
-            if ('modelviewer' in model) {
-                displayId = model.modelviewer.displayid;
-                typeId    = model.modelviewer.typeid;
-                type      = model.modelviewer.type;
-                slot      = model.slot;
-            }
-            else if ('npcmodel' in model) {
-                displayId = model.npcmodel;
-                typeId    = model.id;
-                type      = 1;
-            }
-            else if ('displayid' in model) {
-                displayId = model.displayid;
-                typeId    = model.id;
-                type      = 3;
-                slot      = model.slotbak || model.slot;
-            }
-
-            switch (type) {
-            case 1:
-                linkType = 'npc';
-                break;
-            case 3:
-                linkType = 'item';
-                break;
-            default:
-                linkType = 'item';
-                break;
-            }
-
-            if (displayId) {
-                var a = $WH.ce('a');
-                a.href = 'javascript:;';
-                a.rel = this.genericlinktype + '=' + model.id + ' domain=' + Locale.get().domain ;
-                a.onclick = this.template.modelShow.bind(this.template, type, typeId, displayId, slot, false);
-
-                var img = $WH.ce('img');
-                img.src = g_staticUrl + '/modelviewer/thumbs/' + linkType + '/' + displayId + '.png';
-                $WH.ae(a, img);
-
-                $WH.ae(td, a);
-            }
-
-            d = $WH.ce('div');
-            d.style.position = 'relative';
-            d.style.height = '1em';
-
-            var d2 = $WH.ce('div');
-            d2.className = 'screenshot-caption';
-
-            var a = $WH.ce('a');
-            a.className = 'q' + ((this.genericlinktype == 'item') ? g_items[model.id].quality : '');
-            a.style.fontFamily = 'Verdana,sans-serif';
-            a.href = g_host + '?' + this.genericlinktype + '=' + model.id;
-            $WH.ae(a, $WH.ct(model.name.substr(1)));
-            $WH.ae(d2, a);
-
-            $WH.ae(d, d2);
-            $WH.ae(td, d);
-
-            if (displayId) {
-                $WH.aE(td, 'click', this.template.modelShow.bind(this.template, type, typeId, displayId, slot, true));
-            }
-        },
-
-        modelShow: function (type, typeId, displayId, slot, sp, e) {
-            if (sp) {
-                e = $WH.$E(e);
-
-                if (e.shiftKey || e.ctrlKey) {
-                    return;
-                }
-
-                var
-                    j = 0,
-                    el = e._target;
-
-                while (el && j < 3) {
-                    if (el.nodeName == 'A') {
-                        return;
-                    }
-                    if (el.nodeName == 'IMG') {
-                        break;
-                    }
-                    el = el.parentNode;
-                }
-            }
-
-            var opt = {
-                type:      type,
-                typeId:    typeId,
-                displayId: displayId,
-                noPound:   1
-            };
-
-            if (typeof slot != "undefined") {
-                opt.slot = slot;
-            }
-
-            ModelViewer.show(opt);
+            var link = $WH.ce('a');
+            link.href = '?' + this.genericlinktype + '=' + model.id;
+            if (this.genericlinktype == 'item' && g_items[model.id])
+                link.className = 'q' + g_items[model.id].quality;
+            $WH.ae(link, $WH.ct(model.name.charAt(0) == '@' ? model.name.substr(1) : model.name));
+            $WH.ae(td, link);
         },
 
         sortFunc: function (a, b, col) {

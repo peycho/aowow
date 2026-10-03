@@ -1047,7 +1047,6 @@ var mn_more = [
     [13,"Ayuda",,[
         [0,"Los comentarios y tú","?help=commenting-and-you"],
         [5,"Comparación de objetos","?help=item-comparison"],
-        [1,"Visualizador de modelos","?help=modelviewer"],
         [6,"Perfiles","?help=profiler"],
         [2,"Capturas de pantalla: Sugerencias y trucos","?help=screenshots-tips-tricks"],
         [3,"Medición de atributos","?help=stat-weighting"],
@@ -2557,6 +2556,8 @@ var g_conditions = {
 /* end aowow custom */
 
 var LANG = {
+    modelviewer_retired: 'El antiguo visor 3D ha sido retirado.',
+    forum_rules: 'Reglas del foro',
     alltime_stc:   "Todo el tiempo",
     lastmonth_stc: "Mes pasado",
     lastweek_stc:  "Semana pasada",
@@ -2955,7 +2956,6 @@ var LANG = {
     button_resync:       "Resincronizar",
     button_selectall:    "Seleccionar todos",
     button_upgrades:     "Buscar actualizaciones",
-    button_viewin3d:     "Ver en 3D",
     button_markup:       "Aumentar",
     button_link:         "Enlace",
 
@@ -2999,7 +2999,6 @@ var LANG = {
     message_newnamedifferent:     "Su nuevo nombre de usuario tiene que ser diferente a su nombre de usuario anterior.",
     message_noscreenshot:         "Por favor seleccione la captura de pantalla para subir.",
     message_novideo:              "Por favor, introduce información válida del vídeo.",
-    message_nothingtoviewin3d:    "No se han seleccionado objetos que se puedan ver en 3D.",
     message_passwordmin:          "Usa al menos 15 caracteres y como máximo 72 bytes UTF-8 (algunos caracteres usan varios bytes).",
     message_passwordsdonotmatch:  "Las contraseñas no son iguales.",
     message_savebeforeexit:       "Perderás cualquier cambio realizado que no hayas guardado.",
@@ -4537,7 +4536,6 @@ var LANG = {
     button_customprofile: "Perfil personalizado",
     button_armorychar:    "Gestionar personaje",
 
-    pr_clienttab:    "$1<br /><span class=\"q1\">Si éste es tu personaje, puedes registrar tus<br />$2 ¡usando el cliente de Wowhead!</span><br /><span class=\"q2\">Haz clic para saber más</span>",
     pr_lookup:       "Búsqueda: ",
     pr_noneitem:     "Ninguno",
     pr_nonegem:      "Ninguno",
@@ -4838,7 +4836,6 @@ var LANG = {
     su_resetweight:  "Restablecer",
 
     su_export:       "Exportar",
-    su_viewin3d:     "Ver en 3D",
     su_split:        "Separar",
 
     su_customscale:  "Escala personalizada #$1",

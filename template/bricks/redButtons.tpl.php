@@ -7,15 +7,6 @@
 ?>
 
 <?php
-// link to wowhead
-if (isset($this->redButtons[BUTTON_WOWHEAD])):
-    if ($this->redButtons[BUTTON_WOWHEAD]):
-        echo '<a href="'.$this->wowheadLink.'" rel="np" referrerpolicy="no-referrer" class="button-red"><em><b><i>Wowhead</i></b><span>Wowhead</span></em></a>';
-    else:
-        echo '<a href="javascript:;" class="button-red button-red-disabled"><em><b><i>Wowhead</i></b><span>Wowhead</span></em></a>';
-    endif;
-endif;
-
 // go to my playlist
 if (isset($this->redButtons[BUTTON_PLAYLIST])):
     echo '<a href="?sound&playlist" class="button-red"><em><b><i>'.Lang::sound('goToPlaylist').'</i></b><span>'.Lang::sound('goToPlaylist').'</span></em></a>';
@@ -27,15 +18,6 @@ if (isset($this->redButtons[BUTTON_LINKS])):
         echo '<a href="javascript:;" id="open-links-button" class="button-red" onclick="this.blur(); Links.show('.strtr($this->json($b, JSON_HEX_APOS), ['"' => "'"]).');"><em><b><i>'.Lang::main('links').'</i></b><span>'.Lang::main('links').'</span></em></a>';
     else:
         echo '<a href="javascript:;" id="open-links-button" class="button-red button-red-disabled"><em><b><i>'.Lang::main('links').'</i></b><span>'.Lang::main('links').'</span></em></a>';
-    endif;
-endif;
-
-// view in 3D
-if (isset($this->redButtons[BUTTON_VIEW3D])):
-    if ($b = $this->redButtons[BUTTON_VIEW3D]):             // json_encode puts property names in brackets wich is not cool with inline javascript
-        echo '<a href="javascript:;" id="view3D-button" class="button-red" onclick="this.blur(); ModelViewer.show('.strtr($this->json($b, JSON_HEX_APOS), ['"' => "'"]).')"><em><b><i>'.Lang::main('view3D').'</i></b><span>'.Lang::main('view3D').'</span></em></a>';
-    else:
-        echo '<a href="javascript:;" id="view3D-button" class="button-red button-red-disabled"><em><b><i>'.Lang::main('view3D').'</i></b><span>'.Lang::main('view3D').'</span></em></a>';
     endif;
 endif;
 

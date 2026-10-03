@@ -1047,7 +1047,6 @@ var mn_more = [
     [13,"Hilfe",,[
         [0,"Kommentare und du","?help=commenting-and-you"],
         [5,"Gegenstandsvergleich","?help=item-comparison"],
-        [1,"Modellviewer","?help=modelviewer"],
         [6,"Profiler","?help=profiler"],
         [2,"Screenshots: Tipps & Tricks","?help=screenshots-tips-tricks"],
         [3,"Gewichtung von Werten","?help=stat-weighting"],
@@ -2557,6 +2556,8 @@ var g_conditions = {
 /* end aowow custom */
 
 var LANG = {
+    modelviewer_retired: 'Der bisherige 3D-Modellviewer wurde eingestellt.',
+    forum_rules: 'Forenregeln',
     alltime_stc:   "Allzeit",
     lastmonth_stc: "Letzter Monat",
     lastweek_stc:  "Letzte Woche",
@@ -2955,7 +2956,6 @@ var LANG = {
     button_resync:       "Resynchronisieren",
     button_selectall:    "Alles auswählen",
     button_upgrades:     "Verbesserungen finden",
-    button_viewin3d:     "3D-Ansicht",
     button_markup:       "Markup",
     button_link:         "Link",
 
@@ -2999,7 +2999,6 @@ var LANG = {
     message_newnamedifferent:     "Euer neuer Benutzername muss sich von eurem alten Benutzernamen unterscheiden.",
     message_noscreenshot:         "Wählt bitte den Screenshot aus, den Ihr hochladen möchtet.",
     message_novideo:              "Bitte gebt gültige Videoinformationen ein.",
-    message_nothingtoviewin3d:    "Es wurden keine Gegenstände ausgewählt, die in 3D angezeigt werden können.",
     message_passwordmin:          "Verwendet mindestens 15 Zeichen und höchstens 72 UTF-8-Bytes (manche Zeichen benötigen mehrere Bytes).",
     message_passwordsdonotmatch:  "Die Kennwörter stimmen nicht überein.",
     message_savebeforeexit:       "Ihr werdet alle ungespeicherten Änderungen verlieren.",
@@ -4537,7 +4536,6 @@ var LANG = {
     button_customprofile: "Individuelles Profil",
     button_armorychar:    "Charakter verwalten",
 
-    pr_clienttab:    '$1<br /><span class="q1">Falls dies Eurer Charakter ist, könnt Ihr den Wowhead Client benutzen, um Eure $2 zu verfolgen!</span><br /><span class="q2">Klickt, um genaueres zu erfahren!</span>',
     pr_lookup:       "Suchen: ",
     pr_noneitem:     "Nichts",
     pr_nonegem:      "Nichts",
@@ -4838,7 +4836,6 @@ var LANG = {
     su_resetweight:  "Rücksetzen",
 
     su_export:       "Exportieren",
-    su_viewin3d:     "3D-Ansicht",
     su_split:        "Teilen",
 
     su_customscale:  "Eigene Gewichtung #$1",

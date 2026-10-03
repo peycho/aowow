@@ -82,10 +82,8 @@ class ObjectsBaseResponse extends TemplateResponse implements ICache
         /* Main Content */
         /****************/
 
-        $this->redButtons[BUTTON_WOWHEAD] = true;
         if ($fiQuery = $this->filter->buildGETParam())
         {
-            $this->wowheadLink .= '&filter='.$fiQuery;
             $this->fiMenuExtension = $fiQuery;
         }
 

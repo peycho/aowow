@@ -83,7 +83,6 @@ class SoundBaseResponse extends TemplateResponse implements ICache
         $fullpath = DB::Aowow()->selectCell('SELECT IF(sf.`path` <> "", CONCAT(sf.`path`, "\\", sf.`file`), sf.`file`) FROM ::sounds_files sf JOIN ::sounds s ON s.`soundFile1` = sf.`id` WHERE s.`id` = %i', $this->typeId);
 
         $this->redButtons = array(
-            BUTTON_WOWHEAD  => true,
             BUTTON_PLAYLIST => true,
             BUTTON_LINKS    => array(
                 'type'   => Type::SOUND,

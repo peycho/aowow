@@ -36,9 +36,11 @@ PY
     done
     php tests/security-csrf.php --http
     php tests/external-links.php
+    php tests/retirement.php
     ;;
   javascript)
     node tests/external-links.mjs
+    php tests/retirement.php --fixtures | node tests/retirement.mjs
     php tests/security-json.php --fixtures | node tests/security-json.mjs
     node tests/security-private-uploads.mjs
     node tests/security-guide-uploads.mjs
@@ -62,6 +64,9 @@ PY
         --dump-dom "file://$fixture_root/$fixture.html" > "$fixture_root/$fixture.dom"
       python3 tests/ci/check-browser.py "$fixture_root/$fixture.dom"
     done
+    php tests/retirement.php --fixtures > "$fixture_root/retirement-assets.json"
+    node tests/retirement.mjs --browser < "$fixture_root/retirement-assets.json" > "$fixture_root/retirement.html"
+    python3 tests/retirement-browser.py "$fixture_root/retirement.html" "$fixture_root/retirement-assets.json" "$browser"
     ;;
   sql)
     # These exact disposable databases are destructive fixtures; never load application credentials.

@@ -119,7 +119,6 @@ if (typeof $WowheadPower == "undefined") {
         function init() {
             if (isRemote) {
                 var script = document.createElement("script");
-                // script.src = (document.location.protocol != "https:" ? "http:": document.location.protocol) + "//wowjs.zamimg.com/js/basic.js?5";
                 script.src = g_staticUrl + "/js/basic.js";
                 head.appendChild(script);
             }
@@ -195,7 +194,6 @@ if (typeof $WowheadPower == "undefined") {
             if (isRemote) {
                 $WH.ae(head, $WH.ce("link", {
                     type: "text/css",
-                    // href: (document.location.protocol != "https:" ? "http:": document.location.protocol) + "//wowcss.zamimg.com/css/basic.css?5",
                     href: g_staticUrl + "/css/basic.css",
                     rel:  "stylesheet"
                 }));
@@ -286,10 +284,8 @@ if (typeof $WowheadPower == "undefined") {
                 i2 = 3;
                 if (t.href.indexOf("http://") == 0 || t.href.indexOf("https://") == 0) {
                     i0 = 1;
-                    // url = t.href.match(/^https?:\/\/(.+?)?\.?wowhead\.com(?:\:\d+)?\/\??(item|quest|spell|achievement|event|npc|object|itemset|currency)=(-?[0-9]+)/);
                     url = t.href.match(/^https?:\/\/(.*)\/?\??(item|quest|spell|achievement|event|npc|object|itemset|currency)=(-?[0-9]+)/);
                     if (url == null) {
-                        // url = t.href.match(/^http:\/\/(.+?)?\.?wowhead\.com\/\?(profile)=([^&#]+)/)
                         url = t.href.match(/^https?:\/\/(.*)\/?\??(profile|guide)=([^&#]+)/);
                     }
 
@@ -432,7 +428,6 @@ if (typeof $WowheadPower == "undefined") {
                         // t.style.paddingLeft = "18px !important";
                         t.setAttribute("style", t.getAttribute("style") + "; padding-left:18px !important;");
                         t.style.verticalAlign = "center";
-                        // t.style.background = "url(" + (document.location.protocol != "https:" ? "http:": document.location.protocol) + "//wowimg.zamimg.com/images/wow/icons/tiny/" + data.icon.toLocaleLowerCase() + ".gif) left center no-repeat"
                         t.style.background = "url(" + g_staticUrl + "/images/wow/icons/tiny/" + data.icon.toLocaleLowerCase() + ".gif) left center no-repeat"
                     }
 
@@ -572,8 +567,6 @@ if (typeof $WowheadPower == "undefined") {
                 }
             }
 
-            // var url = "http://" + $WH.g_getDomainFromLocale(locale) + ".wowhead.com"
-            // var url = (document.location.protocol != "https:" ? "http:": document.location.protocol) + "//" + localeDomain + ".wowhead.com";
             var
                 localeDomain = $WH.g_getDomainFromLocale(locale),
                 url = g_host + "/";

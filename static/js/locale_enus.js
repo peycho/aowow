@@ -1093,7 +1093,6 @@ var mn_more = [
     [13,"Help",,[
         [0,"Commenting and You","?help=commenting-and-you"],
         [5,"Item Comparison","?help=item-comparison"],
-        [1,"Model Viewer","?help=modelviewer"],
         [6,"Profiler","?help=profiler"],
         [2,"Screenshots: Tips & Tricks","?help=screenshots-tips-tricks"],
         [3,"Stat Weighting","?help=stat-weighting"],
@@ -2605,6 +2604,8 @@ var g_conditions = {
 /* end aowow custom */
 
 var LANG = {
+    modelviewer_retired: 'The legacy 3D viewer has been retired.',
+    forum_rules: 'Forum rules',
     alltime_stc:   "All Time",
     lastmonth_stc: "Last Month",
     lastweek_stc:  "Last Week",
@@ -3004,7 +3005,6 @@ var LANG = {
     button_resync:       "Resync",
     button_selectall:    "Select all",
     button_upgrades:     "Find upgrades",
-    button_viewin3d:     "View in 3D",
     button_markup:       "Markup",
     button_link:         "Link",
 
@@ -3048,7 +3048,6 @@ var LANG = {
     message_newnamedifferent:     "Your new username must be different than your previous one.",
     message_noscreenshot:         "Please select the screenshot to upload.",
     message_novideo:              "Please enter valid video information.",
-    message_nothingtoviewin3d:    "No items were selected that can be viewed in 3D.",
     message_passwordmin:          "Use at least 15 characters and no more than 72 UTF-8 bytes (some characters use multiple bytes).",
     message_passwordsdonotmatch:  "Passwords do not match.",
     message_savebeforeexit:       "You will lose any unsaved changes you have made.",
@@ -4581,7 +4580,6 @@ var LANG = {
     button_customprofile: "Custom profile",
     button_armorychar:    "Manage character",
 
-    pr_clienttab:    "$1<br /><span class=\"q1\">If this is your character, you can track your<br />$2 using the Wowhead Client!</span><br /><span class=\"q2\">Click to learn more</span>",
     pr_lookup:       "Lookup: ",
     pr_noneitem:     "None",
     pr_nonegem:      "None",
@@ -4882,7 +4880,6 @@ var LANG = {
     su_resetweight:  "Reset",
 
     su_export:       "Export",
-    su_viewin3d:     "View in 3D",
     su_split:        "Split",
 
     su_customscale:  "Custom scale #$1",

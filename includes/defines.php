@@ -15,9 +15,6 @@ define('FILTER_FLAG_STRIP_AOWOW', FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH
 define('TDB_WORLD_MINIMUM_VER',  25101);
 define('TDB_WORLD_EXPECTED_VER', 26091);
 
-// as of 01.01.2024     https://www.wowhead.com/wotlk/de/spell=40120/{seo}
-//                      https://www.wowhead.com/wotlk/es/search=vuelo
-define('WOWHEAD_LINK', 'https://www.wowhead.com/wotlk/%s/%s%s');
 
 define('LOG_LEVEL_ERROR', 1);
 define('LOG_LEVEL_WARN',  2);
@@ -170,10 +167,9 @@ define('U_GROUP_COMMENTS_MODERATOR',        (U_GROUP_MODERATOR|U_GROUP_LOCALIZER
 define('U_GROUP_PREMIUM_PERMISSIONS',       (U_GROUP_PREMIUM|U_GROUP_STAFF|U_GROUP_VIP));
 
 // red buttons on the top of the page
-define('BUTTON_WOWHEAD',                    0);
+// Button IDs 0 (Wowhead) and 3 (Flash viewer) are retired; keep the other IDs stable.
 define('BUTTON_UPGRADE',                    1);
 define('BUTTON_COMPARE',                    2);
-define('BUTTON_VIEW3D',                     3);
 define('BUTTON_LINKS',                      4);
 define('BUTTON_FORUM',                      5);
 define('BUTTON_TALENT',                     6);

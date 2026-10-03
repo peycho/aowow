@@ -83,6 +83,7 @@ $lang = array(
         )
     ),
     'main' => array(
+        'modelViewerRetired' => 'El antiguo visor 3D ha sido retirado.',
         'name'          => "nombre",
         'link'          => "Enlace",
         'signIn'        => "Iniciar sesión / Registrarse",

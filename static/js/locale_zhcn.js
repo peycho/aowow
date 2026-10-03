@@ -1093,7 +1093,6 @@ var mn_more = [
     [13,"帮助",,[
         [0,"评论与你","?help=commenting-and-you"],
         [5,"物品比较","?help=item-comparison"],
-        [1,"模型查看器","?help=modelviewer"],
         [6,"Profiler","?help=profiler"],
         [2,"截屏：技巧与窍门","?help=screenshots-tips-tricks"],
         [3,"数据权重","?help=stat-weighting"],
@@ -2604,6 +2603,8 @@ var g_conditions = {
 /* end aowow custom */
 
 var LANG = {
+    modelviewer_retired: '旧版3D模型查看器已停用。',
+    forum_rules: '论坛规则',
     alltime_stc:   "全天候",
     lastmonth_stc: "上个月",
     lastweek_stc:  "上周",
@@ -3003,7 +3004,6 @@ var LANG = {
     button_resync:       "重新同步",
     button_selectall:    "全选",
     button_upgrades:     "查找更新",
-    button_viewin3d:     "3D查看",
     button_markup:       "标记",
     button_link:         "链接",
 
@@ -3047,7 +3047,6 @@ var LANG = {
     message_newnamedifferent:     "您的新用户名必须不同于旧用户名。",
     message_noscreenshot:         "请选择要上传的截屏。",
     message_novideo:              "请输入有效的视频信息。",
-    message_nothingtoviewin3d:    "没有选中可以3D浏览的物品。",
     message_passwordmin:          "请使用至少15个字符且不超过72个UTF-8字节（某些字符占用多个字节）。",
     message_passwordsdonotmatch:  "密码不匹配",
     message_savebeforeexit:       "您将失去所有未保存的修改。",
@@ -4578,7 +4577,6 @@ var LANG = {
     button_customprofile: "Custom profile",
     button_armorychar:    "Manage character",
 
-    pr_clienttab:    "$1<br /><span class=\"q1\">If this is your character, you can track your<br />$2 using the Wowhead Client!</span><br /><span class=\"q2\">点击学习更多</span>",
     pr_lookup:       "查找：",
     pr_noneitem:     "无",
     pr_nonegem:      "无",
@@ -4879,7 +4877,6 @@ var LANG = {
     su_resetweight:  "重置",
 
     su_export:       "出口",
-    su_viewin3d:     "3D查看",
     su_split:        "分拆",
 
     su_customscale:  "自定义标尺 #$1",

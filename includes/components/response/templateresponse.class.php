@@ -134,7 +134,6 @@ class TemplateResponse extends BaseResponse
     public  string $h1Link      = '';                       //
     public ?string $headerLogo  = null;                     // url to non-standard logo for events etc.
     public  string $search      = '';                       // prefilled search bar
-    public  string $wowheadLink = 'https://wowhead.com/';
     public  int    $contribute  = CONTRIBUTE_NONE;
     public ?array  $inputbox    = null;
     public ?string $rss         = null;                     // link rel=alternate for rss auto-discovery
@@ -183,7 +182,6 @@ class TemplateResponse extends BaseResponse
 
         if ($this->pageName)
         {
-            $this->wowheadLink = sprintf(WOWHEAD_LINK, Lang::getLocale()->domain(), $this->fullParams, '');
             $this->pageTemplate['pageName'] = $this->pageName;
         }
 

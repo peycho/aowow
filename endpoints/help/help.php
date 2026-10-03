@@ -17,6 +17,8 @@ class HelpBaseResponse extends TemplateResponse
 
     private string $catg = '';
 
+    public string $retirementNotice = '';
+
     public function __construct(string $rawParam)
     {
         parent::__construct($rawParam);
@@ -34,6 +36,10 @@ class HelpBaseResponse extends TemplateResponse
 
     protected function generate() : void
     {
+        // Keep the bookmarked help route and its CMS article; the banner describes the retired feature.
+        if ($this->catg === 'modelviewer')
+            $this->retirementNotice = Lang::main('modelViewerRetired');
+
         $this->h1 = Lang::main('moreTitles', $this->pageName, $this->catg);
 
         array_unshift($this->title, $this->h1);

@@ -128,7 +128,6 @@ class ClassBaseResponse extends TemplateResponse implements ICache
         $this->expansion  = Util::$expansionString[$this->subject->getField('expansion')];
         $this->redButtons = array(
             BUTTON_LINKS   => ['type' => $this->type, 'typeId' => $this->typeId],
-            BUTTON_WOWHEAD => true,
             BUTTON_TALENT  => ['href' => '?talent#'.Util::$tcEncoding[self::TC_CLASS_IDS[$this->typeId] * 3], 'pet' => false],
             BUTTON_FORUM   => false                         // todo (low): Cfg::get('BOARD_URL') + X
         );

@@ -53,7 +53,6 @@ class PetsBaseResponse extends TemplateResponse implements ICache
         /* Main Content */
         /****************/
 
-        $this->redButtons[BUTTON_WOWHEAD] = true;
 
         $conditions = [Listview::DEFAULT_SIZE];
 

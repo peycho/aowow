@@ -334,6 +334,30 @@ CODE;
         file_put_contents($temp.'/missing-extension.php', '<?php namespace Aowow; function extension_loaded(string $name) : bool { return false; }');
         [$code,$output]=process([PHP_BINARY,'-d','auto_prepend_file='.$temp.'/missing-extension.php',$root.'/aowow','--update'],$root);
         check($code!==0,'missing runtime extensions are nonzero');
+        // Apply the configuration-only retirement update through the real journaled migration runner.
+        $retirement = files(['1791028800_01.sql' => file_get_contents($root.'/setup/sql/updates/1791028800_01.sql')]);
+        foreach (['http://www.wowhead.com/forums?board=', 'https://forum.example.test/board=',
+                  'http://www.wowhead.com/forums?board= ', 'http://WWW.wowhead.com/forums?board=', '', null] as $value) {
+            resetDb();
+            if ($value !== null) $db->query("INSERT INTO ::config VALUES ('board_url', %s)", $value);
+            $db->query("INSERT INTO ::config VALUES ('other_url', 'https://example.test/')");
+            $db->query("UPDATE ::dbversion SET build='existing'");
+            $before = [];
+            foreach (['articles', 'guides', 'comments', 'account_cookies'] as $table) {
+                $db->query('CREATE TABLE %n (id int PRIMARY KEY, content longblob)', '::'.$table);
+                $db->query('INSERT INTO %n VALUES (1, %s)', '::'.$table, "Historical [modelviewer] content\0\n[db=ptr] UTF-8 текст");
+                $before[$table] = (array)$db->query('SELECT * FROM %n', '::'.$table)->fetch();
+            }
+            SqlUpdate::apply($db, $retirement);
+            $expected = $value === 'http://www.wowhead.com/forums?board=' ? '' : $value;
+            check($db->query("SELECT value FROM ::config WHERE `key`='board_url'")->fetchSingle() === $expected, 'retirement clears only exact shipped board URL');
+            check($db->query("SELECT value FROM ::config WHERE `key`='other_url'")->fetchSingle() === 'https://example.test/', 'retirement preserves unrelated config');
+            check($db->query('SELECT build FROM ::dbversion')->fetchSingle() === 'existing globaljs tooltips', 'retirement requests both asset rebuilds');
+            foreach ($before as $table => $row)
+                check((array)$db->query('SELECT * FROM %n', '::'.$table)->fetch() === $row, 'retirement preserves stored '.$table.' bytes');
+            SqlUpdate::apply($db, $retirement);
+            check($db->query('SELECT build FROM ::dbversion')->fetchSingle() === 'existing globaljs tooltips', 'journal prevents retirement migration replay');
+        }
         echo "\n$checks update checks passed.\n";
     }
     finally { cleanup($temp); }

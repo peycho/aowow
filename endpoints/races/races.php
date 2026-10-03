@@ -33,7 +33,6 @@ class RacesBaseResponse extends TemplateResponse implements ICache
         array_unshift($this->title, $this->h1);
 
 
-        $this->redButtons[BUTTON_WOWHEAD] = true;
 
         $conditions = [Listview::DEFAULT_SIZE];
         if (!User::isInGroup(U_GROUP_EMPLOYEE))
