@@ -102,20 +102,8 @@ class AchievementsBaseResponse extends TemplateResponse implements ICache
         /* Main Content */
         /****************/
 
-        // fix modern client achievement category structure: top catg [1:char, 2:statistic, 3:guild]
-        if ($this->category && $this->category[0] != 1)
-            $link = '=1.'.implode('.', $this->category);
-        else if ($this->category)
-            $link = '=2'.(count($this->category) > 1 ? '.'.implode('.', array_slice($this->category, 1)) : '');
-        else
-            $link = '';
-
-        $this->redButtons[BUTTON_WOWHEAD] = true;
-        $this->wowheadLink = sprintf(WOWHEAD_LINK, Lang::getLocale()->domain(), $this->pageName, $link);
-
         if ($fiQuery = $this->filter->buildGETParam())
         {
-            $this->wowheadLink    .= '&filter='.$fiQuery;
             $this->fiMenuExtension = $fiQuery;
         }
 

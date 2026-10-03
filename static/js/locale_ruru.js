@@ -1047,7 +1047,6 @@ var mn_more = [
     [13,"Справка",,[
         [0,"Комментарии и Вы","?help=commenting-and-you"],
         [5,"Сравнение предметов","?help=item-comparison"],
-        [1,"3D просмотр","?help=modelviewer"],
         [6,"Профили персонажей","?help=profiler"],
         [2,"Скриншоты: Секреты мастерства","?help=screenshots-tips-tricks"],
         [3,"Значимость характеристик","?help=stat-weighting"],
@@ -2557,6 +2556,8 @@ var g_conditions = {
 /* end aowow custom */
 
 var LANG = {
+    modelviewer_retired: 'Устаревший просмотрщик 3D-моделей больше не поддерживается.',
+    forum_rules: 'Правила форума',
     alltime_stc:   "Все время",
     lastmonth_stc: "Последний месяц",
     lastweek_stc:  "Последняя неделя",
@@ -2956,7 +2957,6 @@ var LANG = {
     button_resync:       "Ресинхронизация",
     button_selectall:    "Выбрать всё",
     button_upgrades:     "Найти лучше",
-    button_viewin3d:     "Посмотреть в 3D",
     button_markup:       "Разметка",
     button_link:         "Ссылка",
 
@@ -3000,7 +3000,6 @@ var LANG = {
     message_newnamedifferent:     "Прежнее и новое имя пользователя не должны совпадать.",
     message_noscreenshot:         "Выберите изображение для загрузки.",
     message_novideo:              "Введите корректную информацию о видео.",
-    message_nothingtoviewin3d:    "Вы не выбрали предметы, которые можно просмотреть в 3D.",
     message_passwordmin:          "Используйте не менее 15 символов и не более 72 байт UTF-8 (некоторые символы занимают несколько байт).",
     message_passwordsdonotmatch:  "Пароли не совпадают.",
     message_savebeforeexit:       "Вы потеряете все не сохраненные изменения.",
@@ -4538,7 +4537,6 @@ var LANG = {
     button_customprofile: "Созданный профиль",
     button_armorychar:    "Управление персонажем",
 
-    pr_clienttab:    "$1<br /><span class=\"q1\">\nЕсли это ваш персонаж, вы можете просматривать<br />\nваши $2 используя Wowhead Client!</span><br /><span class=\"q2\">Узнать больше</span>",
     pr_lookup:       "Поиск: ",
     pr_noneitem:     "Нет",
     pr_nonegem:      "Нет",
@@ -4839,7 +4837,6 @@ var LANG = {
     su_resetweight:  "Сброс",
 
     su_export:       "Экспорт",
-    su_viewin3d:     "Посмотреть в 3D",
     su_split:        "Разделить",
 
     su_customscale:  "Пользовательский фильтр #$1",

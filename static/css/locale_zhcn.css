@@ -14,47 +14,6 @@
     line-height: 21px;
 }
 
-/* <<< custom <<< */
-
-div.modelviewer-quality div {
-    float: left;
-    width: 61px;
-    height: 22px;
-    margin-right: 10px;
-    background: url(../images/zhcn/modelviewer-picshures.gif) left center no-repeat;
-}
-
-div.modelviewer-model div {
-    margin-left: 40px;
-    margin-right: 10px;
-    float: left;
-    width: 50px;
-    height: 22px;
-    background: url(../images/zhcn/modelviewer-picshures.gif) -506px center no-repeat;
-}
-
-a.modelviewer-help span {
-    display: block;
-    width: 52px;
-    height: 22px;
-    background: url(../images/zhcn/modelviewer-picshures.gif) -100px center no-repeat;
-}
-
-a:hover.modelviewer-help span {
-    background-position: -200px center;
-}
-
-a.modelviewer-close span {
-    display: block;
-    width: 66px;
-    height: 22px;
-    background: url(../images/zhcn/modelviewer-picshures.gif) -300px center no-repeat;
-}
-
-a:hover.modelviewer-close span {
-    background-position: -400px center;
-}
-
 a.screenshotviewer-prev b {
     display: block;
     width: 88px;

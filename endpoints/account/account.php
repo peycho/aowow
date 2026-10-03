@@ -23,8 +23,6 @@ class AccountBaseResponse extends TemplateResponse
     public ?array    $premiumborderMessage = null;
 
     // form fields
-    public  int      $modelrace        = 0;
-    public  int      $modelgender      = 0;
     public  int      $idsInLists       = 0;
     public  string   $curEmail         = '';
     public  string   $curName          = '';
@@ -97,10 +95,6 @@ class AccountBaseResponse extends TemplateResponse
         /*************/
 
         /* GENERAL */
-
-        // Modelviewer
-        if ($_ = DB::Aowow()->selectCell('SELECT `data` FROM ::account_cookies WHERE `name` = %s AND `userId` = %i', 'default_3dmodel', User::$id))
-            [$this->modelrace, $this->modelgender] = explode(',', $_);
 
         // Lists
         $this->idsInLists = $user['debug'] ? 1 : 0;

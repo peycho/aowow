@@ -62,24 +62,7 @@ if ($this->bans):
 <?php endif; ?>
 
                             <div style="text-align: left">
-                                <h3 class="first"><?=Lang::account('modelviewer');?></h3>
-                                <table>
-                                    <tr><td><?=Lang::account('mvNote'); ?></td>
-                                        <td><select id="modelrace" name="modelrace">
-                                            <option></option>
-<?=$this->makeOptionsList(Lang::game('ra'), $this->modelrace, 44, fn($v, $k) => $k > 0); ?>
-                                        </select>
-                                        <select id="modelgender" name="modelgender">
-                                            <option></option>
-<?=$this->makeOptionsList(Lang::main('sex'), $this->modelgender, 44); ?>
-                                        </select>
-                                        </td>
-                                    </tr>
-                                </table>
-
-                                <div class="pad"></div>
-
-                                <h3><?=Lang::account('lists'); ?></h3>
+                                <h3 class="first"><?=Lang::account('lists'); ?></h3>
                                 <label><input type="checkbox" name="idsInLists"<?=($this->idsInLists ? ' checked="checked"' : '');?> /><?=Lang::account('listsNote'); ?></label>
 
                                 <div class="pad"></div>

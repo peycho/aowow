@@ -66,7 +66,6 @@ class FactionsBaseResponse extends TemplateResponse implements ICache
         /* Main Content */
         /****************/
 
-        $this->redButtons[BUTTON_WOWHEAD] = true;
 
         $conditions = [/* Listview::DEFAULT_SIZE */];       // don't limit - there are 300+ Misc factions and no way to filter them
 

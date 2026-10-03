@@ -83,6 +83,7 @@ $lang = array(
         )
     ),
     'main' => array(
+        'modelViewerRetired' => 'La visionneuse 3D historique a été retirée.',
         'name'          => "nom",
         'link'          => "Lien",
         'signIn'        => "Se connecter / S'inscrire",

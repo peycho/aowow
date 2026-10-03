@@ -170,7 +170,6 @@ class AchievementBaseResponse extends TemplateResponse implements ICache
         $this->headIcons   = [$this->subject->getField('iconString')];
         $this->description = $this->subject->getField('description', true);
         $this->redButtons  = array(
-            BUTTON_WOWHEAD => !($this->subject->getField('cuFlags') & CUSTOM_SERVERSIDE),
             BUTTON_LINKS   => array(
                 'linkColor' => 'ffffff00',
                 'linkId'    => Type::getFileString(Type::ACHIEVEMENT).':'.$this->typeId.':&quot;..UnitGUID(&quot;player&quot;)..&quot;:0:0:0:0:0:0:0:0',

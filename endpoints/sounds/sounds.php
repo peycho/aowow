@@ -81,12 +81,8 @@ class SoundsBaseResponse extends TemplateResponse implements ICache
         /****************/
 
         $this->redButtons = array(
-            BUTTON_WOWHEAD  => true,
             BUTTON_PLAYLIST => true
         );
-        if ($fiQuery = $this->filter->buildGETParam())
-            $this->wowheadLink .= '&filter='.$fiQuery;
-         // note: do not propagate filter to menu. Its just for categories
 
         $tabData = [];
         $sounds  = new SoundList($conditions, ['calcTotal' => true]);

@@ -58,7 +58,6 @@ class ZonesBaseResponse extends TemplateResponse implements ICache
         /* Main Content */
         /****************/
 
-        $this->redButtons[BUTTON_WOWHEAD] = true;
 
         $conditions  = [];                                  // do not limit
         $visibleCols = [];

@@ -135,8 +135,6 @@ class SpellBaseResponse extends TemplateResponse implements ICache
         /***************/
 
         $this->redButtons = array(
-            BUTTON_VIEW3D  => false,
-            BUTTON_WOWHEAD => true,
             BUTTON_LINKS   => array(
                 'linkColor' => 'ff71d5ff',
                 'linkId'    => Type::getFileString(Type::SPELL).':'.$this->typeId,
@@ -146,21 +144,6 @@ class SpellBaseResponse extends TemplateResponse implements ICache
             )
         );
 
-        // could have multiple models set, one per effect
-     /* disabled due to missing models+textures
-      * foreach ($this->modelInfo as $mI)
-      * {
-      *     $this->redButtons[BUTTON_VIEW3D] = ['type' => $mI['type'], 'displayId' => $mI['displayId']];
-      *
-      *     if (isset($mI['humanoid']))
-      *     {
-      *         $this->redButtons[BUTTON_VIEW3D]['typeId']   = $mI['typeId'];
-      *         $this->redButtons[BUTTON_VIEW3D]['humanoid'] = 1;
-      *     }
-      *
-      *     break;
-      * }
-     */
 
 
         /*************************/
