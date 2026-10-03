@@ -1037,7 +1037,8 @@ var mn_community = [
     [11, "Usuarios más populares", "?top-users"],
     [,"Social"],
     [6,"Página de Facebook",null,null,{tinyIcon: g_staticUrl + "/images/icons/facebook.png"}],
-    [5,"Página de Twitter",null,null,{tinyIcon: g_staticUrl + "/images/icons/twitter.png"}]
+    [5,"Página de Twitter",null,null,{tinyIcon: g_staticUrl + "/images/icons/twitter.png"}],
+    [12,"Servidor de Discord",null,null,{tinyIcon: g_staticUrl + "/images/icons/forum.png"}]
 ];
 var mn_more = [
     [,"Todo sobre AoWoW"],

@@ -28,6 +28,7 @@ $AoWoWconf['externalLinks'] = [
     'irc'      => ['enabled' => false, 'url' => ''],
     'facebook' => ['enabled' => true,  'url' => 'https://www.facebook.com/your-page'],
     'twitter'  => ['enabled' => true,  'url' => 'https://twitter.com/your-account'],
+    'discord'  => ['enabled' => true,  'url' => 'https://discord.gg/your-invite'],
     'github'   => ['enabled' => true,  'url' => 'https://github.com/your-org/your-project']
 ];
 ```
@@ -35,7 +36,8 @@ $AoWoWconf['externalLinks'] = [
 Set `enabled` to the PHP boolean `false` to hide a link while keeping its URL.
 Empty or invalid URLs also hide the link; URLs must be absolute HTTP or HTTPS
 addresses without embedded credentials. Omitted links or fields retain their
-original defaults. Fresh database setup writes all six default entries, and
+original defaults; Discord is disabled by default with an empty URL.
+Fresh database setup writes all seven default entries, and
 later database configuration rewrites preserve this section. Existing installs
 can add the section manually. Changes apply on the next page load, including
 cached page templates, without rebuilding JavaScript or editing locale files.

@@ -14,6 +14,7 @@ final class ExternalLinks
         'irc'      => ['enabled' => true, 'url' => 'http://webchat.quakenet.org/'],
         'facebook' => ['enabled' => true, 'url' => 'http://www.facebook.com'],
         'twitter'  => ['enabled' => true, 'url' => 'http://twitter.com'],
+        'discord'  => ['enabled' => false, 'url' => ''],
         'github'   => ['enabled' => true, 'url' => 'https://github.com/Sarjuuk/aowow']
     ];
 

@@ -40,7 +40,14 @@ namespace {
 
     ExternalLinks::load([]);
     foreach (ExternalLinks::defaults() as $key => $entry)
-        check(ExternalLinks::url($key) === $entry['url'], 'Missing configuration retains '.$key);
+        check(ExternalLinks::url($key) === ($entry['enabled'] ? $entry['url'] : null), 'Missing configuration retains '.$key);
+
+    ExternalLinks::load(['discord' => ['enabled' => true, 'url' => 'https://discord.gg/test-invite']]);
+    check(ExternalLinks::url('discord') === 'https://discord.gg/test-invite', 'Discord accepts an enabled invite URL');
+    ExternalLinks::load(['discord' => ['enabled' => false, 'url' => 'https://discord.gg/test-invite']]);
+    check(ExternalLinks::url('discord') === null, 'Discord can be disabled while retaining its URL');
+    ExternalLinks::load(['discord' => ['enabled' => true, 'url' => '']]);
+    check(ExternalLinks::url('discord') === null, 'Discord with an empty URL stays hidden');
 
     ExternalLinks::load(['facebook' => ['url' => 'https://example.com/our-page'], 'twitter' => ['enabled' => false]]);
     check(ExternalLinks::url('facebook') === 'https://example.com/our-page', 'Custom URL with default enabled status');

@@ -1037,7 +1037,8 @@ var mn_community = [
     [11, "Лучшие пользователи", "?top-users"],
     [,"Социальные сети"],
     [6,"Facebook",null,null,{tinyIcon: g_staticUrl + "/images/icons/facebook.png"}],
-    [5,"Twitter",null,null,{tinyIcon: g_staticUrl + "/images/icons/twitter.png"}]
+    [5,"Twitter",null,null,{tinyIcon: g_staticUrl + "/images/icons/twitter.png"}],
+    [12,"Сервер Discord",null,null,{tinyIcon: g_staticUrl + "/images/icons/forum.png"}]
 ];
 var mn_more = [
     [,"О AoWoW"],

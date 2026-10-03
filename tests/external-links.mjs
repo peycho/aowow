@@ -3,14 +3,15 @@ import {readFileSync, readdirSync} from 'node:fs';
 import vm from 'node:vm';
 
 let checks = 0;
-const keys = {3: 'forum', 7: 'blog', 4: 'irc', 6: 'facebook', 5: 'twitter'};
+const keys = {3: 'forum', 7: 'blog', 4: 'irc', 6: 'facebook', 5: 'twitter', 12: 'discord'};
 for (const file of readdirSync('static/js').filter(file => /^locale_.*\.js$/.test(file))) {
-    for (const mask of [31, 0, 1, 7, 8, 16]) {
+    for (const mask of [63, 0, 1, 7, 8, 16, 32, 31]) {
         const context = vm.createContext({g_staticUrl: '/static'});
         vm.runInContext(readFileSync(`static/js/${file}`, 'utf8'), context);
         vm.runInContext(readFileSync('static/js/external-links.js', 'utf8'), context);
         const menu = context.mn_community;
         const original = menu.map(entry => [...entry]);
+        assert.ok(original.some(entry => entry[0] === 12), `${file}: Discord is available in the localized menu`);
         const links = Object.fromEntries(Object.values(keys).map((key, i) => [key, mask & (1 << i) ? `https://example.com/${key}` : null]));
         context.g_applyExternalLinks(menu, links);
         assert.equal(context.mn_path.find(entry => entry[0] === 3)[3], menu, `${file}: shared menu reference remains intact`);

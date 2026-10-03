@@ -1083,7 +1083,8 @@ var mn_community = [
     [11, "用户排行榜", "?top-users"],
     [,"社交"],
     [6,"Facebook页面",null,null,{tinyIcon: g_staticUrl + "/images/icons/facebook.png"}],
-    [5,"推特页面",null,null,{tinyIcon: g_staticUrl + "/images/icons/twitter.png"}]
+    [5,"推特页面",null,null,{tinyIcon: g_staticUrl + "/images/icons/twitter.png"}],
+    [12,"Discord服务器",null,null,{tinyIcon: g_staticUrl + "/images/icons/forum.png"}]
 ];
 var mn_more = [
     [,"关于AoWoW"],
