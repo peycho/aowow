@@ -33,7 +33,6 @@ class ClassesBaseResponse extends TemplateResponse implements ICache
         array_unshift($this->title, Util::ucFirst(Lang::game('classes')));
 
 
-        $this->redButtons[BUTTON_WOWHEAD] = true;
 
         $this->lvTabs = new Tabs(['parent' => new JsExpression("\$WH.ge('tabs-generic')")]);
 

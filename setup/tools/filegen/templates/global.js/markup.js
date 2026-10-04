@@ -878,7 +878,9 @@ var Markup = {
             allowedClass: MARKUP_CLASS_STAFF,
             toHtml: function(attr)
             {
-                return '<b><span class="icontiny" style="background-image: url(' + g_staticUrl + '/images/icons/favicon.gif)"><a href="http://www.wowhead.com/forums&topic=2">forum rules</a></span></b>';
+                var label = Markup._safeHtml(LANG.forum_rules);
+                var url = typeof g_externalLinks != 'undefined' ? g_externalLinks.forum : null;
+                return url ? '<a href="' + Markup._safeHtml(url) + '">' + label + '</a>' : label;
             }
         },
         hr:
@@ -1686,6 +1688,8 @@ var Markup = {
         model:
         {
             empty: false,
+            rawText: true,
+            allowedChildren: { '<text>': 1 },
             attr:
             {
                 item:     { req: false, valid: /^[0-9]+$/ },
@@ -1702,80 +1706,12 @@ var Markup = {
                 label:    { req: false, valid: /[\S ]+/ }
             },
             allowedClass: MARKUP_CLASS_STAFF,
-            skipSlots: { 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1, 10: 1, 16: 1, 19: 1, 20: 1 },
+            // Old model tags stay parseable but must not load Flash or implicit thumbnails.
             toHtml: function(attr)
             {
-                var str = '';
-                var classes = [];
-                var styles = [];
-
-                if (attr['float'])
-                    classes.push('markup-float-' + attr['float']);
-                if (attr.border)
-                {
-                    if (attr.border == 0)
-                        classes.push('no-border');
-                    else
-                    {
-                        classes.push('border');
-                        styles.push('border-width:' + attr.border + 'px');
-                    }
-                }
-                else
-                {
-                    classes.push('content-image');
-                    if (attr.shadow == 'true')
-                        classes.push('content-image-shadowed');
-                }
-                if (attr.npc)
-                {
-                    str = '<a' + Markup._addGlobalAttributes(attr) + ' href="#modelviewer:1:' + attr.npc + ':' + (attr.humanoid ? '1' : '0') +
-                        '" onclick="ModelViewer.show({ type: 1, displayId: ' + attr.npc + ', slot: ' + attr.slot + ', ' + (attr.humanoid ? 'humanoid: 1, ' : '') +
-                        'displayAd: 1, fromTag: 1' + (attr.link ? ", link: '" + Markup._safeJsString(attr.link) + "'" : '') + (attr.label ? ", label: '" + Markup._safeJsString(attr.label) + "'" : '') +
-                        ' });"><img alt="' + Markup._safeHtml(attr._contents) + '" title="' + Markup._safeHtml(attr._contents) + '" src="' +
-                        (attr.img ? attr.img : g_staticUrl + '/modelviewer/thumbs/npc/' + attr.npc + '.png" width="150" height="150"') + ' ';
-                    if (classes.length)
-                        str += 'class="' + classes.join(' ') + '"';
-                    if (styles.length)
-                        str += ' style="' + styles.join(';') + '"';
-                    str += '/></a>';
-                    return [ str ];
-                }
-                else if (attr.object)
-                {
-                    str = '<a' + Markup._addGlobalAttributes(attr) + ' href="#modelviewer:2:' + attr.object + '" onclick="ModelViewer.show({ type: 2, displayId: ' +
-                        attr.object + ', displayAd: 1, fromTag: 1' + (attr.link ? ", link: '" + Markup._safeJsString(attr.link) + "'" : '') + (attr.label ? ", label: '" + Markup._safeJsString(attr.label) + "'" : '') +
-                        ' });"><img alt="' + Markup._safeHtml(attr._contents) + '" title="' + Markup._safeHtml(attr._contents) + '" src="' +
-                        (attr.img ? attr.img : g_staticUrl + '/modelviewer/thumbs/obj/' + attr.object + '.png" width="150" height="150"') + ' ';
-                    if (classes.length)
-                        str += 'class="' + classes.join(' ') + '"';
-                    if (styles.length)
-                        str += ' style="' + styles.join(';') + '"';
-                    str += '/></a>';
-                    return [ str ];
-                }
-                else if (attr.item && attr.slot)
-                {
-                    str = '<a' + Markup._addGlobalAttributes(attr) + ' href="#modelviewer:3:' + attr.item + ':' + attr.slot +
-                        '" onclick="ModelViewer.show({ type: 3, displayId: ' + attr.item + ', slot: ' + attr.slot + ', displayAd: 1, fromTag: 1' +
-                        (attr.link ? ", link: '" + Markup._safeJsString(attr.link) + "'" : '') + (attr.label ? ", label: '" + Markup._safeJsString(attr.label) + "'" : '') +
-                        ' });"><img alt="' + Markup._safeHtml(attr._contents) + '" title="' + Markup._safeHtml(attr._contents) + '" src="' +
-                        (attr.img ? attr.img : g_staticUrl + '/modelviewer/thumbs/item/' + attr.item + '.png" width="150" height="150"') + ' ';
-                    if (classes.length)
-                        str += 'class="' + classes.join(' ') + '"';
-                    if (styles.length)
-                        str += ' style="' + styles.join(';') + '"';
-                    str += '/></a>';
-                    return [ str ];
-                }
-                else if (attr.itemset)
-                {
-                    str = '<a' + Markup._addGlobalAttributes(attr) + ' href="javascript:;" onclick="ModelViewer.show({ type: 4, equipList: [' + attr.itemset +
-                        '], displayAd: 1, fromTag: 1' + (attr.link ? ", link: '" + Markup._safeJsString(attr.link) + "'" : '') + (attr.label ? ", label: '" + Markup._safeJsString(attr.label) + "'" : '') + ' });">';
-                }
-                else
-                    return ['[model]', '[/model]'];
-                return [str, '</a>'];
+                var label = attr.label || attr._contents || '';
+                return ['<span class="model-retired">' + (label ? Markup._safeHtml(label) + ': ' : '') +
+                    Markup._safeHtml(LANG.modelviewer_retired) + '</span>'];
             }
         },
         money:
@@ -2159,11 +2095,8 @@ var Markup = {
                         var matches = url.match(/https?:\/\/(us|eu)\.battle\.net\/wow\/en\/blog\/([0-9]+)/i) || url.match(/https?:\/\/(us|eu)\.battle\.net\/wow\/en\/forum\/topic\/([0-9]+)/i);
 
                         if (matches) {
-                            str += 'Originally posted by <strong>Blizzard</strong> (<a href="' + url + '" target="_blank">Official Post</a>'
-
-                            var topicId = matches[2];
-                            str += ' | <a href="http://www.wowhead.com/bluetracker?topic=' + topicId + '">Blue Tracker</a>)' +
-                            '</div><div class="quote-body"><hr /><h2>' + username + '</h2>';
+                            str += 'Originally posted by <strong>Blizzard</strong> (<a href="' + url + '" target="_blank">Official Post</a>)' +
+                                '</div><div class="quote-body"><hr /><h2>' + username + '</h2>';
                         }
                         else
                             str += (
@@ -3876,8 +3809,6 @@ var Markup = {
             url = 'http://' + domain + '.wowhead.com';
             nameCol = 'name_' + Markup.domainToLocale[domain];
         }
-        else if (location.href.indexOf('wowheadnews.com') != -1)
-            url = 'http://www.wowhead.com';
 
         return [url, nameCol, domain];
     },

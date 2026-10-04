@@ -359,19 +359,6 @@ a.profiler-header-editlink {
 
 /*********************************************/
 
-.profiler-model-outer {
-    position: relative;
-}
-
-.profiler-model {
-    position: absolute;
-    top: 6px;
-    left: 50px;
-    height: 345px;
-    width: 275px;
-    z-index: 10;
-}
-
 .profiler-search {
     position: absolute;
     top: 0;

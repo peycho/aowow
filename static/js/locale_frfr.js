@@ -1047,7 +1047,6 @@ var mn_more = [
     [13,"Aide",,[
         [0,"Le guide du commentaire","?help=commenting-and-you"],
         [5,"Comparaison d'objets","?help=item-comparison"],
-        [1,"Visionneuse 3D","?help=modelviewer"],
         [6,"Profiler","?help=profiler"],
         [2,"Captures d'écran : Trucs et astuces","?help=screenshots-tips-tricks"],
         [3,"Échelles de valeurs","?help=stat-weighting"],
@@ -2557,6 +2556,8 @@ var g_conditions = {
 /* end aowow custom */
 
 var LANG = {
+    modelviewer_retired: 'La visionneuse 3D historique a été retirée.',
+    forum_rules: 'Règles du forum',
     alltime_stc:   "A chaque fois",
     lastmonth_stc: "Mois dernier",
     lastweek_stc:  "Semaine dernière",
@@ -2956,7 +2957,6 @@ var LANG = {
     button_resync:       "Resynchronisation",
     button_selectall:    "Sélectionner tout",
     button_upgrades:     "Trouver des améliorations",
-    button_viewin3d:     "Voir en 3D",
     button_markup:       "Marge",
     button_link:         "Lien",
 
@@ -3000,7 +3000,6 @@ var LANG = {
     message_newnamedifferent:     "Votre nouveau nom d'utilisateur doit être différent de l'ancien.",
     message_noscreenshot:         "Veuillez sélectionner la capture d'écran à envoyer.",
     message_novideo:              "Veuillez entrer des informations valide pour le vidéo.",
-    message_nothingtoviewin3d:    "Aucun objets qui ont été sélectionnés ne peuvent être vus en 3D.",
     message_passwordmin:          "Utilisez au moins 15 caractères et au maximum 72 octets UTF-8 (certains caractères utilisent plusieurs octets).",
     message_passwordsdonotmatch:  "Les mots de passe ne correspondent pas.",
     message_savebeforeexit:       "Vous allez perdre tous les changements non sauvegarder que vous avez fait.",
@@ -4537,7 +4536,6 @@ var LANG = {
     button_customprofile: "Profile personnalisé",
     button_armorychar:    "Gérer le personnage",
 
-    pr_clienttab:    "$1<br /><span class=\"q1\">Si c'est votre personnage, vous pouvez retracer vos <br />$2 en utilisant le client Wowhead!</span><br /><span class=\"q2\">Cliquer pour en apprendre plus</span>",
     pr_lookup:       "Accès rapide : ",
     pr_noneitem:     "Aucun",
     pr_nonegem:      "Aucun",
@@ -4838,7 +4836,6 @@ var LANG = {
     su_resetweight:  "Réinitialiser",
 
     su_export:       "Exporter",
-    su_viewin3d:     "Voir en 3D",
     su_split:        "Séparer",
 
     su_customscale:  "Échelle personalisée #$1",

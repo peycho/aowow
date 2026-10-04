@@ -41,7 +41,6 @@ class TitlesBaseResponse extends TemplateResponse implements ICache
             array_unshift($this->title, Lang::title('cat', $this->category[0]));
 
 
-        $this->redButtons[BUTTON_WOWHEAD] = true;
 
         $conditions = [Listview::DEFAULT_SIZE];
 

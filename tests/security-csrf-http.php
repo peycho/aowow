@@ -58,6 +58,13 @@ try {
     }
     $response = $request('account=update-email', 'POST', ['csrfToken' => $token, 'newemail' => 'current@example.test', 'currentPassword' => 'fixture-password']);
     check($response['json']['message'] === 'newMailDiff', 'Correct password continues to normal email validation');
+    foreach ([[], ['idsInLists'=>'on'], ['idsInLists'=>'on', 'modelrace'=>'bad', 'modelgender'=>'bad']] as $fields) {
+        $before = $request('fixture=token')['json']['writes'];
+        $response = $request('account=update-general-settings', 'POST', ['csrfToken'=>$token] + $fields);
+        check($response['status'] === 200 && $response['json']['writes'] === $before + 1 &&
+              $response['json']['message'][0] === 'general' && $response['json']['message'][1] === true,
+              'Real account POST saves without viewer fields and ignores older fields');
+    }
     $login = $request('fixture=login', 'POST', ['csrfToken' => $token]);
     check($login['json']['token'] !== $token, 'HTTP identity change rotates token');
     check($request($writeUrl, 'POST', ['csrfToken' => $token])['status'] === 403, 'Old token cannot mutate after login');

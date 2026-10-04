@@ -369,13 +369,3 @@ a.talentcalc-button-summary {
     width: 614px; /* fixes IE7 being dumb and moving down the glyph window */
     position: relative;
 }
-
-.talentcalc-model {
-    background-color: #141414;
-    border: 1px solid #404040;
-    width: 368px;
-    height: 364px;
-    float: left;
-    position: absolute;
-    top: 33px;
-}

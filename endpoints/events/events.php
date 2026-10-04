@@ -53,7 +53,6 @@ class EventsBaseResponse extends TemplateResponse implements ICache
         /* Main Content */
         /****************/
 
-        $this->redButtons[BUTTON_WOWHEAD] = true;
 
         $condition = [Listview::DEFAULT_SIZE];
 

@@ -248,7 +248,7 @@ var listviewIdList = new function () {
         Lightbox.setSize(950, 590);
 
         if (i) {
-            container.className = 'modelviewer';
+            container.className = 'staff-id-list';
 
             var div = $WH.ce('div');
             var pre = $WH.ce('pre');
@@ -258,10 +258,10 @@ var listviewIdList = new function () {
             $WH.ae(container, div);
 
             var a = $WH.ce('a');
-            a.className = 'modelviewer-close';
+            a.className = 'staff-id-list-close';
             a.href = 'javascript:;';
             a.onclick = Lightbox.hide;
-            $WH.ae(a, $WH.ce('span'));
+            $WH.ae(a, $WH.ct(LANG.close));
             $WH.ae(container, a);
 
             clear = $WH.ce('div');

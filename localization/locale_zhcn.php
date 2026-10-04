@@ -83,6 +83,7 @@ $lang = array(
         )
     ),
     'main' => array(
+        'modelViewerRetired' => '旧版3D模型查看器已停用。',
         'name'          => "名字",
         'link'          => "链接",
         'signIn'        => "登录 / 注册",

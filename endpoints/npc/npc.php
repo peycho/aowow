@@ -346,14 +346,8 @@ class NpcBaseResponse extends TemplateResponse implements ICache
         $this->quotes       = $this->getQuotes();
         $this->reputation   = $this->getOnKillRep($_altIds, $mapType);
         $this->redButtons   = array(
-            BUTTON_WOWHEAD => true,
             BUTTON_LINKS   => ['type' => $this->type, 'typeId' => $this->typeId],
-            BUTTON_VIEW3D  => /* ['type' => Type::NPC, 'typeId' => $this->typeId, 'displayId' => $this->subject->getRandomModelId()] */ false // disabled due to missing models+textures
         );
-
-     // if ($this->subject->getField('humanoid'))
-     //     $this->redButtons[BUTTON_VIEW3D]['humanoid'] = 1;
-
 
         /**************/
         /* Extra Tabs */

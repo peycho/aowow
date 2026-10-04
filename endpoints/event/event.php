@@ -118,12 +118,9 @@ class EventBaseResponse extends TemplateResponse implements ICache
         if ($_holidayId && empty($this->article))
             $this->article = new Markup($this->subject->getField('description', true), ['dbpage' => true]);
 
-        if ($_holidayId)
-            $this->wowheadLink = sprintf(WOWHEAD_LINK, Lang::getLocale()->domain(), 'event=', $_holidayId);
 
         $this->headIcons  = [$this->subject->getField('iconString')];
         $this->redButtons = array(
-            BUTTON_WOWHEAD => $_holidayId > 0,
             BUTTON_LINKS   => ['type' => $this->type, 'typeId' => $this->typeId]
         );
 

@@ -41,7 +41,6 @@ class SkillsBaseResponse extends TemplateResponse implements ICache
             array_unshift($this->title, Lang::skill('cat', $this->category[0]));
 
 
-        $this->redButtons[BUTTON_WOWHEAD] = true;
 
         $conditions = [Listview::DEFAULT_SIZE];
         if (!User::isInGroup(U_GROUP_EMPLOYEE))

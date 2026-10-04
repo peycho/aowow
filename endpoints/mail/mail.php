@@ -123,7 +123,6 @@ class MailBaseResponse extends TemplateResponse implements ICache
 
         $this->redButtons = array(
             BUTTON_LINKS   => ['type' => $this->type, 'typeId' => $this->typeId],
-            BUTTON_WOWHEAD => false
         );
 
         $this->extraText = new Markup(UIText::format($this->subject->getField('text', true), Lang::FMT_MARKUP), ['dbpage' => true, 'allow' => Markup::CLASS_ADMIN], 'text-generic');

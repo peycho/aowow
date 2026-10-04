@@ -17,8 +17,6 @@ class AccountUpdategeneralsettingsResponse extends TextResponse
     protected  bool   $requiresLogin = true;
 
     protected  array  $expectedPOST  = array(
-        'modelrace'   => ['filter' => FILTER_VALIDATE_INT, 'options' => ['default' => 0, 'min_range' => 1, 'max_range' => 11]],
-        'modelgender' => ['filter' => FILTER_VALIDATE_INT, 'options' => ['default' => 0, 'min_range' => 1, 'max_range' => 2] ],
         'idsInLists'  => ['filter' => FILTER_CALLBACK,     'options' => [self::class, 'checkCheckbox']                       ]
     );
 
@@ -35,19 +33,7 @@ class AccountUpdategeneralsettingsResponse extends TextResponse
 
     private function updateGeneral() : string
     {
-        if (!$this->assertPOST('modelrace', 'modelgender'))
-            return Lang::main('genericError');
-
-        if ($this->_post['modelrace'] && !ChrRace::tryFrom($this->_post['modelrace']))
-            return Lang::main('genericError');
-
-        // js handles this as cookie, so saved as cookie; Q - also save in ::account table?
-        if (!DB::Aowow()->qry('REPLACE INTO ::account_cookies (`userId`, `name`, `data`) VALUES (%i, %s, %s)', User::$id, 'default_3dmodel', $this->_post['modelrace']. ',' . $this->_post['modelgender']))
-            return Lang::main('genericError');
-
-        if (!setcookie('default_3dmodel', $this->_post['modelrace']. ',' . $this->_post['modelgender'], 0, '/'))
-            return Lang::main('intError');
-
+        // Viewer fields from old forms are ignored; only the remaining list preference is saved.
         // int > number of edited rows > no changes is still success
         if (!is_int(DB::Aowow()->qry('UPDATE ::account SET `debug` = %i WHERE `id` = %i', $this->_post['idsInLists'] ? 1 : 0, User::$id)))
             return Lang::main('intError');

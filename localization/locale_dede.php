@@ -82,6 +82,7 @@ $lang = array(
         )
     ),
     'main' => array(
+        'modelViewerRetired' => 'Der bisherige 3D-Modellviewer wurde eingestellt.',
         'name'          => "Name",
         'link'          => "Link",
         'signIn'        => "Anmelden / Registrieren",

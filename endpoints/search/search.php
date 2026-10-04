@@ -65,9 +65,6 @@ class SearchBaseResponse extends TemplateResponse implements ICache
 
         array_unshift($this->title, $this->search, Lang::main('search'));
 
-        $this->redButtons[BUTTON_WOWHEAD] = true;
-        $this->wowheadLink = sprintf(WOWHEAD_LINK, Lang::getLocale()->domain(), 'search=', Util::htmlEscape($this->query));
-
         $this->lvTabs = new Tabs(['parent' => new JsExpression("\$WH.ge('tabs-generic')")], __forceTabs: true);
 
         $canRedirect = true;

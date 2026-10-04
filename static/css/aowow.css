@@ -2467,85 +2467,6 @@ span.menu-buttons span.hassubmenu {
     background: url(../images/Menu/arrow-down.gif) right center no-repeat;
 }
 
-div.modelviewer {
-    padding: 10px 10px 0 10px;
-    background-color: #303030;
-    font-size: 13px;
-}
-div.modelviewer a.dialog-cancel {
-    clear: right;
-    margin-top: 5px;
-}
-div.modelviewer a.dialog-question {
-    margin-top: 5px;
-}
-
-div.modelviewer-animation {
-    float: right;
-    margin: 10px 0px 5px 10px;
-    line-height: 22px;
-    height: 22px;
-    display: block;
-}
-
-div.modelviewer-animation var {
-    float: left;
-    height: 22px;
-    display: block;
-    color: #a0a0a0;
-    text-transform: uppercase;
-    text-decoration: none;
-    font-size: 15px;
-    font-style: normal;
-    margin-right: 10px;
-    font-family: Tahoma, sans-serif;
-}
-
-div.modelviewer-screen {
-    background-color: #141414;
-    width: 600px;
-    height: 400px;
-    overflow: hidden;
-    text-align: center;
-    margin: 0 auto;
-}
-
-div.modelviewer-model {
-    clear: left;
-    padding: 5px 0 10px 0;
-    padding: 10px 0;
-}
-
-div.modelviewer-model var {
-    height: 22px;
-    line-height: 22px;
-    float: left;
-    margin-right: 10px;
-    display: block;
-    color: #a0a0a0;
-    text-transform: uppercase;
-    text-decoration: none;
-    font-size: 15px;
-    font-style: normal;
-    font-family: Tahoma, sans-serif;
-}
-
-a.modelviewer-help {
-    float: right;
-    display: block;
-    padding: 10px 0 10px 10px;
-    margin-right: 10px;
-    margin-top:5px;
-}
-
-a.modelviewer-close {
-    float: right;
-    display: block;
-    padding: 10px 0 10px 10px;
-    clear:right;
-    margin-top:5px;
- }
-
 /**********/
 /* LAYOUT */
 /**********/
@@ -4316,3 +4237,7 @@ a.button-red.fa-clipboard > em > span {
 .gossip-tabard       { background: url(../images/icons/gossip-tabard.png) left center no-repeat; }
 .gossip-battlemaster { background: url(../images/icons/gossip-battlemaster.png) left center no-repeat; }
 /* .gossip-auctioneer { background: url(../images/icons/gossip-auctioneer.png) left center no-repeat; } */
+
+/* Staff ID-list dialog formerly shared the Flash viewer presentation. */
+.staff-id-list { padding: 10px; background-color: #303030; font-size: 13px; }
+.staff-id-list-close { float: right; padding: 10px; }

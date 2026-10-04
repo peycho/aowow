@@ -220,9 +220,6 @@ Summary.prototype = {
             this.onAfterCreate(result);
         }
 
-        if (this.templateName == 'compare') {
-            ModelViewer.addExtraPound(this.viewIn3dFromPound.bind(this));
-        }
     },
 
     updateGroups: function() {
@@ -1131,9 +1128,6 @@ Summary.prototype = {
                         [0, LANG.su_export, '?compare=' + this.getGroupData(groupi), null, {newWindow: true}]
                     ];
 
-                    if (this.viewableIn3d(col)) {
-                        a.menu.push([0, LANG.su_viewin3d, this.viewIn3d.bind(this, col)]);
-                    }
 
                     if (col.group.length > 1) {
                         a.menu.push([0, LANG.su_split, this.splitColumn.bind(this, col)]);
@@ -3311,54 +3305,6 @@ Summary.prototype = {
 
                 _this.sortPickerWindow(lv);
             }
-        });
-    },
-
-    // Item slots to ignore when checking if the column can be viewed in 3D
-    ignoredSlots: {
-         2: 1, // Neck
-        11: 1, // Finger
-        12: 1, // Trinket
-        18: 1, // Bag
-        24: 1, // Projectile
-        28: 1  // Relic
-    },
-
-    viewableIn3d: function(col) {
-        for (var i = 0, len = col.group.length; i < len; ++i) {
-            var d = g_items[col.group[i][0]].jsonequip;
-            if (d.slotbak > 0 && d.displayid > 0 && !this.ignoredSlots[d.slotbak]) {
-                return true;
-            }
-        }
-
-        return false;
-    },
-
-    viewIn3dFromPound: function(pound) {
-        var p = parseInt(pound) | 0;
-        if (p >= 0 && p < this.groups.length) {
-            this.viewIn3d(this.columns[this.clone.i + p]);
-        }
-    },
-
-    viewIn3d: function(col) {
-        var stuff = [];
-
-        for (var i = 0, len = col.group.length; i < len; ++i) {
-            var d = g_items[col.group[i][0]].jsonequip;
-            if (d.slotbak > 0 && d.displayid > 0 && !this.ignoredSlots[d.slotbak]) {
-                stuff.push(d.slotbak);
-                stuff.push(d.displayid);
-            }
-        }
-
-        ModelViewer.show({
-            type: 4,
-            typeId: 9999,
-            equipList: stuff,
-            extraPound: col.i,
-            noPound: (this.autoSave ? 1 : null)
         });
     },
 

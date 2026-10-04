@@ -827,7 +827,6 @@ class QuestBaseResponse extends TemplateResponse implements ICache
         $this->suggestedPl   = $this->subject->getField('suggestedPlayers');
         $this->unavailable   = $_flags & QUEST_FLAG_UNAVAILABLE || $this->subject->getField('cuFlags') & CUSTOM_EXCLUDE_FOR_LISTVIEW;
         $this->redButtons    = array(
-            BUTTON_WOWHEAD => true,
             BUTTON_LINKS   => array(
                 'linkColor' => 'ffffff00',
                 'linkId'    => 'quest:'.$this->typeId.':'.$_level,

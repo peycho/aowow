@@ -44,6 +44,68 @@ cached page templates, without rebuilding JavaScript or editing locale files.
 Labels and icons remain localized. These deployment settings are independent
 of the database-backed `?admin=siteconfig` settings.
 
+## Wowhead integration and viewer retirement (revision 69)
+
+Application navigation no longer adds Wowhead buttons or Blue Tracker links.
+Crop selection borders use the shipped local images, including installations
+under a URL subdirectory. `[forumrules]` uses the enabled `externalLinks.forum`
+URL above; a disabled forum renders the localized label as plain text.
+
+The Flash viewer, its controls, binaries, and generated JavaScript components
+have been removed. Lists and pet galleries use local entity links. Account
+settings save without viewer race/gender fields and ignore those fields from
+older forms; stored `default_3dmodel` values remain inert. Legacy `[model]` and
+`[modelviewer]` tags display an escaped label and localized retirement notice,
+without loading scripts or requesting thumbnails. The six help menus omit the
+viewer, while `?help=modelviewer` remains available with a localized banner above
+its original article. Operator-owned generated model directories are untouched.
+
+Article text, article seeds, guides, and comments are preserved. Existing articles
+may still describe retired functionality; editorial changes remain outside this
+release. Explicit author-selected Wowhead/PTR/beta markup sources and literal
+external references remain supported, and ordinary game markup resolves locally.
+Historical talent-URL import also remains supported.
+
+Local tooltip endpoints, response formats, `$WowheadPower`, and widget attributes
+are unchanged. Embed the rebuilt local widget using your own configured site:
+
+```html
+<script>var aowow_tooltips = {renamelinks: true, iconizelinks: true};</script>
+<script src="https://database.example.com/static/widgets/power.js"></script>
+<a href="https://database.example.com/?item=19019" data-wowhead="item=19019">Item</a>
+```
+
+Keep the established `rel`/`data-wowhead` and `data-disable-wowhead-tooltip`
+attributes; their historical names are compatibility APIs. The widget loads
+scripts, styles, icons, and tooltip data from this installation's configured
+`HOST_URL`/`STATIC_URL`. Supply its extracted local game assets as usual.
+
+Deliver PHP, templates, all six locale scripts, CSS, and rebuilt assets together:
+
+1. Retain the previous deployment package and back up the database, including
+   the `board_url` configuration row and migration/version metadata.
+2. In disposable staging, apply the normal update from the checkout root:
+   `php aowow --update`. [1791028800_01.sql](setup/sql/updates/1791028800_01.sql)
+   clears only a `board_url` value exactly equal to the shipped
+   `http://www.wowhead.com/forums?board=` and requests `globaljs` and `tooltips`
+   rebuilds. Customized values are preserved. Fresh installations omit this
+   obsolete default. There are no article, guide, or comment updates.
+3. Verify completed generators, or explicitly run
+   `php aowow --build=globaljs,tooltips` with the staging site's configuration.
+   Deploy `static/js/global.js` and `static/widgets/power.js` with the PHP/CSS/
+   locale changes. Source fixtures use synthetic URLs and are not deployment
+   assets. Revision 69 changes asset/cache revision keys; invalidate old page
+   caches and any reverse-proxy/CDN cached pages/assets during the release.
+4. Run the [retirement checks](tests/README.md#viewer-retirement-and-local-assets)
+   and staging detail/list/comparison/profile/account/talent pages with Wowhead
+   and ZAM CDN traffic blocked. Check local embedding and extracted game assets,
+   root/subdirectory crop borders, and all six locales before lifting maintenance.
+5. For rollback, restore the coordinated previous package and backed-up affected
+   configuration/version/journal state, then invalidate caches again.
+
+Production deployment is a separate operational step. No replacement viewer,
+new service, content cleanup, or article migration is included.
+
 ## Requirements
 
 + Webserver running PHP ≥ 8.4 including extensions:
