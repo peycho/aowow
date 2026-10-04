@@ -92,34 +92,50 @@ PY
     AOWOW_TEST_DATABASE=aowow_security_test_resources php tests/security-contributions.php
     ;;
   apache)
-    fixture_root="$(mktemp -d /tmp/aowow-private-uploads-apache-XXXXXX)"
-    container="aowow-security-apache-${fixture_root##*-}"
-    cleanup() {
-      docker rm --force "$container" >/dev/null 2>&1 || true
-      rm -rf -- "$fixture_root"
-    }
-    trap cleanup EXIT
-    python3 tests/security-private-uploads-apache.py --prepare "$fixture_root"
-    docker run --detach --rm --name "$container" --publish 127.0.0.1::8080 \
-      --read-only --cap-drop ALL --security-opt no-new-privileges --user 65534:65534 \
-      --tmpfs /tmp:rw,nosuid,nodev --volume "$fixture_root:/fixture:ro" \
-      --entrypoint httpd httpd:2.4 -f /fixture/httpd.conf -DFOREGROUND
-    address="$(docker port "$container" 8080/tcp)"
-    # Wait only for startup; assertion failures must not be hidden by retrying the test suite.
-    ready=false
-    for ((attempt=0; attempt<30; attempt++)); do
-      if curl --fail --silent --output /dev/null "http://$address/crossdomain.xml"; then
-        ready=true
-        break
-      fi
-      sleep 1
+    # Exercise both hosting permission sets, with and without inherited negotiation.
+    for override in 'Options FileInfo' All; do
+      for negotiation in disabled enabled; do
+        for entrypoint in static cgi; do
+          fixture_root="$(mktemp -d /tmp/aowow-private-uploads-apache-XXXXXX)"
+          container="aowow-security-apache-${fixture_root##*-}"
+          cleanup() {
+            docker rm --force "$container" >/dev/null 2>&1 || true
+            rm -rf -- "$fixture_root"
+          }
+          trap cleanup EXIT
+          fixture_args=(--allow-override "$override")
+          if [[ "$negotiation" == enabled ]]; then
+            fixture_args+=(--multiviews)
+          fi
+          if [[ "$entrypoint" == cgi ]]; then
+            fixture_args+=(--cgi-entrypoint)
+          fi
+          echo "Apache overrides: $override; MultiViews: $negotiation; entrypoint: $entrypoint"
+          python3 tests/security-private-uploads-apache.py --prepare "$fixture_root" "${fixture_args[@]}"
+          docker run --detach --rm --name "$container" --publish 127.0.0.1::8080 \
+            --read-only --cap-drop ALL --security-opt no-new-privileges --user 65534:65534 \
+            --tmpfs /tmp:rw,nosuid,nodev --volume "$fixture_root:/fixture:ro" \
+            --entrypoint httpd httpd:2.4 -f /fixture/httpd.conf -DFOREGROUND
+          address="$(docker port "$container" 8080/tcp)"
+          # Wait only for startup; assertion failures must not be hidden by retrying the test suite.
+          ready=false
+          for ((attempt=0; attempt<30; attempt++)); do
+            if curl --fail --silent --output /dev/null "http://$address/crossdomain.xml"; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [[ "$ready" != true ]]; then
+            docker logs "$container"
+            echo 'Apache fixture did not become ready.' >&2
+            exit 1
+          fi
+          python3 tests/security-private-uploads-apache.py --check "http://$address"
+          cleanup
+        done
+      done
     done
-    if [[ "$ready" != true ]]; then
-      docker logs "$container"
-      echo 'Apache fixture did not become ready.' >&2
-      exit 1
-    fi
-    python3 tests/security-private-uploads-apache.py --check "http://$address"
     ;;
   *)
     echo 'Usage: bash tests/ci/run.sh {lint|php|javascript|browser|sql|apache}' >&2

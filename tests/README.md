@@ -59,7 +59,8 @@ activation and password-policy tests run sequentially because they rebuild the
 same fixture tables. Screenshots, migrations and contribution/retention tests
 use their separately guarded database names. A one-sample synthetic password
 benchmark is a timing diagnostic, with no performance threshold. A separate
-Apache 2.4 job tests upload denials, public assets and deny-policy delivery.
+Apache 2.4 job tests routing, upload/script/hidden-path denials, public assets,
+response headers and deny-policy delivery.
 
 The cache fixture supplies a global `Memcached` stand-in. The workflow explicitly
 disables the native extension with `:memcached`, using
@@ -388,15 +389,24 @@ docker stop aowow-upload-apache-test
 rm -r -- "$fixture_root"
 ```
 
-Run the check after Apache has started. It covers direct pending/temp denial,
-encoded paths, PATH_INFO, GET/HEAD and public assets in root, subdirectory and
-separate-static-host layouts. It also checks delivery of A16's explicit deny
+Run the check after Apache has started. It copies all three `.htaccess` files
+and loads `mod_headers`. It covers pending/temp uploads, script-like filenames,
+hidden files/directories, encoded paths, PATH_INFO, GET/HEAD/POST routing, query
+compatibility, response headers, script/style MIME types and range requests for
+extensionless sounds. Public assets are tested at root, subdirectory,
+separate-static-host and separate-upload-host layouts, with an inherited PHP
+handler overridden by the assets' static handler. The default configuration uses
+`AllowOverride Options FileInfo`, avoiding new AuthConfig/Indexes requirements.
+Preparation also accepts `--allow-override All`, `--multiviews` and
+`--cgi-entrypoint` to check full override permissions, inherited filename
+negotiation and execution of a synthetic shell CGI entrypoint. The CI runner
+checks all eight combinations. It checks A16's explicit deny
 `crossdomain.xml` in those layouts; the policy must be served at the origin root
 to act as a master policy. The PHP stream test and Apache policy test are
 separate fixtures; neither runs the complete deployed Apache/PHP application.
 
 Revision 62 needs no schema migration or file move. Deploy the application and
-moderator JavaScript plus both `.htaccess` files on every relevant asset host;
+moderator JavaScript plus all three `.htaccess` files on every relevant asset host;
 verify effective override/rewrite settings or equivalent server rules. Purge
 historically cached pending/temp responses and verify real cropper, session,
 moderator and approval flows in restricted staging. Crop stages created before

@@ -137,6 +137,32 @@ audio processing may require [lame](https://sourceforge.net/projects/lame/files/
 
 ## Install
 
+#### Apache access rules
+
+Deploy the root, `static/` and `static/uploads/` `.htaccess` files together,
+including on separate static hosts and upload aliases. Apache 2.4 needs
+`mod_rewrite`, permitted symlink traversal (`FollowSymLinks` or
+`SymLinksIfOwnerMatch`), and at least `AllowOverride Options FileInfo` for these
+directories. If individual Options are restricted, permit `Indexes`, `Includes`
+and `ExecCGI` for asset directories; the files only disable them. The root only
+disables `Indexes`, preserving CGI-based PHP handlers. Enable `mod_headers` to apply the
+response headers. Servers that ignore `.htaccess` need equivalent access rules.
+
+Set `Options -MultiViews` in the server's corresponding `<Directory>` sections
+to avoid implicit filename negotiation. This belongs in server configuration
+because some hosts do not permit changing MultiViews through `.htaccess`.
+The shipped rules do not require `AuthConfig` or `Indexes` override categories,
+and root requests are explicitly rewritten to `index.php`. Query parameters,
+including percent-encoded route keys, retain the application's routing behavior.
+
+Keep PHP execution configured for the application entrypoint. Static and upload
+directories use Apache's static handler and deny script-like filenames, including
+multiple extensions, hidden paths and private pending/temp uploads. Public
+screenshots, avatars, guide images, scripts, styles, widgets and extensionless
+sounds remain accessible. PHP-FPM deployments must configure upload limits in
+PHP (`upload_max_filesize = 20M`, `post_max_size = 25M`); the root `.htaccess`
+sets these values only for mod_php.
+
 #### 1. Acquire the required repositories
 `git clone git@github.com:Sarjuuk/aowow.git aowow`  
 `git clone git@github.com:Sarjuuk/MPQExtractor.git MPQExtractor`  

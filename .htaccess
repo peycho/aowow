@@ -1,42 +1,39 @@
-# Block view of some folders
+# Disable directory listing without changing the host's PHP or symlink settings.
+# Configure Options -MultiViews in the virtual host (see README.md).
 Options -Indexes
+AddDefaultCharset utf-8
+AcceptPathInfo Off
 
-# Support for UTF8
-AddDefaultCharset utf8
+# Legacy charset module compatibility.
 <IfModule mod_charset.c>
     CharsetDisable on
     CharsetRecodeMultipartForms Off
 </IfModule>
 
-# UHD screenshots can get pretty large (cannot be set in config)
+# PHP-FPM deployments set these limits in their PHP configuration.
 <IfModule mod_php.c>
-    php_value       upload_max_filesize                         20M
-    php_value       post_max_size                               25M
+    php_value upload_max_filesize 20M
+    php_value post_max_size 25M
 </IfModule>
 
-RewriteEngine on
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "same-origin"
+    Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>
 
-# Allow index.php to handle root requests
+RewriteEngine On
+
+# Deny hidden files and directories.
+RewriteRule (^|/)\. - [F,L]
+
+# Pending and temporary uploads require authenticated endpoints.
+RewriteRule ^static/uploads/(?:screenshots/(?:pending|temp)|temp)(?:/|$) - [F,L,NC]
+
+# Public entrypoint and approved assets.
+RewriteRule ^(?:index\.php|robots\.txt|crossdomain\.xml)$ - [L,NC]
+RewriteRule ^static(?:/|$) - [L,NC]
 RewriteRule ^$ index.php [L]
 
-# Allow specific files
-RewriteRule ^(index\.php|crossdomain\.xml|robots\.txt)$ - [L,NC]
-
-# Allow static assets
-# Staging files are served only through the authenticated upload preview route.
-# This must precede the broad static allowlist, including on a separate static host.
-RewriteRule ^static/uploads/(screenshots/(pending|temp)|temp)(/|$) - [F,L,NC]
-RewriteRule ^static/.*$ - [L,NC]
-
-# Block everything else
+# Deny source code, private configuration, caches and other root paths.
 RewriteRule ^ - [F,L]
-
-# RewriteBase /~user/localPath/     # enable if the rules do not work, when they should
-
-# Mapper-Helper: If you cant provide maps for all locales, redirect the browser
-# RewriteRule ^(.*/?)static/images/wow/maps/(frfr|dede|eses|ruru)/(.*)$ $1static/images/wow/maps/enus/$3 [NC]
-
-# accept flattened urls | NYI - need more work :x
-#   RewriteRule     ^([a-z0-9\-]+)$                             ?$1       [NC]      # /items                 => ?items
-#   RewriteRule     ^([a-z0-9\-]+)=([^?&]*)$                    ?$1=$2    [NC]      # /items=4.1             => ?items=4.1
-#   RewriteRule     ^([a-z0-9\-]+)=([^?&]*)[&?](.*)$            ?$1=$2&$3 [NC]      # /items=4.1?filter=sl=7 => ?items=4.1&filter=sl=7
