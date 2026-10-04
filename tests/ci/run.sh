@@ -36,6 +36,7 @@ PY
     done
     php tests/security-csrf.php --http
     php tests/setup-sounds.php
+    php tests/setup-debug.php
     php tests/external-links.php
     php tests/retirement.php
     ;;

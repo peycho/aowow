@@ -50,7 +50,11 @@ CLISetup::registerUtility(new class extends UtilityScript
             $todoKey = $command === 'sql' ? 'doSql' : 'doBuild';
             $doneKey = $command === 'sql' ? 'doneSql' : 'doneBuild';
             $io = [$todoKey => $requested, $doneKey => []];
-            if (!CLISetup::run($command, $io) || array_diff($requested, $io[$doneKey]))
+            CLI::debug('[sync] '.$command.' requested: '.implode(', ', $requested));
+            $success = CLISetup::run($command, $io);
+            $missing = array_diff($requested, $io[$doneKey]);
+            CLI::debug('[sync] '.$command.' result='.($success ? 'true' : 'false').'; completed: '.(implode(', ', $io[$doneKey]) ?: '(none)').'; missing: '.(implode(', ', $missing) ?: '(none)'));
+            if (!$success || $missing)
             {
                 CLI::write('[sync] '.$command.' generation incomplete; pending work retained.', CLI::LOG_ERROR);
                 return false;
@@ -81,6 +85,7 @@ CLISetup::registerUtility(new class extends UtilityScript
         }
         catch (\Throwable $e)
         {
+            CLI::debug('[sync] pending '.$column.' work could not be acknowledged', $e);
             try { $db->query('ROLLBACK'); } catch (\Throwable) { }
             CLI::write('[sync] Could not acknowledge pending work (code '.(int)$e->getCode().').', CLI::LOG_ERROR);
             return false;

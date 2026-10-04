@@ -51,6 +51,7 @@ CLISetup::registerUtility(new class extends UtilityScript
     {
         $todo = &$args['doSql'];
         $done = &$args['doneSql'];
+        CLI::debug('[sql] requested: '.implode(', ', is_array($todo) ? $todo : ($todo ? [$todo] : [])).'; available: '.implode(', ', array_keys($this->generators)));
 
         if (!$this->inited)
             return false;
@@ -76,11 +77,15 @@ CLISetup::registerUtility(new class extends UtilityScript
         {
             $todo = array_intersect(array_keys($this->generators), is_array($todo) ? $todo : [$todo]);
             if (!$todo)
+            {
+                CLI::debug('[sql] none of the requested generators are registered');
                 return false;
+            }
         }
         else
             return false;
 
+        $done = [];
         $allOk = true;
 
         // start file generation
@@ -91,9 +96,11 @@ CLISetup::registerUtility(new class extends UtilityScript
             $scriptRef = &$this->generators[$cmd];
 
             CLI::write('[sql] filling aowow_'.$cmd.' with data');
+            $started = microtime(true);
 
             if ($scriptRef->fulfillRequirements())
             {
+                CLI::debug('[sql] '.$cmd.' requirements satisfied; generating');
                 if ($scriptRef->generate($syncIds))
                 {
                     if (method_exists($scriptRef, 'applyCustomData'))
@@ -102,6 +109,9 @@ CLISetup::registerUtility(new class extends UtilityScript
                     $success = true;
                 }
             }
+            else
+                CLI::debug('[sql] '.$cmd.' requirements failed');
+            CLI::debug('[sql] '.$cmd.' result='.($success ? 'true' : 'false').'; elapsed='.round(microtime(true) - $started, 3).'s');
 
             if (!$success)
                 $allOk = false;
@@ -112,8 +122,8 @@ CLISetup::registerUtility(new class extends UtilityScript
             CLI::write();
             set_time_limit($this->defaultExecTime);         // reset to default for the next script
 
-            // try to free memory
-            unset($scriptRef, $this->generators[$cmd]);
+            // The registry owns these generators; updates and retries can request them again.
+            unset($scriptRef);
             if (gc_enabled())
             {
                 gc_collect_cycles();

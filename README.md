@@ -229,6 +229,18 @@ setup. Existing sound data and audio files are preserved by the skipped steps.
 To add sounds later, extract and reencode the audio as described above, then run
 `php aowow --sql=sounds` followed by `php aowow --build=soundfiles`.
 
+For additional diagnostics, add `--debug`, for example:
+
+```sh
+php aowow --setup --skip-sounds --debug --log=/tmp/aowow-setup-debug.log
+```
+
+The option also works with `--update`, `--sync`, `--sql` and `--build`. It reports
+the active step/command, requested and available generators, completed/missing
+work, timings, file permission failures and exception types/source locations.
+Exception messages, SQL and argument values remain excluded. It does not change
+the site's `DEBUG` setting. Keep the optional log outside publicly served paths.
+
 #### 8. Configure private cache authentication and admin builds
 
 Copy [setup/security.php.example](setup/security.php.example) to

@@ -140,6 +140,7 @@ CLISetup::registerUtility(new class extends UtilityScript
             while (true)
             {
                 CLI::write('[setup] step '.($idx + 1).' / '.count($this->steps));
+                CLI::debug('[setup] step '.($idx + 1).': '.$usName.($name ? '='.$name : ''));
                 if (CLISetup::run($usName, $param))
                 {
                     $this->saveProgress($idx);
@@ -148,7 +149,7 @@ CLISetup::registerUtility(new class extends UtilityScript
 
                 if ($usName === 'update')
                 {
-                    CLI::write('Migration failed: restore or reconcile the update journal before resuming setup.', CLI::LOG_ERROR);
+                    CLI::write('SQL update or its required generators failed. Pending work retained; inspect the update journal and generator errors before resuming setup.', CLI::LOG_ERROR);
                     return false;
                 }
 
@@ -181,13 +182,14 @@ CLISetup::registerUtility(new class extends UtilityScript
 
     public function writeCLIHelp() : bool
     {
-        CLI::write('  usage: php aowow --setup [--locales: --datasrc:] [--step=<step>] [--skip-sounds]', -1, false);
+        CLI::write('  usage: php aowow --setup [--locales: --datasrc:] [--step=<step>] [--skip-sounds] [--debug]', -1, false);
         CLI::write();
         CLI::write('  Initially essential connection information are set up and basic connectivity tests run afterwards.', -1, false);
         CLI::write();
         CLI::write('  In the main stage dbc and world data is compiled into the database and required sound, image and data files are generated.', -1, false);
         CLI::write('    This should not require further input and will take about 15-20 minutes, plus 10 minutes per additional locale.', -1, false);
         CLI::write('    Use --skip-sounds to omit sound data generation and audio copying. Other steps and resume numbers are unchanged.', -1, false);
+        CLI::write('    Use --debug for command, generator, timing and safe exception diagnostics; combine with --log=<file> to save them.', -1, false);
         CLI::write();
         CLI::write('  Lastly pending updates are applied and you are prompted to create an administrator account.', -1, false);
 

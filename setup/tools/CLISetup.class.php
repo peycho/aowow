@@ -55,6 +55,7 @@ class CLISetup
         'help'      => [self::OPT_GRP_MISC, ['h'], self::ARGV_NONE,                        'Display contextual help, if available.',                                                                    ''                                 ],
         'force'     => [self::OPT_GRP_MISC, ['f'], self::ARGV_NONE,                        'Force existing files to be overwritten.',                                                                   ''                                 ],
         'skip-sounds' => [self::OPT_GRP_MISC, [], self::ARGV_NONE,                        'Skip sound data generation and audio copying during initial setup.',                                        ''                                 ],
+        'debug'     => [self::OPT_GRP_MISC, [],    self::ARGV_NONE,                        'Show additional CLI setup/generator diagnostics and safe exception traces.',                                ''                                 ],
         'locales'   => [self::OPT_GRP_MISC, [],    self::ARGV_ARRAY | self::ARGV_OPTIONAL, 'Limit setup to enUS, frFR, deDE, zhCN, esES and/or ruRU. (does not override config settings)',              '=<regionCodes,>'                  ],
         'datasrc'   => [self::OPT_GRP_MISC, [],    self::ARGV_OPTIONAL,                    'Manually point to directory with extracted game files. Accepts absolute paths or paths relative to setup/. (default: setup/mpqdata/)', '=path/'],
         'step'      => [self::OPT_GRP_MISC, [],    self::ARGV_REQUIRED,                    'Start setup at given step (can be used to better automate the setup process).',                             '=step'                            ]
@@ -163,6 +164,7 @@ class CLISetup
                 $us->assignGenerators($name);
 
         self::evalOpts();
+        CLI::debug('[registry] utilities='.count(self::$utilScriptRefs).'; generators='.count(self::$setupScriptRefs).'; unresolved='.count(self::$tmpStore));
     }
 
     public static function getSubScripts(string $invoker = '') : \Generator
@@ -201,6 +203,8 @@ class CLISetup
         // alternative data source (no quotes, use forward slash)
         if (isset(self::$opts['datasrc']))
             self::$srcDir = CLI::nicePath('', self::$opts['datasrc']);
+
+        CLI::debug('[runtime] PHP='.PHP_VERSION.'; revision='.AOWOW_REVISION.'; data source='.self::$srcDir);
 
         if (!self::setLocales())
             CLI::write('No valid locale specified. Check your config or --locales parameter, if used', CLI::LOG_ERROR);
@@ -296,6 +300,7 @@ class CLISetup
         }
         catch (\Throwable $e)
         {
+            CLI::debug('[runInitial] command='.$cmd.' threw an exception', $e);
             CLI::write('Setup command failed (code '.(int)$e->getCode().'). Verify maintenance and inspect the update journal before retrying.', CLI::LOG_ERROR);
             return false;
         }
@@ -312,9 +317,13 @@ class CLISetup
     public static function run(string $cmd, array &$args, bool $initial = false) : bool
     {
         if (!isset(self::$utilScriptRefs[$cmd]))
+        {
+            CLI::debug('[run] utility not registered: '.$cmd);
             return false;
+        }
 
         $us = &self::$utilScriptRefs[$cmd];
+        CLI::debug('[run] starting '.$cmd.'; initial='.($initial ? 'yes' : 'no'));
 
         if ($dbError = array_filter($us::REQUIRED_DB, fn($x) => !DB::isConnected($x)))
         {
@@ -336,6 +345,7 @@ class CLISetup
         $args = array_pad($args, 4, null);
 
         $errors = CLI::errorCount();
+        $started = microtime(true);
         $db = null;
         $lease = null;
         try
@@ -346,11 +356,14 @@ class CLISetup
                 $db = DB::holdConnection(DB_AOWOW);
                 $lease = SqlUpdate::acquire($db);
             }
-            $success = $us->run($args) && CLI::errorCount() === $errors;
+            $result = $us->run($args);
+            CLI::debug('[run] '.$cmd.' returned '.($result ? 'true' : 'false').'; new CLI errors='.(CLI::errorCount() - $errors));
+            $success = $result && CLI::errorCount() === $errors;
 
             $error = [];
             if ($success && !$us->test($error))
             {
+                CLI::debug('[run] '.$cmd.' verification failed; issues='.count($error));
                 CLI::write($us::NOTE_ERROR ?: 'Setup command verification failed.', CLI::LOG_ERROR);
                 foreach ($error as $e)
                     CLI::write($e, CLI::LOG_BLANK);
@@ -363,19 +376,24 @@ class CLISetup
             if ($success)
                 if ($ff = $us->followupFn)
                     if (array_filter($args))
+                    {
+                        CLI::debug('[run] '.$cmd.' follow-up='.$ff);
                         if (!self::run($ff, $args))
                             $success = false;
+                    }
 
             return $success && CLI::errorCount() === $errors;
         }
         catch (\Throwable $e)
         {
+            CLI::debug('[run] '.$cmd.' threw an exception', $e);
             $message = $e instanceof \RuntimeException && $cmd === 'update' && str_starts_with($e->getMessage(), '[update] failed at ') ? $e->getMessage() : 'Setup command failed (code '.(int)$e->getCode().').';
             CLI::write($message, CLI::LOG_ERROR);
             return false;
         }
         finally
         {
+            CLI::debug('[run] '.$cmd.' finished in '.round(microtime(true) - $started, 3).'s; memory='.round(memory_get_usage(true) / 1048576, 1).'MiB');
             if ($lease !== null)
                 try { SqlUpdate::release($db, $lease); }
                 catch (\Throwable) { CLI::write('Could not release the update database lock.', CLI::LOG_ERROR); }
@@ -513,8 +531,9 @@ class CLISetup
                 throw new \RuntimeException();
             return true;
         }
-        catch (\Throwable)
+        catch (\Throwable $e)
         {
+            CLI::debug('[maintenance] persistence verification failed; requested mode='.$value, $e);
             // An unlock may have reached the server before its acknowledgement failed.
             if ($value === self::LOCK_OFF)
                 try { Cfg::set('MAINTENANCE', self::LOCK_ON); } catch (\Throwable) { }
@@ -708,6 +727,7 @@ class CLISetup
             return true;
         }
 
+        CLI::debug('[file] write failed: '.$file.'; exists='.(is_file($file) ? 'yes' : 'no').'; writable='.(is_writable($file) ? 'yes' : 'no').'; parent writable='.(is_writable(dirname($file)) ? 'yes' : 'no').'; symlink='.(is_link($file) ? 'yes' : 'no'));
         return false;
     }
 
@@ -720,6 +740,7 @@ class CLISetup
             return true;
         }
 
+        CLI::debug('[directory] unavailable: '.$dir.'; exists='.(is_dir($dir) ? 'yes' : 'no').'; writable='.(is_writable($dir) ? 'yes' : 'no'));
         return false;
     }
 

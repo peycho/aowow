@@ -193,6 +193,7 @@ final class SqlUpdate
         }
         catch (\Throwable $e)
         {
+            CLI::debug('[update] failed at '.$file.'; statement='.$index, $e);
             if ($transaction)
                 try { $db->query('ROLLBACK'); } catch (\Throwable) { }
             // Never expose SQL, exception messages or database values in process output.

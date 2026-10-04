@@ -35,6 +35,19 @@ abstract class CLI
         return self::$errors;
     }
 
+    /** Explicit CLI diagnostics never include exception messages, SQL or argument values. */
+    public static function debug(string $txt, ?\Throwable $error = null) : void
+    {
+        if (!CLI || !class_exists(CLISetup::class, false) || !CLISetup::getOpt('debug'))
+            return;
+
+        $txt = preg_replace('/[\x00-\x1f\x7f]/', ' ', $txt);
+        self::write('[debug] '.$txt, self::LOG_INFO);
+        if ($error)
+            foreach (ErrorLog::exceptionDetails($error) as $detail)
+                self::write('[debug] '.$detail, self::LOG_INFO);
+    }
+
     /********************/
     /* formatted output */
     /********************/

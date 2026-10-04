@@ -101,6 +101,22 @@ final class ErrorLog
         return '[external]';
     }
 
+    /** Debug traces retain exception types and shipped source locations, never messages or arguments. */
+    public static function exceptionDetails(\Throwable $error) : array
+    {
+        $details = [];
+        for ($depth = 0; $error && $depth < 5; $depth++, $error = $error->getPrevious())
+        {
+            $type = get_class($error);
+            if (!preg_match('/^[a-zA-Z0-9_\\\\]+$/D', $type)) $type = '[anonymous exception]';
+            $details[] = ($depth ? 'caused by ' : '').$type.' (code '.(int)$error->getCode().') @ '.self::source($error->getFile()).':'.$error->getLine();
+            foreach (array_slice($error->getTrace(), 0, 20) as $frame)
+                if (isset($frame['file'], $frame['line']))
+                    $details[] = '  '.self::source($frame['file']).':'.(int)$frame['line'];
+        }
+        return $details;
+    }
+
     /** Preserve the errors-table schema; failed logging cannot recurse or change application inputs. */
     public static function record(int $code, string $kind, string $file, int $line, int $level, array $trace = []) : void
     {

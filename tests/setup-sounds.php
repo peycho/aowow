@@ -8,6 +8,9 @@ namespace Aowow {
         public static bool $resume = false;
         public static function write(string $message = '', mixed ...$args) : void { self::$messages[] = $message; }
         public static function bold(string $message) : string { return $message; }
+        public static function debug(string $message, ?\Throwable $error = null) : void {
+            if (CLISetup::getOpt('debug')) self::$messages[] = '[debug] '.$message;
+        }
         public static function read(array $questions, ?array &$answers) : bool {
             if (self::$resume && str_contains($questions['x'][0], 'continue setup?')) {
                 $answers = ['x' => 'y']; return true;
@@ -109,6 +112,9 @@ namespace {
         check((new ReflectionProperty($setup, 'steps'))->getValue($setup) === $steps, 'Skip option never changes the step list');
         CLI::$messages = []; $setup->writeCLIHelp();
         check(str_contains(implode("\n", CLI::$messages), '--skip-sounds'), 'Setup help documents the option');
+        CLISetup::$options = ['debug' => true, 'skip-sounds' => true]; CLI::$messages = [];
+        check($setup->run($args), 'Setup debug works alongside skip-sounds');
+        check(in_array('[debug] [setup] step 3: sql=spells', CLI::$messages, true), 'Setup diagnostics identify the active generator and original step');
         echo "PASS: $checks setup sound option/parser/progress checks\n";
     }
     finally {
