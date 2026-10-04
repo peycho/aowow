@@ -93,7 +93,7 @@ final class UIText
         );
 
         // redirect 'src' of <IMG> tags
-        $text = preg_replace_callback('/src="([^"]+)"/i', fn($m) => sprintf('src="%s/images/wow/%s.png"', Cfg::get('STATIC_URL'), strtr($m[1], ['\\' => '/'])), $text);
+        $text = preg_replace_callback('/src="([^"]+)"/i', fn($m) => trim($m[1]) === '' ? $m[0] : sprintf('src="%s/images/wow/%s.png"', Cfg::get('STATIC_URL'), strtr($m[1], ['\\' => '/'])), $text);
 
         // docs say SimpleHTML supports anchors though in 335 they seem to be unused
         // also, where the hell do they link to? For now strip the anchor tags and retain the contained text node.
@@ -408,17 +408,40 @@ final class UIText
      */
     private static function validateTag(string $full, string $closing, string $tag, string $attrStr) : bool
     {
-        if ($closing && $attrStr)
+        if ($closing && trim($attrStr))
             return false;
 
-        $attr = explode(' ', strtolower($attrStr));
-        $tag  = strtolower($tag);
+        $tag = strtolower($tag);
 
-        if ($tag == 'img')                                  // at lest 'src' must be set
-            return !empty($attr['src']);
+        if ($tag == 'img' || $tag == 'a')
+        {
+            // Closing anchors have no href; images are void elements.
+            if ($closing)
+                return $tag == 'a';
 
-        if ($tag == 'a')                                    // at lest 'href' must be set
-            return !empty($attr['href']);
+            $attrStr = trim($attrStr);
+            if (str_ends_with($attrStr, '/'))
+                $attrStr = rtrim(substr($attrStr, 0, -1));
+
+            // Parse whole attributes so quoted spaces or embedded "src=" text
+            // cannot be mistaken for an attribute name. Keep value casing intact.
+            preg_match_all('~\G\s*([a-z_:][a-z0-9:_.-]*)\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s"\'=<>`]+))(?=\s|$)~i', $attrStr, $matches, PREG_SET_ORDER | PREG_UNMATCHED_AS_NULL);
+
+            $attr = [];
+            $parsed = '';
+            foreach ($matches as $match)
+            {
+                $name = strtolower($match[1]);
+                if (array_key_exists($name, $attr))
+                    return false;
+
+                $attr[$name] = $match[2] ?? $match[3] ?? $match[4];
+                $parsed .= $match[0];
+            }
+
+            $required = $tag == 'img' ? 'src' : 'href';
+            return $parsed === $attrStr && trim($attr[$required] ?? '') !== '';
+        }
 
         return match ($tag)
         {

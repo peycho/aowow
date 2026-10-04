@@ -12,6 +12,18 @@ They cover URL validation, enabled status, current settings on cached templates,
 script/HTML escaping, and menu filtering with translated labels and icons in all
 six supported JavaScript locales. Both suites run in CI.
 
+## Game text and SimpleHTML
+
+```sh
+php tests/security-uitext.php
+```
+
+This database-free suite executes the real UI text formatter and book serializer
+with synthetic text. It checks SimpleHTML images, local source rewriting,
+anchors with nested content and closing tags, quoted/unquoted attributes,
+missing/empty/malformed attributes, HTML/markup/raw output, ordinary text
+escaping, color sequences and book-page JSON. It runs in the PHP CI group.
+
 ## Viewer retirement and local assets
 
 ```sh

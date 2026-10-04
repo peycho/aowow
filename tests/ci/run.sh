@@ -30,7 +30,7 @@ PY
           exit(1);
       }
     '
-    for suite in json guide-editor tokens error-log client-ip private-uploads guide-uploads \
+    for suite in json uitext guide-editor tokens error-log client-ip private-uploads guide-uploads \
                  expressions cache builds video retention community-pages redirects admin-boundary; do
       php "tests/security-$suite.php"
     done
