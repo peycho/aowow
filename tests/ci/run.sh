@@ -35,6 +35,7 @@ PY
       php "tests/security-$suite.php"
     done
     php tests/security-csrf.php --http
+    php tests/setup-sounds.php
     php tests/external-links.php
     php tests/retirement.php
     ;;

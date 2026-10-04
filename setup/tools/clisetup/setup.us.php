@@ -124,10 +124,18 @@ CLISetup::registerUtility(new class extends UtilityScript
         /* run */
         /*******/
 
-        foreach ($this->steps as $idx => [$usName, , $param])
+        foreach ($this->steps as $idx => [$usName, $name, $param])
         {
             if ($startStep > $idx)
                 continue;
+
+            // Keep the step list stable for --step and saved firstrun progress.
+            if (CLISetup::getOpt('skip-sounds') && in_array($name, ['sounds', 'soundfiles'], true))
+            {
+                CLI::write('[setup] skipping '.$name.' (--skip-sounds)');
+                $this->saveProgress($idx);
+                continue;
+            }
 
             while (true)
             {
@@ -173,12 +181,13 @@ CLISetup::registerUtility(new class extends UtilityScript
 
     public function writeCLIHelp() : bool
     {
-        CLI::write('  usage: php aowow --setup [--locales: --datasrc:] [--step=<step>]', -1, false);
+        CLI::write('  usage: php aowow --setup [--locales: --datasrc:] [--step=<step>] [--skip-sounds]', -1, false);
         CLI::write();
         CLI::write('  Initially essential connection information are set up and basic connectivity tests run afterwards.', -1, false);
         CLI::write();
         CLI::write('  In the main stage dbc and world data is compiled into the database and required sound, image and data files are generated.', -1, false);
         CLI::write('    This should not require further input and will take about 15-20 minutes, plus 10 minutes per additional locale.', -1, false);
+        CLI::write('    Use --skip-sounds to omit sound data generation and audio copying. Other steps and resume numbers are unchanged.', -1, false);
         CLI::write();
         CLI::write('  Lastly pending updates are applied and you are prompted to create an administrator account.', -1, false);
 

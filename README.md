@@ -206,6 +206,9 @@ Extract the following directories from the client archives into `setup/mpqdata/`
    > \<localeCode>/Sound/  
 
 #### 5. Reencode the audio files
+If you will run setup with `--skip-sounds`, you can omit extraction of
+`<localeCode>/Sound/` and skip this reencoding step.
+
 WAV-files need to be reencoded as `ogg/vorbis` and some MP3s may identify themselves as `application/octet-stream` instead of `audio/mpeg`.  
  * [example for WIN](https://gist.github.com/Sarjuuk/d77b203f7b71d191509afddabad5fc9f)  
  * [example for \*nix](https://gist.github.com/Sarjuuk/1f05ef2affe49a7e7ca0fad7b01c081d)
@@ -218,6 +221,13 @@ WAV-files need to be reencoded as `ogg/vorbis` and some MP3s may identify themse
 `php aowow --setup`.  
 This should guide you through with minimal input required from your end, but will take some time though, especially compiling the zone-images. Use it to familiarize yourself with the other functions this setup has. Yes, I'm dead serious: *Go read the code!* It will help you understand how to configure AoWoW and keep it in sync with your world database.  
 When you've created your admin account you are done.
+
+To install without sounds, run `php aowow --setup --skip-sounds`. This skips the
+`sounds` database generator and `soundfiles` audio copying step. Step numbers
+remain unchanged; include `--skip-sounds` again when resuming an interrupted
+setup. Existing sound data and audio files are preserved by the skipped steps.
+To add sounds later, extract and reencode the audio as described above, then run
+`php aowow --sql=sounds` followed by `php aowow --build=soundfiles`.
 
 #### 8. Configure private cache authentication and admin builds
 
