@@ -1,0 +1,376 @@
+# Changelog
+
+Installation and everyday commands are documented in the [README](../README.md).
+The [test guide](../tests/README.md) covers regression checks, and the
+[security review](aowow-security-review.md) records implementation details and
+remaining deployment acceptance work. Commands below run from the checkout root.
+
+## 2026-10-04
+
+### Setup debugging and repeat generation
+
+Added `--debug` to setup and the `--update`, `--sync`, `--sql` and `--build`
+commands. Diagnostics identify the active step and command, requested/available
+and completed/missing generators, elapsed time, memory usage, failed file or
+directory permissions, and exception types, codes and source locations.
+Exception messages, SQL and argument values remain excluded. The flag does not
+change the website's `DEBUG` setting. Combine it with `--log` to save diagnostics:
+
+```sh
+php aowow --setup --skip-sounds --debug --log=/tmp/aowow-setup-debug.log
+```
+
+SQL and build runners now retain registered generators after execution. An
+update can rebuild `globaljs` and `tooltips` even when initial setup already
+ran them in the same process. This fixes an upstream generator-removal bug
+introduced on 2026-01-05; the stricter migration checks previously exposed it
+as incomplete generation. Local references are still released and garbage
+collection remains enabled where configured.
+
+The setup failure message now identifies SQL updates or their required generators
+rather than describing every update follow-up failure as a failed migration.
+Pending-work accounting, maintenance handling and interruption protection remain
+in place. Regression tests exercise repeat SQL/build runs, missing generators,
+requirement failures, false returns, exception redaction and saved logs.
+
+### Optional sound setup
+
+Added `php aowow --setup --skip-sounds`. It skips the `sounds` database generator
+and `soundfiles` audio-copying step. Original step numbers are preserved for
+`--step` and saved `cache/setup/firstrun` progress. Include the flag again when
+resuming an interrupted setup. Existing sound data and audio files are preserved
+by the skipped steps.
+
+With this option, extraction of `<localeCode>/Sound/` and audio reencoding can
+be omitted. To add sounds later, extract and reencode the files described in the
+[installation guide](../README.md#5-reencode-the-audio-files), then run:
+
+```sh
+php aowow --sql=sounds
+php aowow --build=soundfiles
+```
+
+### Talent dataset encoding
+
+Class and pet talent generators now use `Util::toJavaScript` for talent trees.
+The security serializer change introduced explicit `JsExpression` callbacks,
+but this caller still used the JSON-only API. That mismatch produced warnings
+at `includes/utilities.php:613` and incomplete class registration files despite
+successful file-write messages. Trusted profiler callbacks now remain executable
+while talent names and tooltips retain safe text escaping.
+
+Regenerate affected datasets with `php aowow --build=talentcalc`. Regression
+fixtures execute the actual generator for every class and six locales, including
+weapon restrictions, pet data and names/tooltips containing script delimiters.
+
+### UI text attribute parsing
+
+Fixed the SimpleHTML attribute parser so valid images and anchors render correctly,
+including book pages. Empty, missing and malformed required attributes remain
+rejected. Tests cover quoted/unquoted attributes, nested anchor content, image
+source handling and HTML/markup/raw output.
+
+### Apache access-rule compatibility
+
+Updated the root, static and upload denial rules to block hidden paths,
+script-like assets and private staging uploads while preserving application
+routing, public assets, extensionless sounds and CGI-based PHP handlers. Removed
+directives that required unavailable override permissions and the restrictive
+query filter. The supported server configuration is:
+
+Deploy the root, `static/` and `static/uploads/` `.htaccess` files together,
+including on separate static hosts and upload aliases. Apache 2.4 needs
+`mod_rewrite`, permitted symlink traversal (`FollowSymLinks` or
+`SymLinksIfOwnerMatch`), and at least `AllowOverride Options FileInfo` for these
+directories. If individual Options are restricted, permit `Indexes`, `Includes`
+and `ExecCGI` for asset directories; the files only disable them. The root only
+disables `Indexes`, preserving CGI-based PHP handlers. Enable `mod_headers` to apply the
+response headers. Servers that ignore `.htaccess` need equivalent access rules.
+
+Set `Options -MultiViews` in the server's corresponding `<Directory>` sections
+to avoid implicit filename negotiation. This belongs in server configuration
+because some hosts do not permit changing MultiViews through `.htaccess`.
+The shipped rules do not require `AuthConfig` or `Indexes` override categories,
+and root requests are explicitly rewritten to `index.php`. Query parameters,
+including percent-encoded route keys, retain the application's routing behavior.
+
+Keep PHP execution configured for the application entrypoint. Static and upload
+directories use Apache's static handler and deny script-like filenames, including
+multiple extensions, hidden paths and private pending/temp uploads. Public
+screenshots, avatars, guide images, scripts, styles, widgets and extensionless
+sounds remain accessible. PHP-FPM deployments must configure upload limits in
+PHP (`upload_max_filesize = 20M`, `post_max_size = 25M`); the root `.htaccess`
+sets these values only for mod_php.
+
+## 2026-10-03
+
+### Security hardening (revisions 53–68)
+
+Implemented the following source controls, with regression coverage:
+
+- Separate JSON data from explicit trusted JavaScript expressions; escape guide
+  editor fields, headings and changelog contributor text.
+- Add session CSRF protection, POST-only mutations, origin checks, explicit
+  SameSite cookies and password reauthentication for email changes.
+- Use cryptographically secure token generation; validate and consume unexpired
+  recovery/activation tokens, revoke sessions after password resets and preserve
+  existing role groups during activation.
+- Bound password inputs and bcrypt work, upgrade eligible weaker hashes and reserve
+  shared account/peer budgets before local password operations.
+- Use validated SAPI peer addresses for IP attribution and attempt/ban checks.
+  Forwarded headers cannot override the peer.
+- Replace request, error and SQL dumps with safe diagnostic metadata.
+- Deny direct access to pending/temp uploads, serve authenticated previews, bind
+  screenshot completion to one owner/session claim and reencode bounded JPEG/PNG
+  guide uploads with exclusive filenames.
+- Authenticate caches, remove runtime PHP evaluation, constrain admin builds and
+  preserve operator-selected filesystem permissions.
+- Journal SQL updates and retain incomplete follow-up work; bound outbound video
+  requests, contributions, reply paging, caches and disposable-data cleanup.
+- Restrict return redirects to the configured application origin/path; gate browser
+  diagnostics/configuration with exact operator IPs and deny legacy cross-domain
+  access.
+
+Existing installations require the password-budget migration
+[1790899200_01.sql](../setup/sql/updates/1790899200_01.sql) and screenshot-claim
+migration [1790985600_01.sql](../setup/sql/updates/1790985600_01.sql), followed by
+the applicable normal updates and generated assets. Existing local sessions
+require sign-in again after the password-version binding change. Pre-fix pending
+tokens require expiry or reissue; historical logs and deployment permissions
+need separate operator attention. Source regression checks do not establish
+staging or production acceptance; see the [security review](aowow-security-review.md).
+
+#### Cache authentication and admin builds (revision 65)
+
+Copy [setup/security.php.example](../setup/security.php.example) to
+`config/security.php` and replace the cache-key placeholder with a unique value
+generated by `php -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'`. Keep the file
+and its parent directory deployment-owned, inaccessible over HTTP and unwritable
+by PHP-FPM or other sites. Grant only the site's PHP identity read access; never
+commit this file or its key. Missing/invalid keys disable response caching while
+pages continue to generate normally. Revision 65 rejects older unsigned caches.
+
+Admin rebuilds use `PHP_BINDIR/php` by default (`php.exe` on Windows). Set
+`AOWOW_PHP_CLI` in the private file when a different absolute CLI path is needed;
+verify PHP ≥ 8.4 and the site's required extensions/configuration. The binary and
+checkout PHP must remain immutable to PHP-FPM. Grant write access only to approved
+generated assets/datasets and upload/cache/session paths. New public assets use
+`0644`/`0755`; existing permissions are preserved. The DB configurator writes
+credentials with at most `0640`, so provision a private deployment/PHP group or
+equivalent access. Precreate approved assets such as `robots.txt` so their parent
+directory can remain read-only. See [the security review](aowow-security-review.md#a13--consequences-of-compromised-local-data-boundaries)
+for the writable-file inventory and deployment acceptance checks.
+
+#### SQL update accounting (revision 66)
+
+From revision 66, `php aowow --update` stops on SQL/follow-up failures and exits
+nonzero while preserving maintenance. The first update bootstraps an InnoDB
+migration journal; use a deployment account with CREATE or have the schema owner
+pre-provision its exact definition from `setup/sql/01-db_structure.sql`.
+Keep deployment credentials out of runtime configuration. Back up the database
+before updating. An interrupted migration blocks automatic replay because earlier
+DDL/data changes may already be committed. Restore a consistent backup or
+reconcile the recorded partial work before retrying; verify pending generators
+and the site before lifting maintenance. See
+[the update checks](../tests/README.md#sql-update-and-cli-failure-accounting-a14) and
+[the recovery guidance](aowow-security-review.md#a14--migration-failure-accounting).
+
+#### Contribution limits and disposable-data cleanup (revision 67)
+
+Revision 67 adds [1791000000_01.sql](../setup/sql/updates/1791000000_01.sql), an
+InnoDB contribution budget and paging/retention indexes. Apply it with the
+deployment account, then finish the requested `globaljs` build. Deploy PHP,
+templates and rebuilt JavaScript together; missing budget tables deny new
+contributions. Runtime needs SELECT/INSERT/UPDATE on the budget, without DDL.
+YouTube requests require cURL with asynchronous DNS and a working CA trust store.
+
+From the checkout root, inspect cleanup before scheduling it:
+
+```sh
+php aowow --prune
+php aowow --prune=apply
+```
+
+Preview deletes nothing. Apply processes at most 1,000 database rows per table
+and examines 1,000 directory entries per root after positioning at its saved
+cursor. Private cursors advance between runs; reaching a cursor may walk its
+prior directory prefix, so very large historical trees need monitored cleanup.
+It removes expired password/screenshot/daily-budget records, database errors
+older than 30 days, recognized staging files older than two days, and recognized
+file-cache entries older than seven days. Published/pending uploads, guide
+images, articles, moderation records and permanent capacity counters are kept.
+Schedule repeated apply runs as the site's PHP identity with DELETE on only the
+four disposable tables and write access to its private cache/staging paths.
+No scheduler is installed automatically. Inspect output and alert on failures.
+
+Budgets charge attempts conservatively across workers; failed work is charged.
+They track new usage from rollout and do not inventory historical storage.
+Baseline existing files/database usage and provision volume/database limits,
+private-log rotation and monitoring before launch. See
+[A15](aowow-security-review.md#a15--outbound-calls-quotas-and-retention)
+for exact limits and deployment acceptance.
+
+#### Redirects and operator administration (revision 68)
+
+Revision 68 confines locale and announcement return redirects to the origin and
+application path in `HOST_URL`. Missing, malformed or off-origin Referers return
+to the application home or announcement administration. Configure `HOST_URL`
+with the site's canonical scheme, hostname, port and application path; ordinary
+query links and subdirectory installations remain supported.
+
+Browser `?admin=phpinfo`, `?admin=siteconfig` and its add/remove/update actions
+now require an operator IP in addition to a signed-in ADMIN or DEV account.
+The actions still require POST and CSRF protection. These five routes are
+**disabled when the private operator policy is absent, empty or invalid**.
+Other staff functions retain their existing access controls; trusted CLI
+configuration remains available through `php aowow --configure`.
+
+In the deployment-owned `config/security.php` described under cache authentication above, add or edit the
+following constant. Preserve the existing cache key and optional CLI path;
+do not overwrite an existing private file with the example. Replace these
+documentation addresses with the exact addresses of the site's operators:
+
+```php
+define('AOWOW_OPERATOR_IPS', ['192.0.2.10', '2001:db8::10']);
+```
+
+The policy accepts at most 64 exact IPv4/IPv6 addresses. Any malformed entry
+invalidates the entire policy. CIDRs, wildcards, hostnames, ports and forwarded
+headers cannot grant access. IPv4-mapped IPv6 peers require their own explicit
+entry. Keep the list empty if browser diagnostics/configuration are unused.
+Only PHP's `REMOTE_ADDR` is checked. Do not allow a shared reverse proxy's
+address: configure and verify trusted web-server peer handling first, or keep
+these routes disabled and use the CLI. Never infer authorization from an
+unverified `X-Forwarded-For` or `Forwarded` header.
+
+From the checkout root, check the private policy without printing its contents:
+
+```sh
+php -r 'define("AOWOW_REVISION", 68); require "config/security.php"; require "includes/components/operatoraccess.class.php"; $ips = defined("AOWOW_OPERATOR_IPS") ? AOWOW_OPERATOR_IPS : []; if (!is_array($ips) || !Aowow\OperatorAccess::matches($ips[0] ?? null, $ips)) { fwrite(STDERR, "Operator policy disabled or invalid\n"); exit(1); } echo "Operator policy valid\n";'
+```
+
+This checks list syntax, not the deployed FPM peer address. In restricted
+staging verify allowed ADMIN/DEV access, anonymous and ordinary-account denial,
+403 responses for staff on unlisted addresses, spoofed-header denial, and
+POST/CSRF enforcement on all three configuration actions. Verify `no-store`
+responses and absence of shared proxy/CDN caching. Authorized diagnostics retain
+native PHP environment/configuration output and must remain private.
+
+Deploy [crossdomain.xml](../crossdomain.xml) with its explicit `none` policy to
+**`/crossdomain.xml` at the origin root of every application/static host**.
+For an application at `/db/`, its `/db/crossdomain.xml` alone does not install
+the origin's master policy; serve the same file at `/crossdomain.xml` through
+the vhost configuration. Verify GET/HEAD on each actual HTTP/HTTPS origin,
+remove stale grants and purge cached copies of the former wildcard policy.
+This follows the [Adobe policy specification](https://www.adobe.com/devnet-docs/acrobatetk/tools/AppSec/CrossDomain_PolicyFile_Specification.pdf):
+`site-control` is effective in the origin-root master policy. The obsolete
+Flash model viewer is unsupported. This XML policy does not configure CORS.
+
+A16 requires no new SQL migration or JavaScript rebuild. Deploy its PHP files,
+private configuration and XML together. Earlier migrations, generated assets
+and hosting acceptance requirements still apply. Strict CSP has not been added;
+the legacy UI's inline scripts/handlers and eval require a separate tested
+migration. See [A16](aowow-security-review.md#a16--redirects-and-legacydiagnostic-exposure)
+and [its regression checks](../tests/README.md#redirects-and-operator-administration-a16).
+
+### External navigation configuration
+
+Configure the Community menu links and the homepage GitHub link in
+`config/config.php`, alongside the existing `$AoWoWconf` database settings:
+
+```php
+$AoWoWconf['externalLinks'] = [
+    'forum'    => ['enabled' => true,  'url' => 'https://community.example.com/'],
+    'blog'     => ['enabled' => false, 'url' => ''],
+    'irc'      => ['enabled' => false, 'url' => ''],
+    'facebook' => ['enabled' => true,  'url' => 'https://www.facebook.com/your-page'],
+    'twitter'  => ['enabled' => true,  'url' => 'https://twitter.com/your-account'],
+    'discord'  => ['enabled' => true,  'url' => 'https://discord.gg/your-invite'],
+    'github'   => ['enabled' => true,  'url' => 'https://github.com/your-org/your-project']
+];
+```
+
+Set `enabled` to the PHP boolean `false` to hide a link while keeping its URL.
+Empty or invalid URLs also hide the link; URLs must be absolute HTTP or HTTPS
+addresses without embedded credentials. Omitted links or fields retain their
+original defaults; Discord is disabled by default with an empty URL.
+Fresh database setup writes all seven default entries, and
+later database configuration rewrites preserve this section. Existing installs
+can add the section manually. Changes apply on the next page load, including
+cached page templates, without rebuilding JavaScript or editing locale files.
+Labels and icons remain localized. These deployment settings are independent
+of the database-backed `?admin=siteconfig` settings.
+
+### Wowhead integration and viewer retirement (revision 69)
+
+Application navigation no longer adds Wowhead buttons or Blue Tracker links.
+Crop selection borders use the shipped local images, including installations
+under a URL subdirectory. `[forumrules]` uses the enabled `externalLinks.forum`
+URL above; a disabled forum renders the localized label as plain text.
+
+The Flash viewer, its controls, binaries, and generated JavaScript components
+have been removed. Lists and pet galleries use local entity links. Account
+settings save without viewer race/gender fields and ignore those fields from
+older forms; stored `default_3dmodel` values remain inert. Legacy `[model]` and
+`[modelviewer]` tags display an escaped label and localized retirement notice,
+without loading scripts or requesting thumbnails. The six help menus omit the
+viewer, while `?help=modelviewer` remains available with a localized banner above
+its original article. Operator-owned generated model directories are untouched.
+
+Article text, article seeds, guides, and comments are preserved. Existing articles
+may still describe retired functionality; editorial changes remain outside this
+release. Explicit author-selected Wowhead/PTR/beta markup sources and literal
+external references remain supported, and ordinary game markup resolves locally.
+Historical talent-URL import also remains supported.
+
+Local tooltip endpoints, response formats, `$WowheadPower`, and widget attributes
+are unchanged. Embed the rebuilt local widget using your own configured site:
+
+```html
+<script>var aowow_tooltips = {renamelinks: true, iconizelinks: true};</script>
+<script src="https://database.example.com/static/widgets/power.js"></script>
+<a href="https://database.example.com/?item=19019" data-wowhead="item=19019">Item</a>
+```
+
+Keep the established `rel`/`data-wowhead` and `data-disable-wowhead-tooltip`
+attributes; their historical names are compatibility APIs. The widget loads
+scripts, styles, icons, and tooltip data from this installation's configured
+`HOST_URL`/`STATIC_URL`. Supply its extracted local game assets as usual.
+
+Deliver PHP, templates, all six locale scripts, CSS, and rebuilt assets together:
+
+1. Retain the previous deployment package and back up the database, including
+   the `board_url` configuration row and migration/version metadata.
+2. In disposable staging, apply the normal update from the checkout root:
+   `php aowow --update`. [1791028800_01.sql](../setup/sql/updates/1791028800_01.sql)
+   clears only a `board_url` value exactly equal to the shipped
+   `http://www.wowhead.com/forums?board=` and requests `globaljs` and `tooltips`
+   rebuilds. Customized values are preserved. Fresh installations omit this
+   obsolete default. There are no article, guide, or comment updates.
+3. Verify completed generators, or explicitly run
+   `php aowow --build=globaljs,tooltips` with the staging site's configuration.
+   Deploy `static/js/global.js` and `static/widgets/power.js` with the PHP/CSS/
+   locale changes. Source fixtures use synthetic URLs and are not deployment
+   assets. Revision 69 changes asset/cache revision keys; invalidate old page
+   caches and any reverse-proxy/CDN cached pages/assets during the release.
+4. Run the [retirement checks](../tests/README.md#viewer-retirement-and-local-assets)
+   and staging detail/list/comparison/profile/account/talent pages with Wowhead
+   and ZAM CDN traffic blocked. Check local embedding and extracted game assets,
+   root/subdirectory crop borders, and all six locales before lifting maintenance.
+5. For rollback, restore the coordinated previous package and backed-up affected
+   configuration/version/journal state, then invalidate caches again.
+
+Production deployment is a separate operational step. No replacement viewer,
+new service, content cleanup, or article migration is included.
+
+### Regression CI
+
+[Security test CI](../.github/workflows/security-tests.yml) runs the complete suite
+only on pushes with affected source, schema, dependency, policy, test and workflow
+changes, using PHP 8.4/8.5, Node, disposable MySQL, headless Chrome and Apache
+fixtures. See [the test guide](../tests/README.md#continuous-integration)
+for coverage, prerequisites and local commands.
+
+Standalone fixtures use explicit entrypoints and executed browser PASS markers.
+The workflow disables native Memcached because the cache fixture supplies its own
+stand-in. Regression coverage is documented in the [test guide](../tests/README.md).
