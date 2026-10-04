@@ -66,7 +66,7 @@ CLISetup::registerSetup("build", new class extends SetupScript
                 set_time_limit(20);
 
                 $file   = 'datasets/'.$loc->json().'/talents-'.$class->value;
-                $toFile = '$WowheadTalentCalculator.registerClass('.$class->value.', '.Util::toJSON($this->buildTree($class->toMask())).')';
+                $toFile = '$WowheadTalentCalculator.registerClass('.$class->value.', '.Util::toJavaScript($this->buildTree($class->toMask())).')';
 
                 if (!CLISetup::writeFile($file, $toFile))
                     $this->success = false;
@@ -74,7 +74,7 @@ CLISetup::registerSetup("build", new class extends SetupScript
 
             // PetCalc
             $toFile  = "var g_pet_icons = ".$petIcons.";\n\n";
-            $toFile .= 'var g_pet_talents = '.Util::toJSON($this->buildTree(0)).';';
+            $toFile .= 'var g_pet_talents = '.Util::toJavaScript($this->buildTree(0)).';';
             $file    = 'datasets/'.$loc->json().'/pet-talents';
 
             if (!CLISetup::writeFile($file, $toFile))

@@ -1,5 +1,16 @@
 # Security regressions
 
+Talent dataset checks execute the actual setup generator for all classes and six
+locales with synthetic database/spell data. They verify complete class/pet output,
+executable profiler callbacks, weapon restrictions, and escaped names/tooltips:
+
+```sh
+php tests/security-talentcalc.php
+php tests/security-talentcalc.php --fixtures | node tests/security-talentcalc.mjs
+```
+
+Both suites run in CI without a configured application database.
+
 External navigation configuration checks use synthetic configuration and cached
 templates, without runtime credentials or database access:
 

@@ -30,7 +30,7 @@ PY
           exit(1);
       }
     '
-    for suite in json uitext guide-editor tokens error-log client-ip private-uploads guide-uploads \
+    for suite in json talentcalc uitext guide-editor tokens error-log client-ip private-uploads guide-uploads \
                  expressions cache builds video retention community-pages redirects admin-boundary; do
       php "tests/security-$suite.php"
     done
@@ -42,6 +42,7 @@ PY
     node tests/external-links.mjs
     php tests/retirement.php --fixtures | node tests/retirement.mjs
     php tests/security-json.php --fixtures | node tests/security-json.mjs
+    php tests/security-talentcalc.php --fixtures | node tests/security-talentcalc.mjs
     node tests/security-private-uploads.mjs
     node tests/security-guide-uploads.mjs
     node tests/security-password-policy.mjs
