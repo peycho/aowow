@@ -24,6 +24,7 @@ namespace {
     define('CLI_HAS_E', false);
     define('OS_WIN', false);
     require $root.'/includes/defines.php';
+    require $root.'/includes/components/errorlog.class.php';
     require $root.'/includes/locale.class.php';
     $source = getenv('AOWOW_TEST_DIBI_DIR');
     if ($source) {
@@ -265,6 +266,19 @@ CODE;
                 check((int)$db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle()===1,'retry preserves already-restricted maintenance');
             }
         }
+        foreach (['success', 'build-throw'] as $mode) {
+            resetDb(); $db->query('CREATE TABLE ::calls (name varchar(16)) ENGINE=InnoDB');
+            file_put_contents($cli.'/setup/sql/updates/1700000000_01.sql', "INSERT INTO aowow_fixture VALUES (1, 'once'); UPDATE aowow_dbversion SET `sql`='one two', build='three';");
+            [$code,$output]=process([...$php,'--update','--debug'],$cli,['AOWOW_UPDATE_CHILD'=>'1','AOWOW_UPDATE_MODE'=>$mode]);
+            $ok=$mode==='success';
+            check($code===($ok?0:1), $mode.' debug CLI status: '.$output);
+            check(str_contains($output,'[debug]') && str_contains($output,'[sync] build requested: three'), $mode.' debug follows pending generator handoff');
+            check(!str_contains($output,'SECRET_SENTINEL'), $mode.' debug excludes exception messages and SQL values');
+            check(marker()===['date'=>1700000000,'part'=>1], $mode.' debug preserves migration accounting');
+            check((string)$db->query('SELECT build FROM ::dbversion')->fetchSingle()===($ok?'':'three'), $mode.' debug preserves pending build work');
+            check((int)$db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle()===($ok?0:1), $mode.' debug preserves maintenance');
+            if (!$ok) check(str_contains($output,'RuntimeException (code 0) @ '), 'debug shows useful exception metadata');
+        }
         resetDb(); $db->query('CREATE TABLE ::calls (name varchar(16))');
         [$code,$output]=process([...$php,'--update'],$cli,['AOWOW_UPDATE_CHILD'=>'1','AOWOW_UPDATE_MODE'=>'restore-ack-fail']);
         check($code===1 && !str_contains($output,'SECRET_SENTINEL'), 'lost unlock acknowledgement is safe and nonzero');
@@ -274,8 +288,9 @@ CODE;
         check($code===1 && marker()===['date'=>0,'part'=>0], 'initialization error prevents command mutations');
         resetDb(); $db->query('CREATE TABLE ::calls (name varchar(16))');
         file_put_contents($cli.'/setup/sql/updates/1700000000_01.sql', "CREATE TABLE aowow_partial (id int); SELECT SECRET_SENTINEL FROM missing_fixture; INSERT INTO aowow_fixture VALUES (1,'later');");
-        [$code,$output]=process([...$php,'--update'],$cli,['AOWOW_UPDATE_CHILD'=>'1']);
+        [$code,$output]=process([...$php,'--update','--debug'],$cli,['AOWOW_UPDATE_CHILD'=>'1']);
         check($code===1 && !str_contains($output,'SECRET_SENTINEL') && str_contains($output,'1700000000_01.sql statement 2'),'real CLI failed statement metadata');
+        check(str_contains($output,'[debug] [update] failed at 1700000000_01.sql; statement=2'), 'debug identifies failed SQL statement without its contents');
         check(marker()===['date'=>0,'part'=>0] && (int)$db->query('SELECT COUNT(*) FROM ::calls')->fetchSingle()===0,'real CLI failed migration skips sync');
         [$code,$output]=process([...$php,'--update'],$cli,['AOWOW_UPDATE_CHILD'=>'1']);
         check($code===1 && marker()===['date'=>0,'part'=>0], 'real CLI refuses partial DDL retry');

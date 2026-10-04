@@ -1,5 +1,11 @@
 # Security regressions
 
+`php tests/setup-debug.php` executes the real CLI parser, SQL/build runners and
+sync with synthetic generators/database state. It covers opt-in console/file
+diagnostics, exception metadata without secrets, requirement/return failures,
+missing generators, repeat builds after initial setup, and pending-work accounting.
+It runs in the PHP CI group without a configured application database.
+
 `php tests/setup-sounds.php` checks the `--skip-sounds` setup option with the real
 option parser and setup driver, using synthetic generators. It covers default
 setup, skipped sound steps, unchanged step numbers, interrupted/resumed setup,

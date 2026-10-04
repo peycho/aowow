@@ -62,6 +62,7 @@ CLISetup::registerUtility(new class extends UtilityScript
     {
         $todo = &$args['doBuild'];
         $done = &$args['doneBuild'];
+        CLI::debug('[build] requested: '.implode(', ', is_array($todo) ? $todo : ($todo ? [$todo] : [])).'; available: '.implode(', ', array_keys($this->generators)));
 
         if (!$this->inited)
             return false;
@@ -88,7 +89,10 @@ CLISetup::registerUtility(new class extends UtilityScript
         {
             $todo = array_intersect(array_keys($this->generators), is_array($todo) ? $todo : [$todo]);
             if (!$todo)
+            {
+                CLI::debug('[build] none of the requested generators are registered');
                 return false;
+            }
         }
         else
             return false;
@@ -113,9 +117,16 @@ CLISetup::registerUtility(new class extends UtilityScript
             $scriptRef = &$this->generators[$cmd];
 
             CLI::write('[build] gathering data for '.$cmd);
+            $started = microtime(true);
 
             if ($scriptRef->fulfillRequirements())
+            {
+                CLI::debug('[build] '.$cmd.' requirements satisfied; generating');
                 $success = $scriptRef->generate();
+            }
+            else
+                CLI::debug('[build] '.$cmd.' requirements failed');
+            CLI::debug('[build] '.$cmd.' result='.($success ? 'true' : 'false').'; elapsed='.round(microtime(true) - $started, 3).'s');
 
             if (!$success)
                 $allOk = false;
@@ -127,8 +138,8 @@ CLISetup::registerUtility(new class extends UtilityScript
 
             set_time_limit($this->defaultExecTime);         // reset to default for the next script
 
-            // try to free memory
-            unset($scriptRef, $this->generators[$cmd]);
+            // The registry owns these generators; updates and retries can request them again.
+            unset($scriptRef);
             if (gc_enabled())
             {
                 gc_collect_cycles();
