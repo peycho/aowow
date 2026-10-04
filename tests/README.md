@@ -1,5 +1,10 @@
 # Security regressions
 
+`php tests/setup-sounds.php` checks the `--skip-sounds` setup option with the real
+option parser and setup driver, using synthetic generators. It covers default
+setup, skipped sound steps, unchanged step numbers, interrupted/resumed setup,
+and contextual help. It runs in the PHP CI group without a configured database.
+
 Talent dataset checks execute the actual setup generator for all classes and six
 locales with synthetic database/spell data. They verify complete class/pet output,
 executable profiler callbacks, weapon restrictions, and escaped names/tooltips:
