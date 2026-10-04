@@ -1,14 +1,18 @@
-# Also applies when uploads/ is served from its own document root or alias.
+# Applies to static assets, uploads and generated sounds.
 # Configure Options -MultiViews in the virtual host (see README.md).
 Options -Indexes -Includes -ExecCGI
 AcceptPathInfo Off
+
+# Serve assets through Apache's static handler even if a parent sets a PHP handler.
 SetHandler default-handler
 
-# Per-directory rewrite rules replace parent rules, so repeat asset denials here.
 RewriteEngine On
+# Match the complete relative path, including hidden parent directories.
 RewriteRule (^|/)\. - [F,L]
+# Deny both execution and source access, including multiple file extensions.
 RewriteRule \.(?:php[0-9]*|phtml|pht|phar|cgi|pl|py|sh|shtml)(?:[./]|$) - [F,L,NC]
-RewriteRule ^(?:screenshots/(?:pending|temp)|temp)(?:/|$) - [F,L,NC]
+# Protect staging files when this directory is a separate document root or alias.
+RewriteRule ^uploads/(?:screenshots/(?:pending|temp)|temp)(?:/|$) - [F,L,NC]
 
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options "nosniff"
