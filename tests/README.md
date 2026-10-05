@@ -54,6 +54,23 @@ Both suites run in CI without application credentials or a configured database.
 They do not regenerate operator-supplied assets or prove staging acceptance.
 See the [metadata reload commands](../docs/changelog.md#supplemented-wrath-format-map-data).
 
+Picker regressions run the actual Maps endpoint and template with synthetic
+zone rows and temporary image paths, followed by the real picker, string sorter,
+Mapper image URL generation and link parser/serializer with DOM fixtures:
+
+```sh
+php tests/maps-picker.php
+php tests/maps-picker.php --fixtures | node tests/maps-picker.mjs
+```
+
+They cover partial Classic/TBC supplementation, existing Wrath options, public
+instance filtering, active-locale and English images, arbitrary numbered floors,
+missing/malformed image paths, localized text/escaping, alphabetical sorting,
+newly added/removed images, unchanged non-instance pickers, floor/pin deep links,
+and clearing pins. They run in the PHP and JavaScript CI groups without a
+configured application database. Shared image detection is also exercised by
+the existing map-generation/zone-page suite.
+
 ## Game text and SimpleHTML
 
 ```sh

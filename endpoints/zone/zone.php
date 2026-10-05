@@ -29,12 +29,7 @@ class ZoneBaseResponse extends TemplateResponse implements ICache
 
     private function hasMap() : bool
     {
-        foreach ([Lang::getLocale()->json(), 'enus'] as $locale)
-            foreach (['', '-0', '-1'] as $floor)
-                if (file_exists('static/images/wow/maps/'.$locale.'/original/'.$this->typeId.$floor.'.jpg'))
-                    return true;
-
-        return false;
+        return MapImages::exists($this->typeId, Lang::getLocale());
     }
 
     public function __construct(string $id)
@@ -536,9 +531,10 @@ class ZoneBaseResponse extends TemplateResponse implements ICache
 
             $this->map = array(
                 array(                                      // Mapper
-                    'parent'   => 'mapper-generic',
-                    'zone'     => $this->typeId,
-                    'zoneLink' => false
+                    'parent'     => 'mapper-generic',
+                    'zone'       => $this->typeId,
+                    'zoneLink'   => false,
+                    'mapLocales' => [$this->typeId => MapImages::findLocale($this->typeId, Lang::getLocale())?->json()]
                 ),
                 null,                                       // mapperData
                 $som,                                       // ShowOnMap

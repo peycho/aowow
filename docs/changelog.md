@@ -55,6 +55,32 @@ Regression fixtures assemble real tiled images in a temporary directory,
 exercise base-only and mixed layouts, verify Wrath special cases and localized
 labels, and execute the generated datasets with Mapper's floor menu.
 
+### Instance map picker
+
+The Maps page now fills its dungeon and raid dropdowns from existing zone
+metadata and generated images. Available Classic, Burning Crusade and Wrath
+instances appear automatically; missing images, subzones and records excluded
+from public lists stay out of the picker. Labels use the selected locale with
+English name fallback and retain the existing alphabetical sorting.
+
+Maps and zone pages share image detection for single maps and numbered floors,
+including base/courtyard `-0` images and nonconsecutive floor numbers. An image
+in the selected locale takes precedence over English. Mapper receives the
+resolved image locale so English-only instance images are actually displayed
+on other locale pages. Existing map links, pins, floor selection, continent
+pickers and battleground pickers retain their behavior.
+
+Apply the endpoint, helper, templates and static picker script together, and
+regenerate the compiled Mapper JavaScript through the existing command:
+
+```sh
+php aowow --build=globaljs
+```
+
+Supplemented map metadata and images still use the reload/regeneration commands
+above. The picker checks generated images on each request, so later image builds
+do not require editing a zone list or rebuilding a separate picker dataset.
+
 ## 2026-10-04
 
 ### Setup debugging and repeat generation

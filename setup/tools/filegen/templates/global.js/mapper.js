@@ -354,7 +354,7 @@ Mapper.prototype = {
             this.level = level;
         }
 
-        var type = Locale.getName();
+        var type = (this.mapLocales && this.mapLocales[this.zone]) || Locale.getName();
 
      // this.span.style.background = 'url(' + g_staticUrl + '/images/wow/maps/' + type + '/' + Mapper.sizes[this.zoom][2] + '/' + map + '.jpg)';
      // aowow - custom start

@@ -82,6 +82,7 @@ namespace {
     require $root.'/includes/setup/files/binaryfile.class.php';
     require $root.'/includes/setup/files/blp2file.class.php';
     require $root.'/setup/tools/setupScript.class.php';
+    require $root.'/includes/components/mapimages.class.php';
     require $root.'/endpoints/zone/zone.php';
     set_error_handler(function (int $level, string $message) : never { throw new ErrorException($message, 0, $level); });
     $checks = 0;
