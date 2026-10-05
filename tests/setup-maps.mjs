@@ -29,7 +29,7 @@ for (const [file, dataset] of Object.entries(files)) {
             ++checks;
         }
     }
-    for (const zone of [1176, 1977, 3428, 9002, 4723])
+    for (const zone of [1176, 1977, 3428, 3698, 3702, 3968, 4378, 4406, 9002, 4723])
         check(context.Mapper.multiLevelZones[zone] === undefined, `${zone}: single image keeps the default Mapper filename`);
 }
 process.stdout.write(`PASS: ${checks} generated map JavaScript and floor-menu checks\n`);

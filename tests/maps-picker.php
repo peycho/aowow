@@ -6,6 +6,13 @@ namespace Aowow {
         public static Locale $locale = Locale::EN;
         public static function getLocale() : Locale { return self::$locale; }
         public static function maps(string $key, array $args = []) : string { return $key; }
+        public static function zone(string $key, int $category) : string {
+            // Read only the category labels; full locale files depend on unrelated game components.
+            $source = file_get_contents(__DIR__.'/../localization/locale_'.self::$locale->json().'.php');
+            if ($key !== 'cat' || !preg_match("~'zone'\\s*=>\\s*array\\(.*?'cat'\\s*=>\\s*array\\((.*?)\\)~s", $source, $match))
+                throw new \RuntimeException('Missing zone category labels');
+            return json_decode('['.$match[1].']', true, flags: JSON_THROW_ON_ERROR)[$category];
+        }
     }
     class Cfg { public static function get(string $key) : int { return 0; } }
     class User { public static function isInGroup(int $group) : bool { return false; } }
@@ -68,6 +75,7 @@ namespace {
     }
     $wrathDungeons = [206, 1196, 4100, 4196, 4228, 4264, 4265, 4272, 4277, 4415, 4416, 4494, 4723, 4809, 4813, 4820];
     $wrathRaids = [3456, 4273, 4493, 4500, 4603, 4722, 4812, 4987];
+    $arenaNames = [3698 => 'The Ring of Trials', 3702 => 'The Circle of Blood', 3968 => 'Ruins of Lordaeron', 4378 => 'Dalaran Sewers', 4406 => 'The Ring of Valor'];
     $temp = sys_get_temp_dir().'/aowow-picker-test-'.bin2hex(random_bytes(8));
     mkdir($temp);
     $previous = getcwd();
@@ -100,6 +108,15 @@ namespace {
         $addZone(9008, MAP_TYPE_DUNGEON, 'German-only image'); $addImage(9008, '-3', 'dede');
         $addZone(9009, MAP_TYPE_RAID, 'Directory masquerading as image'); mkdir('static/images/wow/maps/enus/original/9009.jpg');
         $addZone(9010, MAP_TYPE_RAID, 'Preview, not a map'); $addImage(9010, '-preview');
+        foreach ($arenaNames as $id => $name) {
+            $addZone($id, 9, $name); $addImage($id);
+        }
+        $addImage(4378, locale: 'dede');
+        $addZone(9011, 9, 'Arena without image');
+        $addZone(9012, 9, 'Hidden arena', flags: CUSTOM_EXCLUDE_FOR_LISTVIEW); $addImage(9012);
+        $addZone(9013, 9, 'Arena subzone', parent: 3698); $addImage(9013);
+        $addZone(9014, 9, 'German-only arena'); $addImage(9014, locale: 'dede');
+        $addZone(2597, 6, 'Battleground category differs from arena type'); $addImage(2597);
         $expectedDungeons = [...$wrathDungeons, 1176, 2557, 3562];
         $expectedRaids = [...$wrathRaids, 1977, 3457, 3959, 4075];
         $images = [];
@@ -122,6 +139,16 @@ namespace {
             $expected = [...$expectedRaids]; sort($expected);
             $actual = array_keys($page->instanceMaps['raids']); sort($actual);
             check($actual === $expected, 'Raids include available Classic/TBC/Wrath maps in '.$locale->json());
+            $expected = array_keys($arenaNames);
+            if ($locale === Locale::DE) $expected[] = 9014;
+            sort($expected);
+            $actual = array_keys($page->instanceMaps['arenas']); sort($actual);
+            check($actual === $expected, 'Arenas include only available public category-9 maps in '.$locale->json());
+            foreach ($arenaNames as $id => $name) {
+                check($page->instanceMaps['arenas'][$id] === ($locale === Locale::DE ? 'DE ' : '').$name, 'Arena labels use localized names with English fallback');
+                check($page->mapLocales[$id] === ($id === 4378 && $locale === Locale::DE ? 'dede' : 'enus'), 'Arena image locale matches available files');
+            }
+            check(!array_intersect_key($page->mapLocales, array_flip([9011, 9012, 9013, 2597])), 'Missing/hidden/subzone arenas and battleground category stay excluded');
             check($page->instanceMaps['dungeons'][1176] === ($locale === Locale::DE ? 'DE ' : '').$payload, 'Localized names fall back to English as needed');
             check($page->mapLocales[1176] === 'enus', 'English-only images use the English image directory');
             if ($locale === Locale::DE) check($page->mapLocales[9008] === 'dede', 'Active-locale images take precedence');
@@ -131,12 +158,13 @@ namespace {
                 check($hasMap->invoke($zonePage) === MapImages::exists($row['id'], $locale), 'Zone page uses the shared availability check');
             }
             $html = (new MapsTemplateFixture)->render($page, $root);
+            check(str_contains($html, '<optgroup label="'.Lang::zone('cat', 9).'" id="maps-arenas"></optgroup>'), 'Actual template uses the existing localized arena category label');
             check((bool)preg_match('~<script type="text/javascript">(.*?)</script>~s', $html, $match), 'Actual template initializes the picker');
             check(!preg_match('~</script|<!--~i', $match[1]), 'Picker names cannot escape the inline script');
             $fixtures[] = ['locale' => $locale->json(), 'script' => $match[1], 'maps' => $page->instanceMaps, 'mapLocales' => $page->mapLocales, 'images' => $images, 'html' => $html];
         }
         foreach (DB::$queries as [$sql, $categories, $exclude]) {
-            check($categories === [MAP_TYPE_DUNGEON, MAP_TYPE_RAID] && $exclude === CUSTOM_EXCLUDE_FOR_LISTVIEW, 'Use existing category and visibility metadata');
+            check($categories === [MAP_TYPE_DUNGEON, MAP_TYPE_RAID, 9] && $exclude === CUSTOM_EXCLUDE_FOR_LISTVIEW, 'Use arena category 9, not arena instance type 6, with existing visibility metadata');
             check(str_contains($sql, '`category` IN %in') && str_contains($sql, '`parentArea` = 0') && str_contains($sql, '(`cuFlags` & %i) = 0'), 'Query excludes outdoor, subzone and hidden records');
         }
         Lang::$locale = Locale::EN;
@@ -146,15 +174,21 @@ namespace {
         unlink('static/images/wow/maps/enus/original/1977.jpg');
         $page = (new ReflectionClass(MapsBaseResponse::class))->newInstanceWithoutConstructor(); $generate->invoke($page);
         check(!isset($page->instanceMaps['raids'][1977]), 'Removed images disappear on the next request');
+        $addImage(9011);
+        $page = (new ReflectionClass(MapsBaseResponse::class))->newInstanceWithoutConstructor(); $generate->invoke($page);
+        check(isset($page->instanceMaps['arenas'][9011]), 'Newly generated arena images appear on the next request');
+        unlink('static/images/wow/maps/enus/original/3698.jpg');
+        $page = (new ReflectionClass(MapsBaseResponse::class))->newInstanceWithoutConstructor(); $generate->invoke($page);
+        check(!isset($page->instanceMaps['arenas'][3698]) && !isset($page->mapLocales[3698]), 'Removed arena images disappear on the next request');
         DB::$rows = [];
         $page = (new ReflectionClass(MapsBaseResponse::class))->newInstanceWithoutConstructor(); $generate->invoke($page);
-        check($page->instanceMaps === ['dungeons' => [], 'raids' => []], 'Empty metadata yields empty instance groups');
+        check($page->instanceMaps === ['dungeons' => [], 'raids' => [], 'arenas' => []], 'Empty metadata yields empty instance groups');
         $html = (new MapsTemplateFixture)->render($page, $root);
         preg_match('~<script type="text/javascript">(.*?)</script>~s', $html, $match);
         $fixtures[] = ['locale' => 'empty', 'script' => $match[1], 'maps' => $page->instanceMaps, 'mapLocales' => $page->mapLocales, 'images' => $images, 'html' => $html];
         DB::$fail = true;
         $page = (new ReflectionClass(MapsBaseResponse::class))->newInstanceWithoutConstructor(); $generate->invoke($page);
-        check($page->instanceMaps === ['dungeons' => [], 'raids' => []], 'Missing metadata does not create broken options');
+        check($page->instanceMaps === ['dungeons' => [], 'raids' => [], 'arenas' => []], 'Missing metadata does not create broken options');
         if (in_array('--fixtures', $argv, true)) echo json_encode($fixtures, JSON_THROW_ON_ERROR);
         else echo "PASS: $checks map picker metadata/image/template checks\n";
     }
