@@ -61,7 +61,7 @@
                                 <a href="javascript:;" onclick="myMapper.setCoords([])" onmousedown="return false"><?=Lang::maps('clear'); ?></a>
                             </div>
                         </div>
-                        <script type="text/javascript">ma_Init();</script>
+                        <script type="text/javascript">ma_Init(<?=$this->json($this->instanceMaps); ?>, <?=$this->json($this->mapLocales); ?>);</script>
                     </div>
                     <div class="clear"></div>
                 </div>

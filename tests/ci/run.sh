@@ -37,6 +37,8 @@ PY
     php tests/security-csrf.php --http
     php tests/setup-sounds.php
     php tests/setup-debug.php
+    php tests/setup-maps.php
+    php tests/maps-picker.php
     php tests/external-links.php
     php tests/retirement.php
     ;;
@@ -45,6 +47,8 @@ PY
     php tests/retirement.php --fixtures | node tests/retirement.mjs
     php tests/security-json.php --fixtures | node tests/security-json.mjs
     php tests/security-talentcalc.php --fixtures | node tests/security-talentcalc.mjs
+    php tests/setup-maps.php --fixtures | node tests/setup-maps.mjs
+    php tests/maps-picker.php --fixtures | node tests/maps-picker.mjs
     node tests/security-private-uploads.mjs
     node tests/security-guide-uploads.mjs
     node tests/security-password-policy.mjs

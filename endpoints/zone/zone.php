@@ -27,6 +27,11 @@ class ZoneBaseResponse extends TemplateResponse implements ICache
 
     private ZoneList $subject;
 
+    private function hasMap() : bool
+    {
+        return MapImages::exists($this->typeId, Lang::getLocale());
+    }
+
     public function __construct(string $id)
     {
         parent::__construct($id);
@@ -259,25 +264,7 @@ class ZoneBaseResponse extends TemplateResponse implements ICache
                 $relQuestZOS = array_merge($relQuestZOS, $children);
         }
 
-        // see if we can actually display a map
-        $mapFilePath = 'static/images/wow/maps/%s/original/%d%s.jpg';
-        $options     = array(
-            [Lang::getLocale()->json(), ''],                // default case
-            [Lang::getLocale()->json(), '-1'],              // try multifloor
-            ['enus', ''],                                   // try english fallback
-            ['enus', '-1']                                  // try english fallback, multifloor
-        );
-        $hasMap = false;
-        foreach ($options as [$lang, $floor])
-        {
-            if (!file_exists(sprintf($mapFilePath, $lang, $this->typeId, $floor)))
-                continue;
-
-            $hasMap = true;
-            break;
-        }
-
-        if ($hasMap)
+        if ($this->hasMap())
         {
             $som = [];
             foreach ($oSpawns as $spawn)
@@ -544,9 +531,10 @@ class ZoneBaseResponse extends TemplateResponse implements ICache
 
             $this->map = array(
                 array(                                      // Mapper
-                    'parent'   => 'mapper-generic',
-                    'zone'     => $this->typeId,
-                    'zoneLink' => false
+                    'parent'     => 'mapper-generic',
+                    'zone'       => $this->typeId,
+                    'zoneLink'   => false,
+                    'mapLocales' => [$this->typeId => MapImages::findLocale($this->typeId, Lang::getLocale())?->json()]
                 ),
                 null,                                       // mapperData
                 $som,                                       // ShowOnMap
