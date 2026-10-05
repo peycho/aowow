@@ -27,6 +27,16 @@ class ZoneBaseResponse extends TemplateResponse implements ICache
 
     private ZoneList $subject;
 
+    private function hasMap() : bool
+    {
+        foreach ([Lang::getLocale()->json(), 'enus'] as $locale)
+            foreach (['', '-0', '-1'] as $floor)
+                if (file_exists('static/images/wow/maps/'.$locale.'/original/'.$this->typeId.$floor.'.jpg'))
+                    return true;
+
+        return false;
+    }
+
     public function __construct(string $id)
     {
         parent::__construct($id);
@@ -259,25 +269,7 @@ class ZoneBaseResponse extends TemplateResponse implements ICache
                 $relQuestZOS = array_merge($relQuestZOS, $children);
         }
 
-        // see if we can actually display a map
-        $mapFilePath = 'static/images/wow/maps/%s/original/%d%s.jpg';
-        $options     = array(
-            [Lang::getLocale()->json(), ''],                // default case
-            [Lang::getLocale()->json(), '-1'],              // try multifloor
-            ['enus', ''],                                   // try english fallback
-            ['enus', '-1']                                  // try english fallback, multifloor
-        );
-        $hasMap = false;
-        foreach ($options as [$lang, $floor])
-        {
-            if (!file_exists(sprintf($mapFilePath, $lang, $this->typeId, $floor)))
-                continue;
-
-            $hasMap = true;
-            break;
-        }
-
-        if ($hasMap)
+        if ($this->hasMap())
         {
             $som = [];
             foreach ($oSpawns as $spawn)

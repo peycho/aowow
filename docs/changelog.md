@@ -5,6 +5,56 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-05
+
+### Supplemented Wrath-format map data
+
+Map generation accepts unnumbered instance maps without a terrain-floor flag,
+including base-only layouts, and includes supplied base/courtyard textures
+alongside numbered `DungeonMap.dbc` floors. A single image keeps `<zoneId>.jpg`;
+multiple floors use `<zoneId>-<floor>.jpg`, including `-0` for the base. Generated
+`Mapper.multiLevelZones` and localized floor labels follow the same floor order.
+Unused floor strings are ignored and missing labels receive a localized level
+name. Zone pages also detect `-0.jpg`, including the existing English fallback.
+
+Existing Wrath fixups remain: Dalaran's floor association, Ahn'kahet's additional
+floor, terrain floors for Black Temple, Sunwell and Ulduar, Stratholme's shifted
+floor numbering, and Trial of the Champion's single-map filename. AoWoW consumes
+3.3.5a/build 12340 DBC layouts and the existing extracted-file structure; it
+does not convert later client formats or select another source format.
+
+Keep the complete Wrath extraction and its supplemented files in one source
+tree, preserving `<localeCode>/DBFilesClient/`,
+`<localeCode>/Interface/WorldMap/<nameINT>/`, and
+`<localeCode>/Interface/FrameXML/GlobalStrings.lua`. Base tiles use
+`<nameINT>1.blp` through `<nameINT>12.blp`; numbered floors use
+`<nameINT><floor>_1.blp` through `<nameINT><floor>_12.blp`. Existing PNG tiles
+are also supported. Floor names use `DUNGEON_FLOOR_<nameINT><floor>` entries,
+with `0` for a base and the existing Wrath numbering for special cases.
+
+Reload the map metadata before regenerating images. For example, replacing
+`/path/to/supplemented-wrath/` with the extraction root:
+
+```sh
+php aowow --dbc=worldmaparea,worldmapoverlay,dungeonmap --datasrc=/path/to/supplemented-wrath/ --locales=enUS
+php aowow --build=img-maps --datasrc=/path/to/supplemented-wrath/ --locales=enUS --force
+```
+
+Use the same selected locales in both commands, such as `--locales=enUS,deDE`,
+or omit `--locales` in both to use configured supported locales. Absolute
+`--datasrc` paths work directly; relative paths should include the checkout-root
+path, for example `--datasrc=setup/supplemented-wrath/`.
+`--dbc` replaces the corresponding `dbc_*` metadata tables. `--build` normally
+reuses populated DBC tables, so changing `--datasrc` or adding `--force` alone
+does not reload their records. `--force` overwrites existing generated images;
+the build also writes `datasets/<locale>/zones` from the supplied floor names.
+No gameplay-table regeneration, database reconfiguration or deployment-tool
+change is needed for these map supplements.
+
+Regression fixtures assemble real tiled images in a temporary directory,
+exercise base-only and mixed layouts, verify Wrath special cases and localized
+labels, and execute the generated datasets with Mapper's floor menu.
+
 ## 2026-10-04
 
 ### Setup debugging and repeat generation

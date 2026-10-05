@@ -123,6 +123,9 @@ Extract these once, still beneath a locale directory:
 - `<localeCode>/Interface/Calendar/Holidays/`
 - `<localeCode>/Sound/` (omit when using `--skip-sounds`)
 
+For an existing installation with supplemented Wrath-format map data, see the
+[map metadata reload and image regeneration commands](docs/changelog.md#supplemented-wrath-format-map-data).
+
 ### 5. Reencode the audio files
 
 Skip this step when using `--skip-sounds`. Otherwise reencode WAV files as

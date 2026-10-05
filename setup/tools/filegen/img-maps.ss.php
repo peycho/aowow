@@ -546,27 +546,6 @@ CLISetup::registerSetup("build", new class extends SetupScript
                 $this->progress += ($nFloors ?: 1) + ($flags & self::AREA_FLAG_DEFAULT_FLOOR_TERRAIN ? 1 : 0);
                 $this->status    = ' - ' . str_pad($this->progress.'/'.($sumMaps), 10) . str_pad('('.number_format($this->progress * 100 / $sumMaps, 2).'%)', 9);
 
-                // includes base level...
-                if ($flags & self::AREA_FLAG_DEFAULT_FLOOR_TERRAIN)
-                {
-                    array_unshift($dmFloors, 0);            // 0 => 0, 1 => 1, etc.
-                    $nFloors++;
-
-                    // .. which is not set in dbc              0 => 1, 1 => 2, etc.
-                    if ($flags & self::AREA_FLAG_NO_DEFAULT_FLOOR)
-                        $dmFloors = array_combine($dmFloors, array_map(fn($x) => ++$x, $dmFloors));
-                }
-                else if ($dmFloors != [0])                  // 1 => 1, 2 => 2, etc.
-                    $dmFloors = array_combine($dmFloors, $dmFloors);
-
-                CLI::write(
-                    '['.$loc->json().'] ' .
-                    str_pad('['.$areaEntry['areaId'].']', 7) .
-                    str_pad($areaEntry['nameINT'], 22) .
-                    str_pad('Overlays: '.count($this->wmOverlays[$areaEntry['id']] ?? []), 14) .
-                    str_pad('Dungeon Maps: '.$nFloors, 18)
-                );
-
                 $srcPath = $mapSrcDir.DIRECTORY_SEPARATOR.$textureStr;
                 if (!CLISetup::fileExists($srcPath))
                 {
@@ -592,6 +571,31 @@ CLISetup::registerSetup("build", new class extends SetupScript
                 $blp = $srcPath.$textureStr.'1.blp';
                 $hasBaseMap = CLISetup::fileExists($blp) || CLISetup::fileExists($png);
 
+                // Wrath DBCs have no terrain-floor flag. An unnumbered texture set
+                // can supply a base/courtyard alongside the numbered DBC floors.
+                $dmFloors = array_combine($dmFloors, $dmFloors);
+                if ($hasBaseMap || ($flags & self::AREA_FLAG_DEFAULT_FLOOR_TERRAIN))
+                {
+                    $dmFloors[0] = 0;
+                    ksort($dmFloors, SORT_NUMERIC);
+                }
+
+                // Preserve the Culling of Stratholme's base => floor 1 mapping.
+                if ($flags & self::AREA_FLAG_NO_DEFAULT_FLOOR)
+                    $dmFloors = array_map(fn($x) => $x + 1, $dmFloors);
+
+                // Keep ordinary terrain maps at zero dungeon floors for overlays.
+                if ($nFloors || ($flags & self::AREA_FLAG_DEFAULT_FLOOR_TERRAIN))
+                    $nFloors = count($dmFloors);
+
+                CLI::write(
+                    '['.$loc->json().'] ' .
+                    str_pad('['.$areaEntry['areaId'].']', 7) .
+                    str_pad($areaEntry['nameINT'], 22) .
+                    str_pad('Overlays: '.count($this->wmOverlays[$areaEntry['id']] ?? []), 14) .
+                    str_pad('Dungeon Maps: '.$nFloors, 18)
+                );
+
                 foreach ($dmFloors as $srcFloorIdx => $outFloorIdx)
                 {
                     ini_set('max_execution_time', $this->maxExecTime);
@@ -611,11 +615,10 @@ CLISetup::registerSetup("build", new class extends SetupScript
                         $srcFile .= $srcFloorIdx.'_';
 
                     if ($nFloors > 1)
-                        if ($outFloorIdx || $flags & self::AREA_FLAG_DEFAULT_FLOOR_TERRAIN)
-                            $outFile .= '-'.$outFloorIdx;
+                        $outFile .= '-'.$outFloorIdx;
 
                     if ($nFloors > 1)
-                        $this->multiLevelZones[$zoneId][$outFile] = $outFile;
+                        $this->multiLevelZones[$zoneId][$outFloorIdx] = $outFile;
 
                     if (!($this->modeMask & (self::M_MAPS | self::M_SUBZONES)))
                         continue;
@@ -684,7 +687,9 @@ CLISetup::registerSetup("build", new class extends SetupScript
         if ($this->multiLevelZones)
         {
             ksort($this->multiLevelZones);
-            $this->multiLevelZones = array_map('array_values', $this->multiLevelZones);
+            foreach ($this->multiLevelZones as &$floors)
+                ksort($floors, SORT_NUMERIC);
+            unset($floors);
         }
         else
         {
@@ -716,23 +721,20 @@ CLISetup::registerSetup("build", new class extends SetupScript
                 $zoneAreas[$lId][4494][2] = Lang::maps('floorN', [2]);
 
             $zoneAreas[$lId] ??= [];
-            foreach ($zoneAreas[$lId] as $zoneId => $floorData)
+            foreach ($this->multiLevelZones as $zoneId => $floors)
             {
-                $nStrings = count($floorData);
-                $nFloors  = count($this->multiLevelZones[$zoneId] ?? []);
-                if ($nStrings == $nFloors)
-                    continue;
-
-                // todo: just note for now, try to compensate later?
-                CLI::write('[img-maps] ['.$loc->json().'] '.str_pad('['.$zoneId.']', 7).'floor count mismatch between GlobalStrings: '.$nStrings.' and image files: '.$nFloors, CLI::LOG_WARN);
+                // Mapper uses array positions, while GlobalStrings uses floor IDs.
+                // Select labels in the exact image order; ignore unused strings.
+                $labels = [];
+                foreach ($floors as $floor => $_)
+                    $labels[] = $zoneAreas[$lId][$zoneId][$floor] ?? Lang::maps('floorN', [count($labels) + 1]);
+                $zoneAreas[$lId][$zoneId] = $labels;
             }
 
             ksort($zoneAreas[$lId]);
 
-            $zoneAreas[$lId] = array_map('array_values', $zoneAreas[$lId]);
-
             // don't convert numbers to int in json
-            $toFile  = "Mapper.multiLevelZones = ".Util::toJSON($this->multiLevelZones, 0x0).";\n\n";
+            $toFile  = "Mapper.multiLevelZones = ".Util::toJSON(array_map('array_values', $this->multiLevelZones), 0x0).";\n\n";
             $toFile .= "var g_zone_areas = ".Util::toJSON($zoneAreas[$lId]).";";
             $file    = 'datasets/'.$loc->json().'/zones';
 

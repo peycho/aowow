@@ -34,6 +34,26 @@ They cover URL validation, enabled status, current settings on cached templates,
 script/HTML escaping, and menu filtering with translated labels and icons in all
 six supported JavaScript locales. Both suites run in CI.
 
+## Map generation
+
+```sh
+php tests/setup-maps.php
+php tests/setup-maps.php --fixtures | node tests/setup-maps.mjs
+```
+
+Use PHP ≥ 8.4 with GD and mbstring, and Node.js ≥ 18. The PHP suite runs the
+actual map generator and tile assembler with synthetic Wrath-compatible database
+rows and BLP/PNG tiles in a temporary directory. It covers unflagged base-only maps,
+mixed base/numbered floors, an explicit floor-zero record, nonconsecutive floors,
+unordered/unused/missing localized names, cached image reuse and zone-page map
+detection with English fallback. Existing Black Temple, Sunwell, Ulduar,
+Stratholme, Dalaran, Ahn'kahet and Trial of the Champion behavior is checked.
+The JavaScript suite executes generated datasets and the actual Mapper floor
+menu, verifying that each label selects the corresponding generated filename.
+Both suites run in CI without application credentials or a configured database.
+They do not regenerate operator-supplied assets or prove staging acceptance.
+See the [metadata reload commands](../docs/changelog.md#supplemented-wrath-format-map-data).
+
 ## Game text and SimpleHTML
 
 ```sh
