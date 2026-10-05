@@ -43,6 +43,7 @@
                             <select onchange="ma_ChooseZone(this)" class="zone-picker">
                                 <option value="0" style="color: #bbbbbb"><?=Lang::maps('More'); ?></option>
                                 <optgroup label="<?=Lang::maps('Battlegrounds'); ?>" id="maps-battlegrounds"></optgroup>
+                                <optgroup label="<?=Lang::zone('cat', 9); ?>" id="maps-arenas"></optgroup>
                                 <optgroup label="<?=Lang::maps('Miscellaneous'); ?>">
                                     <option value="-1"><?=Lang::maps('Azeroth'); ?></option>
                                     <option value="-3"><?=Lang::maps('EasternKingdoms'); ?></option>

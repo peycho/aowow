@@ -48,6 +48,8 @@ mixed base/numbered floors, an explicit floor-zero record, nonconsecutive floors
 unordered/unused/missing localized names, cached image reuse and zone-page map
 detection with English fallback. Existing Black Temple, Sunwell, Ulduar,
 Stratholme, Dalaran, Ahn'kahet and Trial of the Champion behavior is checked.
+Base-only fixtures for the five TBC/Wrath arenas verify image generation,
+single-map filenames and zone-page detection without terrain-floor flags.
 The JavaScript suite executes generated datasets and the actual Mapper floor
 menu, verifying that each label selects the corresponding generated filename.
 Both suites run in CI without application credentials or a configured database.
@@ -67,7 +69,10 @@ They cover partial Classic/TBC supplementation, existing Wrath options, public
 instance filtering, active-locale and English images, arbitrary numbered floors,
 missing/malformed image paths, localized text/escaping, alphabetical sorting,
 newly added/removed images, unchanged non-instance pickers, floor/pin deep links,
-and clearing pins. They run in the PHP and JavaScript CI groups without a
+and clearing pins. Arena coverage checks category `9` independently of instance
+type `6`, the existing localized Arenas label, five available TBC/Wrath arenas,
+missing/hidden/subzone records, active-locale and English images, selection and
+image URLs. They run in the PHP and JavaScript CI groups without a
 configured application database. Shared image detection is also exercised by
 the existing map-generation/zone-page suite.
 

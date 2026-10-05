@@ -57,11 +57,20 @@ labels, and execute the generated datasets with Mapper's floor menu.
 
 ### Instance map picker
 
-The Maps page now fills its dungeon and raid dropdowns from existing zone
+The Maps page now fills its dungeon, raid and arena dropdowns from existing zone
 metadata and generated images. Available Classic, Burning Crusade and Wrath
 instances appear automatically; missing images, subzones and records excluded
 from public lists stay out of the picker. Labels use the selected locale with
 English name fallback and retain the existing alphabetical sorting.
+
+Arenas appear under More using the existing localized arena category label.
+They use zone category `9`; instance type `MAP_TYPE_ARENA` (`6`) is a separate
+field and must not be used as a category filter. The generic map generator
+already supports compatible base-only arena textures. Arenas use the same
+image availability and locale fallback checks as dungeons and raids, with no
+fixed list of arena IDs. Tests cover the five TBC/Wrath arenas using synthetic
+Wrath-compatible records and tiles; actual extracted arena assets are required
+to generate their images with the commands above.
 
 Maps and zone pages share image detection for single maps and numbered floors,
 including base/courtyard `-0` images and nonconsecutive floor numbers. An image

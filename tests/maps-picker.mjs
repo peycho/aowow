@@ -52,7 +52,7 @@ for (const fixture of fixtures) {
     runInNewContext(fixture.script, context, { timeout: 1000 });
     equal(context.pickerMarker, 0, 'Localized names stay data');
     equal(JSON.stringify(context.g_zones), originalNames, 'Instance labels do not alter global zone-name rendering');
-    for (const group of ['dungeons', 'raids']) {
+    for (const group of ['dungeons', 'raids', 'arenas']) {
         const options = elements['maps-' + group].children;
         const expected = Object.entries(fixture.maps[group]).sort(([, a], [, b]) => a.localeCompare(b));
         equal(options.map(option => [String(option.value), option.children[0].text]), expected, `${locale}: available ${group} sorted by localized name`);
@@ -95,5 +95,9 @@ for (const fixture of fixtures) {
     context.ma_Init();
     equal(elements['maps-dungeons'].children.length, 0, 'No hardcoded dungeon fallback');
     equal(elements['maps-raids'].children.length, 0, 'No hardcoded raid fallback');
+    equal(elements['maps-arenas'].children.length, 0, 'No hardcoded arena fallback');
+    // Initializers supplying the previous two-group shape remain compatible.
+    context.ma_Init({ dungeons: {}, raids: {} });
+    equal(elements['maps-arenas'].children.length, 0, 'Older picker data may omit the arena group');
 }
 process.stdout.write(`PASS: ${checks} map picker DOM/locale/link checks\n`);

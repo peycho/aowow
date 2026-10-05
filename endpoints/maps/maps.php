@@ -8,6 +8,9 @@ if (!defined('AOWOW_REVISION'))
 
 class MapsBaseResponse extends TemplateResponse
 {
+    // Zone categories differ from instance types: arenas use category 9, type 6.
+    private const int ARENA_CATEGORY = 9;
+
     protected  string $template   = 'maps';
     protected  string $pageName   = 'maps';
     protected ?int    $activeTab  = parent::TAB_TOOLS;
@@ -16,7 +19,7 @@ class MapsBaseResponse extends TemplateResponse
     protected  array  $dataLoader = ['zones'];
     protected  array  $scripts    = [[SC_JS_FILE, 'js/maps.js'], [SC_CSS_STRING, 'zone-picker { margin-left: 4px }']];
 
-    public array $instanceMaps = ['dungeons' => [], 'raids' => []];
+    public array $instanceMaps = ['dungeons' => [], 'raids' => [], 'arenas' => []];
     public array $mapLocales = [];
 
     protected function generate() : void
@@ -28,7 +31,7 @@ class MapsBaseResponse extends TemplateResponse
         $zones = DB::Aowow()->selectAssoc(
             'SELECT `id`, `category`, `name_loc0`, `name_loc2`, `name_loc3`, `name_loc4`, `name_loc6`, `name_loc8`
              FROM ::zones WHERE `category` IN %in AND `parentArea` = 0 AND (`cuFlags` & %i) = 0',
-            [MAP_TYPE_DUNGEON, MAP_TYPE_RAID], CUSTOM_EXCLUDE_FOR_LISTVIEW
+            [MAP_TYPE_DUNGEON, MAP_TYPE_RAID, self::ARENA_CATEGORY], CUSTOM_EXCLUDE_FOR_LISTVIEW
         );
         foreach ($zones ?: [] as $zone)
         {
@@ -36,7 +39,12 @@ class MapsBaseResponse extends TemplateResponse
             if (!($imageLocale = MapImages::findLocale($id, Lang::getLocale())))
                 continue;
 
-            $group = $zone['category'] == MAP_TYPE_RAID ? 'raids' : 'dungeons';
+            $group = match ((int)$zone['category'])
+            {
+                MAP_TYPE_RAID => 'raids',
+                self::ARENA_CATEGORY => 'arenas',
+                default => 'dungeons'
+            };
             $this->instanceMaps[$group][$id] = Util::localizedString($zone, 'name', true);
             $this->mapLocales[$id] = $imageLocale->json();
         }
