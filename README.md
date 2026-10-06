@@ -13,6 +13,7 @@ and is not intended for commercial use.
 
 - [Changelog](docs/changelog.md): security, configuration and setup changes.
 - [Test guide](tests/README.md): regression coverage and local commands.
+- [Upstream sync](docs/upstream-sync.md): agent workflow for Sarjuuk reviews and imports with contributor credit.
 - [Security review](docs/aowow-security-review.md): findings and deployment acceptance.
 
 ## Requirements

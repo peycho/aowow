@@ -7,6 +7,14 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-06
 
+### Upstream synchronization procedure
+
+Added repository agent instructions and an [upstream-sync workflow](upstream-sync.md)
+triggered by requests to check or sync with Sarjuuk. Checks fetch and review
+current changes; requested imports preserve contributor credit through
+cherry-picks or normal merges and validate on PHP 8.5. Each integration records
+source revisions, decisions, adaptations and validation results.
+
 ### Sarjuuk upstream integration
 
 Reviewed and incorporated `Sarjuuk/aowow` master at
