@@ -19,6 +19,7 @@ require $root.'/includes/setup/sqlupdate.class.php';
 $options = ['driver'=>'mysqli', 'host'=>'127.0.0.1', 'port'=>(int)(getenv('AOWOW_TEST_DB_PORT') ?: 3306),
     'username'=>'root', 'password'=>'', 'database'=>'aowow_security_test_legacy', 'substitutes'=>[''=>'aowow_'], 'charset'=>'utf8mb4'];
 $db = new DibiConnection($options);
+$db->onEvent[] = DB::errorLogger(...);
 $db->query("SET SESSION sql_mode = ''");
 // MySQL 8.4 defaults reject the historical nonunique FK before its archived repair.
 // MariaDB and older MySQL accept this schema; adjust only this disposable fixture connection.
@@ -77,6 +78,36 @@ function community() : array {
         (array)$db->query('SELECT * FROM ::account_favorites WHERE userId=1001')->fetch(),
         (array)$db->query('SELECT * FROM ::account_cookies WHERE userId=1001')->fetch(),
     ];
+}
+function spellProjection() : array {
+    global $db, $root;
+    // Use the shipped Wrath DBC schema and the actual generator SELECT/positional INSERT.
+    $formats=parse_ini_file($root.'/setup/tools/dbc/12340.ini', true, INI_SCANNER_RAW);
+    foreach (['spell','spellcasttimes','spellrunecost','spellduration','spellradius'] as $name) {
+        $columns=[]; $row=[];
+        foreach ($formats[$name] as $field=>$type) {
+            if (str_starts_with($field,'UNUSED')) continue;
+            if ($type==='LOC') foreach ([0,2,3,4,6,8] as $locale) {
+                $columns[]='`'.$field.'_loc'.$locale.'` TEXT NULL';
+                $row[$field.'_loc'.$locale]=null;
+            }
+            else {
+                $columns[]='`'.$field.'` '.($type==='f'?'FLOAT':($type==='s'?'TEXT NULL':'BIGINT NOT NULL DEFAULT 0'));
+                $row[$field]=$type==='s'?null:0;
+            }
+        }
+        $db->query('CREATE TABLE %n (%sql)', 'dbc_'.$name, implode(', ', $columns));
+        if ($name==='spell') {
+            $row['id']=90002; $row['name_loc0']='Synthetic Wrath spell';
+            $db->query('INSERT INTO dbc_spell', $row);
+        }
+    }
+    $script=file_get_contents($root.'/setup/tools/sqlgen/spell.ss.php');
+    preg_match('/\$baseQry = \'(.*?)\';/s', $script, $match);
+    check(isset($match[1]), 'actual spell projection is available');
+    $rows=$db->selectAssoc($match[1], 0, 10);
+    check(count($rows ?? [])===1 && $rows[0]['rank_loc0']===null && $rows[0]['name_loc2']===null, 'valid Wrath strings preserve NULL for empty/unavailable text');
+    return $rows[0];
 }
 function invoke(string $cwd, string $mode = 'success', array $arguments = ['--update', '--debug', '--datasrc=/fixture/extraction/']) : array {
     $process = proc_open([PHP_BINARY, $cwd.'/aowow', ...$arguments], [['pipe','r'], ['pipe','w'], ['pipe','w']], $pipes, $cwd,
@@ -196,6 +227,15 @@ CODE;
     }
     foreach (['MyISAM', 'InnoDB'] as $engine) {
         resetLegacy($engine); $before=community();
+        $longSpellText=str_repeat('Synthetic текст ',5000);
+        seed('spell', ['id'=>90001, 'description_loc0'=>$longSpellText]);
+        $db->query('ALTER TABLE ::spell MODIFY name_loc0 varchar(512) COLLATE utf8mb4_bin NOT NULL');
+        // The legacy positional layout gets four aura fields through archived/current SQL.
+        // Reproduce the reported NULL failure independently of that later layout change.
+        $legacySpell=(array)$db->query('SELECT * FROM ::spell WHERE id=90001')->fetch();
+        $legacySpell['id']=90003; $legacySpell['rank_loc0']=null;
+        $dbErrors=DB::errorCount();
+        check($db->qry('INSERT INTO ::spell VALUES %l', $legacySpell)===null && DB::errorCount()===$dbErrors+1, 'exact legacy required text rejects the DBC empty-string representation');
         seed('account', ['id'=>1002, 'user'=>'fixture-blank-one', 'displayName'=>'Fixture Blank One', 'email'=>'']);
         seed('account', ['id'=>1003, 'user'=>'fixture-blank-two', 'displayName'=>'Fixture Blank Two', 'email'=>'']);
         check(!$db->query("SHOW COLUMNS FROM ::config LIKE 'default'")->fetch(), 'exact legacy config has no default column');
@@ -204,6 +244,19 @@ CODE;
         check(!str_contains($output, 'SECRET_SENTINEL'), 'legacy diagnostics stay redacted');
         check(strtoupper($db->query("SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aowow_dbversion'")->fetchSingle())==='INNODB', 'version metadata prepared for accounting');
         check(community()===$before, 'representative community content and upload owner/IDs survive every migration');
+        $textColumns=$db->query("SELECT COLUMN_NAME, IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aowow_spell' AND COLUMN_NAME REGEXP '^(name|rank|description|buff)_loc[0-9]+$'")->fetchPairs();
+        check(count($textColumns)===24 && array_unique(array_values($textColumns))===['YES'], 'every localized spell string accepts valid empty DBC strings');
+        check($db->query("SELECT COLUMN_TYPE, COLLATION_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aowow_spell' AND COLUMN_NAME='name_loc0'")->fetchPairs()===['varchar(512)'=>'utf8mb4_bin'], 'custom larger spell width and collation are preserved');
+        check((int)$db->query("SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aowow_spell' AND COLUMN_NAME='name_loc8'")->fetchSingle()>=184, 'short legacy locale width is widened for current extracted strings');
+        $projection=spellProjection();
+        $projection['description_loc0']=$longSpellText;
+        $required=$db->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aowow_spell' AND IS_NULLABLE='NO'")->fetchPairs();
+        $unexpectedNulls=array_intersect(array_keys(array_filter($projection,fn($value)=>$value===null)),array_values($required));
+        check(!$unexpectedNulls, 'spell projection has unexpected required NULL columns: '.implode(', ',$unexpectedNulls));
+        $dbErrors=DB::errorCount();
+        check($db->qry('INSERT INTO ::spell VALUES %l', $projection)!==null && $db->getAffectedRows()===1 && DB::errorCount()===$dbErrors, 'real Wrath spell projection inserts successfully after complete migration corpus');
+        check($db->query('SELECT description_loc0 FROM ::spell WHERE id=90002')->fetchSingle()===$longSpellText, 'migrated spell storage retains text exceeding TEXT capacity');
+        check((array)$db->query('SELECT rank_loc0, name_loc2, buff_loc0 FROM ::spell WHERE id=90002')->fetch() === ['rank_loc0'=>null, 'name_loc2'=>null, 'buff_loc0'=>null], 'empty localized spell values survive insertion');
         check((string)$db->query('SELECT login FROM ::account WHERE id=1001')->fetchSingle()==='fixture-login', 'account login survives rename');
         check((string)$db->query('SELECT username FROM ::account WHERE id=1001')->fetchSingle()==='Fixture User', 'display name survives rename');
         check((string)$db->query('SELECT wowicon FROM ::account WHERE id=1001')->fetchSingle()==='fixture_icon', 'account image reference survives rename');
@@ -246,6 +299,23 @@ CODE;
                 (int)$db->query('SELECT COUNT(*) FROM aowow_fixture_generators')->fetchSingle()===2 && community()===$before, 'metadata-only preparation preserves journal, completed work and community');
         }
     }
+    // Reproduce a prior run that applied SQL and cleared tasks despite failed spell inserts.
+    // Only the new migration runs; this also checks data retention across that ALTER itself.
+    $repair=$temp.'/repair'; mkdir($repair);
+    copy($root.'/setup/sql/updates/1791244800_01.sql', $repair.'/1791244800_01.sql');
+    resetLegacy(); $before=community();
+    $longSpellText=str_repeat('Synthetic текст ',5000);
+    seed('spell', ['id'=>90001, 'description_loc0'=>$longSpellText]);
+    $db->query("UPDATE ::dbversion SET date=1791142907, part=1, `sql`='', build='talenticons'");
+    $concatLimit=(int)$db->query('SELECT @@SESSION.group_concat_max_len')->fetchSingle();
+    $repairVersion=SqlUpdate::apply($db,$repair);
+    $repairSql=preg_split('/\s+/',trim($repairVersion['sql']));
+    $repairBuild=preg_split('/\s+/',trim($repairVersion['build']));
+    check($db->query('SELECT description_loc0 FROM ::spell WHERE id=90001')->fetchSingle()===$longSpellText && community()===$before, 'repair ALTER preserves preexisting long spell text and community records');
+    check(!array_diff(['spell','items','stats','itemset','source','search'],$repairSql), 'repair schedules data generation even when prior SQL tasks were cleared');
+    check(!array_diff(['talenticons','enchants','globaljs','tooltips','profiler'],$repairBuild), 'repair retains pending builds and schedules affected output');
+    check((int)$db->query('SELECT @@SESSION.group_concat_max_len')->fetchSingle()===$concatLimit, 'repair restores the session aggregation limit');
+    check(count($db->query('SELECT * FROM ::sql_update_journal')->fetchAll())===1, 'repair journals only its own migration on an already-migrated marker');
     foreach (['sql-throw', 'sql-partial', 'build-throw'] as $mode) {
         resetLegacy(); $before=community();
         [$status,$output]=invoke($cli,$mode);

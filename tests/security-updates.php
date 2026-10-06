@@ -47,6 +47,7 @@ namespace {
     (new ReflectionProperty(DB::class, 'interfaceTimes'))->setValue(null, [DB_AOWOW => [time()+86400, 86400], DB_WORLD => [time()+86400, 86400]]);
 
     if (getenv('AOWOW_UPDATE_CHILD')) {
+        $db->onEvent[] = DB::errorLogger(...);
         if (getenv('AOWOW_UPDATE_MODE') === 'init-error') Aowow\CLI::write('Fixture initialization failure', Aowow\CLI::LOG_ERROR);
         if (getenv('AOWOW_UPDATE_MODE') === 'missing-world')
             (new ReflectionProperty(DB::class, 'interfaceCache'))->setValue(null, [DB_AOWOW => $db]);
@@ -233,6 +234,7 @@ CLISetup::registerUtility(new class('GENERATOR') extends UtilityScript {
         if ($mode===$cmd.'-throw') throw new \RuntimeException('SECRET_SENTINEL');
         if ($mode===$cmd.'-error') { CLI::write('Fixture failure', CLI::LOG_ERROR); return true; }
         if ($mode===$cmd.'-fail') return false;
+        if ($mode===$cmd.'-swallowed') DB::Aowow()->qry('INSERT INTO ::calls VALUES (NULL)');
         if ($mode==='ack-fail' && $cmd==='sql') DB::Aowow()->nativeQuery("CREATE TRIGGER fixture_ack BEFORE UPDATE ON aowow_dbversion FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='SECRET_SENTINEL'");
         $args[$key]=$mode===$cmd.'-partial'?array_slice($args[$todo],0,1):$args[$todo];
         if ($mode==='lock-probe') {
@@ -248,9 +250,9 @@ CODE;
         file_put_contents($cli.'/setup/tools/clisetup/fixture-build.us.php', str_replace('GENERATOR', 'build', $fake));
         $php=[PHP_BINARY,'-d','extension='.getenv('AOWOW_TEST_MYSQLI_EXTENSION'),$cli.'/aowow'];
         if (!getenv('AOWOW_TEST_MYSQLI_EXTENSION')) $php=[PHP_BINARY,$cli.'/aowow'];
-        foreach (['success','lock-probe','sql-fail','build-fail','sql-throw','sql-error','sql-partial','sql-test-fail','ack-fail','missing-world'] as $mode) {
+        foreach (['success','lock-probe','sql-fail','build-fail','sql-throw','sql-error','sql-partial','sql-test-fail','ack-fail','missing-world','sql-swallowed','build-swallowed'] as $mode) {
             resetDb();
-            $db->query('CREATE TABLE ::calls (name varchar(16)) ENGINE=InnoDB');
+            $db->query('CREATE TABLE ::calls (name varchar(16) NOT NULL) ENGINE=InnoDB');
             file_put_contents($cli.'/setup/sql/updates/1700000000_01.sql', "INSERT INTO aowow_fixture VALUES (1, 'once'); UPDATE aowow_dbversion SET `sql`='one two', build='three';");
             [$code,$output]=process([...$php,'--update'],$cli,['AOWOW_UPDATE_CHILD'=>'1','AOWOW_UPDATE_MODE'=>$mode]);
             $ok=in_array($mode,['success','lock-probe']);
@@ -258,9 +260,9 @@ CODE;
             check((int)$db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle()===($ok?0:1), $mode.' maintenance outcome');
             check(marker()===['date'=>1700000000,'part'=>1],$mode.' migration completes independently of generation');
             check(!str_contains($output,'SECRET_SENTINEL'), $mode.' redacted exception');
-            check((string)$db->query('SELECT `sql` FROM ::dbversion')->fetchSingle()===($ok || $mode==='build-fail'?'':'one two'), $mode.' pending SQL outcome');
+            check((string)$db->query('SELECT `sql` FROM ::dbversion')->fetchSingle()===($ok || in_array($mode,['build-fail','build-swallowed'],true)?'':'one two'), $mode.' pending SQL outcome');
             check((string)$db->query('SELECT build FROM ::dbversion')->fetchSingle()===($ok?'':'three'), $mode.' pending build outcome');
-            check((int)$db->query("SELECT COUNT(*) FROM ::calls WHERE name='build'")->fetchSingle()===($ok || $mode==='build-fail'?1:0), $mode.' build skipped after SQL failure');
+            check((int)$db->query("SELECT COUNT(*) FROM ::calls WHERE name='build'")->fetchSingle()===($ok || in_array($mode,['build-fail','build-swallowed'],true)?1:0), $mode.' build skipped after SQL failure');
             if (!$ok) {
                 if ($mode === 'ack-fail') $db->query('DROP TRIGGER fixture_ack');
                 [$code,$output]=process([...$php,'--update'],$cli,['AOWOW_UPDATE_CHILD'=>'1','AOWOW_UPDATE_MODE'=>'success']);

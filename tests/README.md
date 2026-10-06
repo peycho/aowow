@@ -4,6 +4,8 @@
 sync with synthetic generators/database state. It covers opt-in console/file
 diagnostics, exception metadata without secrets, requirement/return failures,
 missing generators, repeat builds after initial setup, and pending-work accounting.
+Swallowed database errors in SQL/build generators and failed custom-data application
+must fail the command without acknowledging the affected work.
 It runs in the PHP CI group without a configured application database.
 
 `php tests/setup-sounds.php` checks the `--skip-sounds` setup option with the real
@@ -683,6 +685,13 @@ and long Unicode captions, favorites, preferences and upload references/bytes.
 The full corpus also exercises the corrected hunter refresh and MySQL-compatible
 index migrations.
 
+Spell compatibility checks use the shipped Wrath DBC schema and the real spell
+generator projection/positional insert. They reproduce legacy NULL rejection,
+verify all 24 nullable localized text columns after migration, preserve spell
+text exceeding TEXT capacity and custom larger widths/collations, and insert
+valid empty/unavailable localized strings successfully. The migration queues
+repair generation even when earlier SQL tasks were already acknowledged.
+
 Account preflight regressions cover duplicate nonempty emails and display names,
 case/accent/trailing-space collisions under the legacy collation, both metadata
 engines, account-value redaction, unchanged accounts/community rows, no migration
@@ -727,6 +736,9 @@ acknowledgement, malformed metadata, maintenance verification, connection timer
 retention, concurrent exclusion, pending work, help, initialization, verification
 and follow-up statuses. Missing-extension checks deliberately stub extension
 availability before the real kernel can read runtime configuration.
+Failed SQL/build queries whose exceptions are swallowed by the runtime wrapper
+still produce a nonzero CLI status, retain maintenance and pending work, skip
+dependent builds after SQL failure, and permit a generator-only retry.
 
 For a library-only test installation, `AOWOW_TEST_DIBI_DIR` may point to unpacked
 Dibi source. `AOWOW_TEST_MYSQLI_EXTENSION` optionally passes an absolute mysqli

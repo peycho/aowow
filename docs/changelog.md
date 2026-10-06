@@ -16,8 +16,8 @@ confirmed legacy marker `1711739612 / 1 / sql=power / build=NULL` requires 53
 files from `v2.0`, beginning with `1713730806_01.sql` and ending with
 `1758578400_17.sql`. They precede the current series beginning with
 `1759504522_01.sql`. Target `052513a6efce69175937323386627c851250e843`
-requires 88 current files through `1791028800_01.sql`; this checkout has 89,
-ending with `1791142907_01.sql`. Older archives are not replayed.
+requires 88 current files through `1791028800_01.sql`; this checkout has 90,
+ending with `1791244800_01.sql`. Older archives are not replayed.
 
 The CLI update bootstraps only maintenance and locale settings, so a legacy
 configuration table without `default` can reach its introducing migration,
@@ -54,6 +54,26 @@ Archived screenshot/video migrations `1758578400_06.sql` and
 silent truncation to 200 characters with AoWoW's non-strict SQL sessions.
 Existing text survives; new-submission interface limits and the fresh-install
 schema remain unchanged.
+
+Migration `1791244800_01.sql` also permits NULL in all 24 localized spell text
+columns, matching the DBC reader's representation of empty strings. Historical
+varchar lengths are widened where needed for current extracted text; larger
+custom widths, character sets, collations and legacy MEDIUMTEXT capacity are
+preserved. It queues spell, item, statistics, item-set, source and search data and
+dependent datasets again, including work that an earlier generator incorrectly
+acknowledged after failed writes. The same `--update` command applies this repair
+to an already-migrated database and resumes retained build tasks.
+
+SQL and file generators now report failure when their queries fail, even if the
+database wrapper returns NULL and the generator returns true. Database failure
+accounting survives suppressed or capped diagnostics and keeps pending tasks and
+maintenance intact. Failed custom-data application also prevents completion.
+Diagnostics continue to omit database values, raw SQL and exception messages.
+Capture both output streams when rehearsing, for example:
+
+```sh
+php aowow --update --datasrc=/path/to/wrath-extraction/ --debug > legacy-update.log 2>&1
+```
 
 Before any pending migration SQL runs, the updater also checks legacy account
 uniqueness when `1753572319_01.sql` is pending. That migration introduces unique
@@ -114,11 +134,13 @@ check production-specific content and custom schema changes against the upstream
 schema conversions.
 
 Validation used PHP 8.5.10, MySQL 8.4.10 and MariaDB 10.6.28. Both disposable
-database engines passed 894 legacy checks, including account conflict preflight,
-347 existing migration checks and
-the complete SQL CI group. Syntax, PHP/HTTP, JavaScript and browser regression
-groups passed, as did Composer validation and platform checks (with existing
-package-metadata warnings). No production migration was performed.
+database engines passed 924 legacy checks, including account conflict preflight,
+spell projection insertion and repair after incorrectly acknowledged SQL work,
+and 366 migration/CLI checks. The complete SQL CI group and syntax and PHP/HTTP
+regression groups passed, including 1,600 safe error-logging checks and 70 setup
+runner checks. Earlier JavaScript/browser, Composer validation and platform
+checks also passed (with existing package-metadata warnings); they were not
+rerun for the spell schema repair. No production migration was performed.
 
 ### Upstream synchronization procedure
 

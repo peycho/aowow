@@ -97,20 +97,19 @@ CLISetup::registerUtility(new class extends UtilityScript
 
             CLI::write('[sql] filling aowow_'.$cmd.' with data');
             $started = microtime(true);
+            $dbErrors = DB::errorCount();
 
             if ($scriptRef->fulfillRequirements())
             {
                 CLI::debug('[sql] '.$cmd.' requirements satisfied; generating');
                 if ($scriptRef->generate($syncIds))
                 {
-                    if (method_exists($scriptRef, 'applyCustomData'))
-                        $success = $scriptRef->applyCustomData();
-
-                    $success = true;
+                    $success = !method_exists($scriptRef, 'applyCustomData') || $scriptRef->applyCustomData();
                 }
             }
             else
                 CLI::debug('[sql] '.$cmd.' requirements failed');
+            $success = $success && DB::errorCount() === $dbErrors;
             CLI::debug('[sql] '.$cmd.' result='.($success ? 'true' : 'false').'; elapsed='.round(microtime(true) - $started, 3).'s');
 
             if (!$success)

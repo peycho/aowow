@@ -146,6 +146,12 @@ class DB
     private static array $connectionHolds = [];
     private static array $optionsCache   = [];
     private static array $logs           = [];
+    private static int   $errors         = 0;
+
+    public static function errorCount() : int
+    {
+        return self::$errors;
+    }
 
     public static function connect(int $idx) : bool
     {
@@ -209,10 +215,12 @@ class DB
 
     public static function errorLogger(\Dibi\Event $evt/* string $message, array $data */) : void
     {
-        if (!error_reporting())
+        if (!$evt->result instanceof \Exception)
             return;
 
-        if (!$evt->result instanceof \Exception)
+        // Setup must observe failed queries even when diagnostics are suppressed or capped.
+        ++self::$errors;
+        if (!error_reporting())
             return;
 
         ErrorLog::record((int)$evt->result->getCode(), 'DATABASE_ERROR', $evt->source[0] ?? '', (int)($evt->source[1] ?? 0), LOG_LEVEL_WARN);
