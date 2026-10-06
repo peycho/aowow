@@ -7,6 +7,20 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-06
 
+### Maintenance page metadata
+
+The maintenance response now uses `Lang::meta('description', 'home')`, matching
+the current locale files. The obsolete `homeDesc` lookup returned NULL and caused
+a TypeError instead of displaying maintenance, including when an exception handler
+constructed the response. HTTP 503, Retry-After, localized metadata and manual SEO
+description precedence are preserved. This PHP correction needs no migration or
+generated-data rebuild and does not change the maintenance setting.
+
+The focused fixture exercises actual response constructors, maintenance generation,
+metadata and locale files in all six shipped languages. Configuration, database
+reads, identity and final output transport are synthetic. All 90 checks passed
+on PHP 8.5, together with the complete PHP regression group and syntax checks.
+
 ### Legacy database upgrades
 
 `php aowow --update` now discovers SQL in `setup/sql/updates` and its version

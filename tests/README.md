@@ -8,6 +8,13 @@ Swallowed database errors in SQL/build generators and failed custom-data applica
 must fail the command without acknowledging the affected work.
 It runs in the PHP CI group without a configured application database.
 
+`php tests/maintenance-response.php` checks real maintenance generation and
+response constructors with all six shipped locale files. It verifies localized
+and manual SEO descriptions, maintenance template selection, and retained 503
+and Retry-After headers. Configuration, database reads, identity and final output
+transport are synthetic; the fixture does not contact a deployed website.
+It runs in the PHP CI group and catches the obsolete `homeDesc` metadata lookup.
+
 `php tests/setup-sounds.php` checks the `--skip-sounds` setup option with the real
 option parser and setup driver, using synthetic generators. It covers default
 setup, skipped sound steps, unchanged step numbers, interrupted/resumed setup,
