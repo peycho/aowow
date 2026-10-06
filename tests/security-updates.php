@@ -212,7 +212,7 @@ SQL;
         symlink($root.'/includes/setup',$cli.'/includes/setup');
         symlink($root.'/setup/setup.php',$cli.'/setup/setup.php');
         foreach (['setupScript.class.php','utilityScript.class.php','CLISetup.class.php','dbcreader.class.php'] as $file) symlink($root.'/setup/tools/'.$file,$cli.'/setup/tools/'.$file);
-        foreach (['update','sync'] as $name) symlink($root.'/setup/tools/clisetup/'.$name.'.us.php',$cli.'/setup/tools/clisetup/'.$name.'.us.php');
+        foreach (['update','sync','validate-schema'] as $name) symlink($root.'/setup/tools/clisetup/'.$name.'.us.php',$cli.'/setup/tools/clisetup/'.$name.'.us.php');
         $fake=<<<'CODE'
 <?php
 namespace Aowow;

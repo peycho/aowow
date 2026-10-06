@@ -202,6 +202,18 @@ already-applied migration with pending rebuilds. Check the journal and complete
 pending work before lifting maintenance. See the
 [update and recovery details](docs/changelog.md#sql-update-accounting-revision-66).
 
+To inspect application table structure against the checkout's initial schema:
+
+```sh
+php aowow --validate-schema
+```
+
+This reads metadata without applying SQL or changing maintenance. Exit status
+`0` means a match; `1` means differences or a failed comparison. It needs the
+configured application database and metadata read access, but no world database
+or extracted inputs. See [schema validation](docs/changelog.md#database-schema-validation)
+for coverage and how to interpret intentional differences.
+
 ### 10. Contribution limits and disposable-data cleanup
 
 Apply the normal updates and complete requested asset builds. Preview cleanup

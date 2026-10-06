@@ -152,7 +152,7 @@ try {
     symlink($root.'/localization', $cli.'/localization');
     symlink($root.'/setup/setup.php', $cli.'/setup/setup.php');
     foreach (['setupScript.class.php', 'utilityScript.class.php', 'CLISetup.class.php', 'dbcreader.class.php'] as $file) symlink($root.'/setup/tools/'.$file, $cli.'/setup/tools/'.$file);
-    foreach (['update', 'sync'] as $file) symlink($root.'/setup/tools/clisetup/'.$file.'.us.php', $cli.'/setup/tools/clisetup/'.$file.'.us.php');
+    foreach (['update', 'sync', 'validate-schema'] as $file) symlink($root.'/setup/tools/clisetup/'.$file.'.us.php', $cli.'/setup/tools/clisetup/'.$file.'.us.php');
     symlink($root.'/setup/sql/updates', $cli.'/setup/sql/updates');
     $config = $options + ['db'=>$options['database'], 'prefix'=>'aowow_'];
     file_put_contents($cli.'/config/config.php', '<?php $AoWoWconf = '.var_export(['aowow'=>$config, 'world'=>$config], true).';');
