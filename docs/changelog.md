@@ -5,6 +5,212 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-06
+
+### Maintenance page metadata
+
+The maintenance response now uses `Lang::meta('description', 'home')`, matching
+the current locale files. The obsolete `homeDesc` lookup returned NULL and caused
+a TypeError instead of displaying maintenance, including when an exception handler
+constructed the response. HTTP 503, Retry-After, localized metadata and manual SEO
+description precedence are preserved. This PHP correction needs no migration or
+generated-data rebuild and does not change the maintenance setting.
+
+The focused fixture exercises actual response constructors, maintenance generation,
+metadata and locale files in all six shipped languages. Configuration, database
+reads, identity and final output transport are synthetic. All 90 checks passed
+on PHP 8.5, together with the complete PHP regression group and syntax checks.
+
+### Legacy database upgrades
+
+`php aowow --update` now discovers SQL in `setup/sql/updates` and its version
+archives, orders all pending files by numeric date/part, and skips files at or
+before the stored marker. Duplicate pending identifiers are rejected. The
+confirmed legacy marker `1711739612 / 1 / sql=power / build=NULL` requires 53
+files from `v2.0`, beginning with `1713730806_01.sql` and ending with
+`1758578400_17.sql`. They precede the current series beginning with
+`1759504522_01.sql`. Target `052513a6efce69175937323386627c851250e843`
+requires 88 current files through `1791028800_01.sql`; this checkout has 90,
+ending with `1791244800_01.sql`. Older archives are not replayed.
+
+The CLI update bootstraps only maintenance and locale settings, so a legacy
+configuration table without `default` can reach its introducing migration,
+`1717076299_01.sql`. Full configuration is reloaded after SQL succeeds and
+before generators execute. Other setup commands and web requests continue to
+use the full configuration loader. CLI initialization still selects `--datasrc`
+and locales before constructing generators.
+
+Under the existing database update lock, the updater checks the actual version
+table engine and converts MyISAM metadata to InnoDB without changing its row.
+Migration checksums, durable statement progress, atomic version/journal
+completion and refusal to replay unfinished SQL remain enforced. The enclosing
+lock stays held through SQL/build generators and maintenance restoration. Pending
+work is cleared only after verified completion; the archived migration itself
+removes `power`. Failures retain maintenance and incomplete tasks. Success restores
+the state observed under the lock, which may already have been maintenance.
+
+Executing the complete historical corpus and checking its generator requests
+exposed additional blockers: `1718468660_01.sql` queued the table name
+`item_stats` instead of the shipped generator `stats`; `1718998554_01.sql`
+and `1725025019_01.sql` queued retired `markup`/`locales` generators whose
+output is now produced by `globaljs`;
+`1760911493_01.sql` used a nonexistent profiler `flags` column instead of
+`cuFlags`; `1768556688_01.sql` and `1770626911_01.sql` attempted multiple new
+InnoDB FULLTEXT indexes in a single ALTER, rejected by MySQL. The column reference
+and generator identifiers are corrected, and index additions are separate
+statements with the same resulting indexes. Journals checksum the corrected
+files when they are first applied;
+existing applied entries are retained and skipped. An unfinished entry from an
+older file still blocks replay, even after the SQL file has been corrected.
+
+Archived screenshot/video migrations `1758578400_06.sql` and
+`1758578400_08.sql` also retain legacy captions using `mediumtext`, avoiding
+silent truncation to 200 characters with AoWoW's non-strict SQL sessions.
+Existing text survives; new-submission interface limits and the fresh-install
+schema remain unchanged.
+
+Migration `1791244800_01.sql` also permits NULL in all 24 localized spell text
+columns, matching the DBC reader's representation of empty strings. Historical
+varchar lengths are widened where needed for current extracted text; larger
+custom widths, character sets, collations and legacy MEDIUMTEXT capacity are
+preserved. It queues spell, item, statistics, item-set, source and search data and
+dependent datasets again, including work that an earlier generator incorrectly
+acknowledged after failed writes. The same `--update` command applies this repair
+to an already-migrated database and resumes retained build tasks.
+
+SQL and file generators now report failure when their queries fail, even if the
+database wrapper returns NULL and the generator returns true. Database failure
+accounting survives suppressed or capped diagnostics and keeps pending tasks and
+maintenance intact. Failed custom-data application also prevents completion.
+Diagnostics continue to omit database values, raw SQL and exception messages.
+Capture both output streams when rehearsing, for example:
+
+```sh
+php aowow --update --datasrc=/path/to/wrath-extraction/ --debug > legacy-update.log 2>&1
+```
+
+Before any pending migration SQL runs, the updater also checks legacy account
+uniqueness when `1753572319_01.sql` is pending. That migration introduces unique
+display names and email addresses; the legacy schema allows collisions, including
+case/accent/trailing-space variants under its column collation. A conflict now
+stops with a message identifying the field, without printing account values or
+changing accounts. Empty email addresses are excluded because the migration
+converts them to NULL. Metadata preparation and maintenance locking still occur;
+no migration is journaled or version advanced on this preflight failure.
+
+Recreating a rehearsal database removes a partially applied migration, but retains
+any conflicting account values from the source backup. Resolve those associations
+privately on the copy before another successful rehearsal. The updater cannot
+choose which account owns an email without changing sign-in/recovery behavior,
+so it does not merge accounts, erase addresses or weaken the unique constraint.
+
+To rehearse, restore the application database and uploads into an isolated copy
+and configure that checkout to use the restored application database. Keep the
+original backup unchanged. Install locked Composer dependencies and use the
+supported PHP CLI extensions. The update account needs the SELECT, INSERT,
+UPDATE, DELETE, CREATE, ALTER, DROP and INDEX permissions required by the pending
+migrations, plus access to the configured world database. It must be able to
+create the InnoDB journal and alter legacy version metadata. Ensure sufficient
+database space for engine/index rebuilds and writable generated-output directories.
+
+Provide a compatible TrinityCore 3.3.5a world database independently of the
+application database upgrade. This checkout requires world `cache_id >= 25101`
+and expects schema revision `26091`; the numeric minimum alone does not establish
+that all generator queries are compatible. Supply complete Wrath-format extracted
+DBC, textures and other inputs needed by the queued generators for the configured
+locales. Use an extraction already prepared according to the README. The application
+updater does not upgrade the world database or extract client files.
+
+From the isolated checkout root, the rehearsal command is:
+
+```sh
+php aowow --update --datasrc=/path/to/wrath-extraction/ --debug
+```
+
+Check the exit status, applied journal entries, final version, empty SQL/build
+queues, generated assets, and community records/upload references before accepting
+the rehearsal. If SQL was interrupted, restore a consistent copy or reconcile its
+recorded partial work before retrying; do not blindly replay it. Generator failures
+can be retried with the same command after correcting their prerequisites. A retry
+preserves maintenance if the failed run left it enabled. Do not manually advance
+the version, clear `power`, or load first-install SQL over an existing database.
+
+The [legacy regression suite](../tests/README.md#legacy-database-upgrade-compatibility)
+uses historical DDL and synthetic community records in disposable databases. It
+executes the real CLI/kernel/configuration, every pending SQL migration and sync
+accounting, substituting only generator data production. It covers both metadata
+engines, already-current runs, checksum/progress accounting, SQL/configuration and
+generator failures, retries, hard interruption, competing commands, and preserved
+accounts, comments, custom articles, screenshots, videos, favorites, preferences
+and upload references. Fixture success is not a migration of actual production
+data or validation of real world data and extracted assets. Rehearsal must also
+check production-specific content and custom schema changes against the upstream
+schema conversions.
+
+Validation used PHP 8.5.10, MySQL 8.4.10 and MariaDB 10.6.28. Both disposable
+database engines passed 924 legacy checks, including account conflict preflight,
+spell projection insertion and repair after incorrectly acknowledged SQL work,
+and 366 migration/CLI checks. The complete SQL CI group and syntax and PHP/HTTP
+regression groups passed, including 1,600 safe error-logging checks and 70 setup
+runner checks. Earlier JavaScript/browser, Composer validation and platform
+checks also passed (with existing package-metadata warnings); they were not
+rerun for the spell schema repair. No production migration was performed.
+
+### Upstream synchronization procedure
+
+Added repository agent instructions and an [upstream-sync workflow](upstream-sync.md)
+triggered by requests to check or sync with Sarjuuk. Checks fetch and review
+current changes; requested imports preserve contributor credit through
+cherry-picks or normal merges and validate on PHP 8.5. Each integration records
+source revisions, decisions, adaptations and validation results.
+
+### Sarjuuk upstream integration
+
+Reviewed and incorporated `Sarjuuk/aowow` master at
+`18ad819a3c7a0e072af1a80cacbeef6675d98e27`, starting from fork `dev` at
+`346bccb073015fb1c5d8e76172eb8be558f746b6`. Both imports use `cherry-pick -x`
+and retain Sarjuuk's author identity and dates, with source revisions in their
+commit messages. The integrator remains the new committer.
+
+| Upstream revision | Result revision | Decision and conflict resolution |
+| --- | --- | --- |
+| `a904053b9fbdc1796f6f1a76f1484aae394cb77a` | `457df7879db63d6fd6b00f1d27b2ad6bf2592835` | Adapted self-closing slash handling for generated markup. Retained the fork's attribute parser, empty-source rejection and standalone/paired break behavior; attribute and closing-anchor fixes were already present. |
+| `18ad819a3c7a0e072af1a80cacbeef6675d98e27` | `7679d0831a2bb899b4ac67e0aa899f08ab27ff60` | Imported achievement-criteria name widening from 50 to 150 characters in all six locales, including the regeneration migration. Resolved fresh-setup version metadata to `1791142907 / 1`, preserving pending `globaljs` generation and existing fork configuration defaults. |
+
+Focused regressions cover self-closing image/break markup, HTML and book output,
+long Unicode criteria, row preservation, pending setup work and migration replay.
+The existing fresh-install contribution regression now accepts newer schema
+markers while still verifying that an already included migration is skipped.
+
+Validation passed on PHP 8.5.10, Node 24 and disposable MySQL 8.4: repository
+`lint`, `php`, `javascript`, `browser` and `sql` groups, each run through
+`bash tests/ci/run.sh <group>`, plus `git diff --check`.
+Focused suites passed 85 UI text/image/anchor/book checks
+and 347 migration checks; the contribution SQL suite passed 653 checks.
+Apache checks are not repeated because access rules are unchanged. Local
+fixtures do not establish deployment acceptance.
+
+For an existing installation, apply the source changes before running the
+normal `php aowow --update` procedure. The new migration widens the columns and
+queues `achievementcriteria` regeneration, retaining previously pending work.
+The database migration and deployed data regeneration have not been executed
+as part of this source integration.
+
+### Item loot-tab labels
+
+Item pages now retain trusted locale expressions through the loot-tab helper.
+Previously, its string-only label parameter coerced `JsExpression` objects into
+literal text, displaying labels such as `LANG.tab_disenchanting`. Contains,
+Prospecting, Milling and Disenchanting now use their translated labels while
+ordinary labels and loot names remain escaped data. Loot rows, percentages,
+hidden columns and the loot-table initializer retain their existing behavior.
+
+Regression checks execute the real item helper and Listview/Tabs serializers,
+then evaluate their output against all six shipped JavaScript locale tables.
+After applying the PHP change, previously cached item pages need to expire or
+be refreshed. An administrator, bureaucrat or developer can request the existing
+`?item=29254&refresh` URL to bypass both page-cache backends for that request.
+
 ## 2026-10-05
 
 ### Supplemented Wrath-format map data

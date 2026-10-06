@@ -1,1 +1,1 @@
-UPDATE `aowow_dbversion` SET `build` = CONCAT(IFNULL(`build`, ''), ' markup');
+UPDATE `aowow_dbversion` SET `build` = CONCAT(IFNULL(`build`, ''), ' globaljs');

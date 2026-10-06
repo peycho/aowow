@@ -88,4 +88,4 @@ CREATE TABLE `aowow_item_stats` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 UPDATE `aowow_dbversion`
-    SET `sql` = CONCAT(IFNULL(`sql`, ''), ' item_stats');
+    SET `sql` = CONCAT(IFNULL(`sql`, ''), ' stats');

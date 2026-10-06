@@ -8,7 +8,11 @@ namespace Aowow {
     }
     class Lang { public static function main(string $key) : string { return $key; } }
     class Markup { public static function parseTags(string $body) : array { return []; } }
-    class Cfg { public static function get(string $key) : mixed { return $key==='CACHE_DIR' ? 'cache/template' : 0; } }
+    class Cfg {
+        public static function load() : void {}
+        public static function loadForUpdate() : void {}
+        public static function get(string $key) : mixed { return $key==='CACHE_DIR' ? 'cache/template' : 0; }
+    }
 }
 namespace {
     use Aowow\{DB,DibiConnection,ContributionBudget,CommunityContent,Retention,User};
@@ -167,6 +171,7 @@ namespace {
         symlink($root.'/includes/setup',$cli.'/includes/setup');symlink($root.'/setup/setup.php',$cli.'/setup/setup.php');
         foreach(['setupScript.class.php','utilityScript.class.php','CLISetup.class.php','dbcreader.class.php'] as $file)symlink($root.'/setup/tools/'.$file,$cli.'/setup/tools/'.$file);
         symlink($root.'/setup/tools/clisetup/prune.us.php',$cli.'/setup/tools/clisetup/prune.us.php');
+        symlink($root.'/setup/tools/clisetup/update.us.php',$cli.'/setup/tools/clisetup/update.us.php');
         $file=$cli.'/static/uploads/temp/owner-1-1-'.str_repeat('a',16);file_put_contents($file,'fixture');touch($file,time()-3*DAY);
         $db->query("INSERT INTO ::errors (date,version,phpError,file,line,query,post,userGroups) VALUES (UNIX_TIMESTAMP()-2592001,67,1,'expired-cli',1,'','',0)");
         [$code,$out]=runCli(['--prune'],$cli);
@@ -185,8 +190,9 @@ namespace {
         check((int)$db->query('SELECT COUNT(*) FROM ::comments')->fetchSingle()===500,'real CLI preserves all published comment rows');
         preg_match('/INSERT INTO `aowow_dbversion` VALUES .*?;/',file_get_contents($root.'/setup/sql/02-db_initial_data.sql'),$initial);
         $db->query('DELETE FROM ::dbversion');$db->nativeQuery($initial[0]);
+        $freshSeed=(array)$db->query('SELECT * FROM ::dbversion')->fetch();
         $fresh=Aowow\SqlUpdate::apply($db,$temp.'/updates');
-        check((int)$fresh['date']===1791000000 && $fresh['build']==='globaljs','fresh schema marker skips duplicate-index migration and retains JS build');
+        check((int)$fresh['date']===(int)$freshSeed['date'] && (int)$fresh['date']>=1791000000 && $fresh['build']==='globaljs','fresh schema marker skips duplicate-index migration and retains JS build');
         check((int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===1,'fresh marker does not replay the new migration');
     }
     finally {cleanup($temp);}

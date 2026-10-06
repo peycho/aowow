@@ -4,7 +4,16 @@
 sync with synthetic generators/database state. It covers opt-in console/file
 diagnostics, exception metadata without secrets, requirement/return failures,
 missing generators, repeat builds after initial setup, and pending-work accounting.
+Swallowed database errors in SQL/build generators and failed custom-data application
+must fail the command without acknowledging the affected work.
 It runs in the PHP CI group without a configured application database.
+
+`php tests/maintenance-response.php` checks real maintenance generation and
+response constructors with all six shipped locale files. It verifies localized
+and manual SEO descriptions, maintenance template selection, and retained 503
+and Retry-After headers. Configuration, database reads, identity and final output
+transport are synthetic; the fixture does not contact a deployed website.
+It runs in the PHP CI group and catches the obsolete `homeDesc` metadata lookup.
 
 `php tests/setup-sounds.php` checks the `--skip-sounds` setup option with the real
 option parser and setup driver, using synthetic generators. It covers default
@@ -33,6 +42,19 @@ node tests/external-links.mjs
 They cover URL validation, enabled status, current settings on cached templates,
 script/HTML escaping, and menu filtering with translated labels and icons in all
 six supported JavaScript locales. Both suites run in CI.
+
+## Item loot-tab labels
+
+```sh
+php tests/security-item-tabs.php
+php tests/security-item-tabs.php --fixtures | node tests/security-item-tabs.mjs
+```
+
+These checks execute the real item loot-tab helper and Listview/Tabs serializers
+with synthetic loot data. They verify translated Contains, Prospecting, Milling
+and Disenchanting labels in all six shipped JavaScript locales, unchanged loot
+rows/columns/callbacks, empty-loot handling, and safe literal labels and row names.
+Both suites run in CI without a configured application database.
 
 ## Map generation
 
@@ -87,6 +109,8 @@ with synthetic text. It checks SimpleHTML images, local source rewriting,
 anchors with nested content and closing tags, quoted/unquoted attributes,
 missing/empty/malformed attributes, HTML/markup/raw output, ordinary text
 escaping, color sequences and book-page JSON. It runs in the PHP CI group.
+Self-closing images and breaks omit the closing slash in generated markup,
+while HTML, book pages and standalone/paired break handling stay compatible.
 
 ## Viewer retirement and local assets
 
@@ -127,7 +151,7 @@ start CI.
 The [GitHub workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)
 describes these push path filters.
 
-Each PHP 8.4/8.5 matrix job uses Node 24 and its own disposable MySQL 8.4 service.
+The PHP 8.5 job uses Node 24 and its own disposable MySQL 8.4 service.
 It installs `composer.lock` without plugins/scripts, verifies platform requirements,
 and runs PHP/JavaScript/Python/shell syntax, every standalone PHP/HTTP and Node
 suite, the generated browser fixtures and all SQL suites. Recovery,
@@ -631,6 +655,62 @@ below; A15 quotas/retention, writable-browser-asset persistence and optional
 profiling boundaries are not closed by these synthetic checks.
 
 
+## Legacy database upgrade compatibility
+
+Run the real legacy upgrade only against an isolated disposable fixture named
+`aowow_security_test_legacy`, using PHP 8.5, MySQLi, the normal CLI extensions,
+process functions and locked Composer dependencies. The fixture server uses an
+empty-password root account on `127.0.0.1`. This test drops all tables in that
+exact database; never use an application database or a shared server.
+
+```sh
+AOWOW_TEST_DATABASE=aowow_security_test_legacy \
+AOWOW_TEST_DB_HOST=127.0.0.1 AOWOW_TEST_DB_PORT=33062 \
+php tests/legacy-updates.php
+```
+
+The SQL CI group creates this database and runs the suite automatically. Historical
+DDL and shipped configuration are preserved in
+`fixtures/legacy-1711739612.sql`, with upstream provenance in its header. The test
+seeds the exact `1711739612 / 1 / power / NULL` marker and synthetic community
+records, then invokes the real `aowow --update` entrypoint, kernel, configuration
+loader, updater and sync. It applies all 53 later archived migrations and the
+entire current series, checking ordering, boundaries, checksums and durable
+completion. MySQL 8.4's restriction on the historical nonunique foreign key is
+relaxed only in the disposable fixture-restoration session; update connections
+retain their normal settings.
+
+Coverage includes MyISAM conversion and existing InnoDB metadata, configuration
+without `default`, migrated configuration available to generators, initialized
+locale/data paths at generator construction, the complete real registry and
+resolution of every queued migration task to a shipped generator, current
+databases, partial SQL and edited-file replay refusal, configuration reload
+failure, actual process interruption, competing commands, generator failures and
+completion/retry accounting. Community checks retain representative account
+identity/password hashes, comments, custom articles, screenshot/video ownership
+and long Unicode captions, favorites, preferences and upload references/bytes.
+The full corpus also exercises the corrected hunter refresh and MySQL-compatible
+index migrations.
+
+Spell compatibility checks use the shipped Wrath DBC schema and the real spell
+generator projection/positional insert. They reproduce legacy NULL rejection,
+verify all 24 nullable localized text columns after migration, preserve spell
+text exceeding TEXT capacity and custom larger widths/collations, and insert
+valid empty/unavailable localized strings successfully. The migration queues
+repair generation even when earlier SQL tasks were already acknowledged.
+
+Account preflight regressions cover duplicate nonempty emails and display names,
+case/accent/trailing-space collisions under the legacy collation, both metadata
+engines, account-value redaction, unchanged accounts/community rows, no migration
+progress or task acknowledgement, retained maintenance, and multiple blank email
+addresses successfully becoming NULL through the real account migration.
+
+Only generator data production is substituted; their completion and lock checks
+remain in the real dispatcher/sync. This does not validate an actual restored
+production database, real world data, client extraction, all possible community
+content, or hosting behavior. Use the [single-command rehearsal workflow](../docs/changelog.md#legacy-database-upgrades)
+for those acceptance checks.
+
 ## SQL update and CLI failure accounting (A14)
 
 Run from the checkout root with PHP ≥ 8.4, mbstring, mysqli, process functions and
@@ -646,6 +726,11 @@ AOWOW_TEST_DB_HOST=127.0.0.1 AOWOW_TEST_DB_PORT=33062 \
 php tests/security-updates.php
 ```
 
+Criteria migration checks widen all six localized name columns, retain existing
+rows and pending SQL/build work, store long Unicode names without truncation,
+and prevent repeated regeneration requests. Fresh-install checks verify the
+widened schema and retained pending `globaljs` build.
+
 An isolated MySQL 8.4 fixture was exercised with PHP 8.5.10 and Dibi 5.1.1. Tests
 use real SQL/DDL/transactions, triggers for statement/accounting/persistence
 failure, independent CLI processes, server named locks and a hard-killed updater.
@@ -658,6 +743,9 @@ acknowledgement, malformed metadata, maintenance verification, connection timer
 retention, concurrent exclusion, pending work, help, initialization, verification
 and follow-up statuses. Missing-extension checks deliberately stub extension
 availability before the real kernel can read runtime configuration.
+Failed SQL/build queries whose exceptions are swallowed by the runtime wrapper
+still produce a nonzero CLI status, retain maintenance and pending work, skip
+dependent builds after SQL failure, and permit a generator-only retry.
 
 For a library-only test installation, `AOWOW_TEST_DIBI_DIR` may point to unpacked
 Dibi source. `AOWOW_TEST_MYSQLI_EXTENSION` optionally passes an absolute mysqli

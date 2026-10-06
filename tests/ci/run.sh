@@ -31,12 +31,13 @@ PY
       }
     '
     for suite in json talentcalc uitext guide-editor tokens error-log client-ip private-uploads guide-uploads \
-                 expressions cache builds video retention community-pages redirects admin-boundary; do
+                 expressions cache builds video retention community-pages redirects admin-boundary item-tabs; do
       php "tests/security-$suite.php"
     done
     php tests/security-csrf.php --http
     php tests/setup-sounds.php
     php tests/setup-debug.php
+    php tests/maintenance-response.php
     php tests/setup-maps.php
     php tests/maps-picker.php
     php tests/external-links.php
@@ -47,6 +48,7 @@ PY
     php tests/retirement.php --fixtures | node tests/retirement.mjs
     php tests/security-json.php --fixtures | node tests/security-json.mjs
     php tests/security-talentcalc.php --fixtures | node tests/security-talentcalc.mjs
+    php tests/security-item-tabs.php --fixtures | node tests/security-item-tabs.mjs
     php tests/setup-maps.php --fixtures | node tests/setup-maps.mjs
     php tests/maps-picker.php --fixtures | node tests/maps-picker.mjs
     node tests/security-private-uploads.mjs
@@ -86,7 +88,7 @@ PY
     # shellcheck disable=SC2016 # PHP variables must be passed literally.
     php -r '
       $db = new mysqli(getenv("AOWOW_TEST_DB_HOST"), "root", "", "", (int)getenv("AOWOW_TEST_DB_PORT"));
-      foreach (["passwords", "screenshots", "updates", "resources"] as $suffix) {
+      foreach (["passwords", "screenshots", "updates", "resources", "legacy"] as $suffix) {
           $db->query("CREATE DATABASE IF NOT EXISTS aowow_security_test_".$suffix." CHARACTER SET utf8mb4");
       }
     '
@@ -96,6 +98,7 @@ PY
     done
     AOWOW_TEST_DATABASE=aowow_security_test_screenshots php tests/security-screenshot-completion.php
     AOWOW_TEST_DATABASE=aowow_security_test_updates php tests/security-updates.php
+    AOWOW_TEST_DATABASE=aowow_security_test_legacy php tests/legacy-updates.php
     AOWOW_TEST_DATABASE=aowow_security_test_resources php tests/security-contributions.php
     ;;
   apache)

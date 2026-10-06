@@ -781,7 +781,7 @@ class TemplateResponse extends BaseResponse
         $this->metaTags[] = ['property' => 'og:type',  'content' => 'website'];
         array_unshift($this->metaTags, ['name' => 'keywords', 'content' => 'Maintenance']);
 
-        $this->buildBasicMetadata(Lang::meta('homeDesc'), useArticle: false);
+        $this->buildBasicMetadata(Lang::meta('description', 'home'), useArticle: false);
 
         $this->display(true);
         exit;

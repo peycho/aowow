@@ -3,6 +3,8 @@
 // Guarded real-SQL suite: use only the dedicated disposable database documented in tests/README.md.
 namespace Aowow {
     class Cfg {
+        public static function load() : void {}
+        public static function loadForUpdate() : void {}
         public static function get(string $key) : mixed {
             return $key === 'MAINTENANCE' ? (int)DB::Aowow()->query("SELECT value FROM ::config WHERE `key` = 'maintenance'")->fetchSingle() : 1;
         }
@@ -45,6 +47,7 @@ namespace {
     (new ReflectionProperty(DB::class, 'interfaceTimes'))->setValue(null, [DB_AOWOW => [time()+86400, 86400], DB_WORLD => [time()+86400, 86400]]);
 
     if (getenv('AOWOW_UPDATE_CHILD')) {
+        $db->onEvent[] = DB::errorLogger(...);
         if (getenv('AOWOW_UPDATE_MODE') === 'init-error') Aowow\CLI::write('Fixture initialization failure', Aowow\CLI::LOG_ERROR);
         if (getenv('AOWOW_UPDATE_MODE') === 'missing-world')
             (new ReflectionProperty(DB::class, 'interfaceCache'))->setValue(null, [DB_AOWOW => $db]);
@@ -165,12 +168,12 @@ SQL;
         SqlUpdate::apply($db, $dir);
         check((int)$db->query('SELECT COUNT(*) FROM ::fixture')->fetchSingle() === 1, 'acknowledged metadata prevents duplicate SQL');
 
-        foreach (['missing', 'duplicate', 'myisam', 'bad-journal', 'null-journal', 'mode', 'autocommit', 'syntax', 'empty'] as $failure) {
+        foreach (['missing', 'duplicate', 'myisam-journal', 'bad-journal', 'null-journal', 'mode', 'autocommit', 'syntax', 'empty'] as $failure) {
             resetDb();
             $sql='INSERT INTO aowow_fixture VALUES (1, "should not run");';
             if ($failure === 'missing') $db->query('DELETE FROM ::dbversion');
             if ($failure === 'duplicate') $db->query('INSERT INTO ::dbversion (`date`,`part`) VALUES (0,0)');
-            if ($failure === 'myisam') $db->query('ALTER TABLE ::dbversion ENGINE=MyISAM');
+            if ($failure === 'myisam-journal') { $db->query(SqlUpdate::JOURNAL_DDL); $db->query('ALTER TABLE ::sql_update_journal ENGINE=MyISAM'); }
             if ($failure === 'bad-journal') $db->query('CREATE TABLE ::sql_update_journal (date int) ENGINE=InnoDB');
             if ($failure === 'null-journal') { $db->query(SqlUpdate::JOURNAL_DDL); $db->query("ALTER TABLE ::sql_update_journal MODIFY status varchar(16) NULL"); $db->query("INSERT INTO ::sql_update_journal VALUES (1,1,'x',NULL,0)"); }
             if ($failure === 'mode') $db->query("SET SESSION sql_mode='NO_BACKSLASH_ESCAPES'");
@@ -231,6 +234,7 @@ CLISetup::registerUtility(new class('GENERATOR') extends UtilityScript {
         if ($mode===$cmd.'-throw') throw new \RuntimeException('SECRET_SENTINEL');
         if ($mode===$cmd.'-error') { CLI::write('Fixture failure', CLI::LOG_ERROR); return true; }
         if ($mode===$cmd.'-fail') return false;
+        if ($mode===$cmd.'-swallowed') DB::Aowow()->qry('INSERT INTO ::calls VALUES (NULL)');
         if ($mode==='ack-fail' && $cmd==='sql') DB::Aowow()->nativeQuery("CREATE TRIGGER fixture_ack BEFORE UPDATE ON aowow_dbversion FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='SECRET_SENTINEL'");
         $args[$key]=$mode===$cmd.'-partial'?array_slice($args[$todo],0,1):$args[$todo];
         if ($mode==='lock-probe') {
@@ -246,9 +250,9 @@ CODE;
         file_put_contents($cli.'/setup/tools/clisetup/fixture-build.us.php', str_replace('GENERATOR', 'build', $fake));
         $php=[PHP_BINARY,'-d','extension='.getenv('AOWOW_TEST_MYSQLI_EXTENSION'),$cli.'/aowow'];
         if (!getenv('AOWOW_TEST_MYSQLI_EXTENSION')) $php=[PHP_BINARY,$cli.'/aowow'];
-        foreach (['success','lock-probe','sql-fail','build-fail','sql-throw','sql-error','sql-partial','sql-test-fail','ack-fail','missing-world'] as $mode) {
+        foreach (['success','lock-probe','sql-fail','build-fail','sql-throw','sql-error','sql-partial','sql-test-fail','ack-fail','missing-world','sql-swallowed','build-swallowed'] as $mode) {
             resetDb();
-            $db->query('CREATE TABLE ::calls (name varchar(16)) ENGINE=InnoDB');
+            $db->query('CREATE TABLE ::calls (name varchar(16) NOT NULL) ENGINE=InnoDB');
             file_put_contents($cli.'/setup/sql/updates/1700000000_01.sql', "INSERT INTO aowow_fixture VALUES (1, 'once'); UPDATE aowow_dbversion SET `sql`='one two', build='three';");
             [$code,$output]=process([...$php,'--update'],$cli,['AOWOW_UPDATE_CHILD'=>'1','AOWOW_UPDATE_MODE'=>$mode]);
             $ok=in_array($mode,['success','lock-probe']);
@@ -256,9 +260,9 @@ CODE;
             check((int)$db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle()===($ok?0:1), $mode.' maintenance outcome');
             check(marker()===['date'=>1700000000,'part'=>1],$mode.' migration completes independently of generation');
             check(!str_contains($output,'SECRET_SENTINEL'), $mode.' redacted exception');
-            check((string)$db->query('SELECT `sql` FROM ::dbversion')->fetchSingle()===($ok || $mode==='build-fail'?'':'one two'), $mode.' pending SQL outcome');
+            check((string)$db->query('SELECT `sql` FROM ::dbversion')->fetchSingle()===($ok || in_array($mode,['build-fail','build-swallowed'],true)?'':'one two'), $mode.' pending SQL outcome');
             check((string)$db->query('SELECT build FROM ::dbversion')->fetchSingle()===($ok?'':'three'), $mode.' pending build outcome');
-            check((int)$db->query("SELECT COUNT(*) FROM ::calls WHERE name='build'")->fetchSingle()===($ok || $mode==='build-fail'?1:0), $mode.' build skipped after SQL failure');
+            check((int)$db->query("SELECT COUNT(*) FROM ::calls WHERE name='build'")->fetchSingle()===($ok || in_array($mode,['build-fail','build-swallowed'],true)?1:0), $mode.' build skipped after SQL failure');
             if (!$ok) {
                 if ($mode === 'ack-fail') $db->query('DROP TRIGGER fixture_ack');
                 [$code,$output]=process([...$php,'--update'],$cli,['AOWOW_UPDATE_CHILD'=>'1','AOWOW_UPDATE_MODE'=>'success']);
@@ -373,6 +377,46 @@ CODE;
             SqlUpdate::apply($db, $retirement);
             check($db->query('SELECT build FROM ::dbversion')->fetchSingle() === 'existing globaljs tooltips', 'journal prevents retirement migration replay');
         }
+        // Widen existing localized criteria without losing rows or queued work.
+        resetDb();
+        preg_match('/CREATE TABLE `aowow_achievementcriteria` \(.*?\) ENGINE=.*?;/s', file_get_contents($root.'/setup/sql/01-db_structure.sql'), $criteria);
+        $db->nativeQuery(str_replace('varchar(150)', 'varchar(50)', $criteria[0]));
+        $nameColumns = array_map(fn($locale) => 'name_loc'.$locale, [0, 2, 3, 4, 6, 8]);
+        $row = array_fill_keys(['id', 'refAchievementId', 'type', 'value1', 'value2', 'value3', 'value4', 'value5', 'value6', 'completionFlags', 'groupFlags', 'timeLimit', 'order'], 0);
+        $row['id'] = 1;
+        foreach ($nameColumns as $column) $row[$column] = 'Original '.$column;
+        $db->query('INSERT INTO ::achievementcriteria', $row);
+        $before = (array)$db->query('SELECT * FROM ::achievementcriteria')->fetch();
+        $db->query("UPDATE ::dbversion SET `sql`='existing', build='globaljs tooltips'");
+        $migration = files(['1791142907_01.sql' => file_get_contents($root.'/setup/sql/updates/1791142907_01.sql')]);
+        SqlUpdate::apply($db, $migration);
+        check(marker() === ['date'=>1791142907, 'part'=>1], 'criteria migration advances the verified version');
+        check((array)$db->query('SELECT * FROM ::achievementcriteria')->fetch() === $before, 'criteria migration preserves existing localized names and row data');
+        check($db->query('SELECT `sql` FROM ::dbversion')->fetchSingle() === 'existing achievementcriteria', 'criteria migration queues regeneration alongside existing SQL work');
+        check($db->query('SELECT build FROM ::dbversion')->fetchSingle() === 'globaljs tooltips', 'criteria migration preserves pending asset builds');
+        $types = $db->query('SHOW COLUMNS FROM ::achievementcriteria')->fetchPairs('Field', 'Type');
+        $db->query("SET SESSION sql_mode = 'STRICT_ALL_TABLES'");
+        foreach ($nameColumns as $column) {
+            check($types[$column] === 'varchar(150)', 'criteria migration widens '.$column);
+            $name = $column.' '.str_repeat('Ж', 120);
+            $db->query('UPDATE ::achievementcriteria SET %n = %s WHERE id=1', $column, $name);
+            check($db->query('SELECT %n FROM ::achievementcriteria WHERE id=1', $column)->fetchSingle() === $name, 'long Unicode criteria survive without truncation in '.$column);
+        }
+        $db->query("SET SESSION sql_mode = ''");
+        SqlUpdate::apply($db, $migration);
+        check($db->query('SELECT `sql` FROM ::dbversion')->fetchSingle() === 'existing achievementcriteria', 'criteria migration journal prevents duplicate regeneration requests');
+
+        // Fresh installs already have the widened schema and retain the fork's pending build.
+        resetDb();
+        $db->nativeQuery($criteria[0]);
+        $types = $db->query('SHOW COLUMNS FROM ::achievementcriteria')->fetchPairs('Field', 'Type');
+        foreach ($nameColumns as $column) check($types[$column] === 'varchar(150)', 'fresh criteria schema widens '.$column);
+        preg_match('/INSERT INTO `aowow_dbversion` VALUES .*?;/', file_get_contents($root.'/setup/sql/02-db_initial_data.sql'), $seed);
+        $db->query('TRUNCATE ::dbversion');
+        $db->nativeQuery($seed[0]);
+        check(marker()['date'] >= 1791142907, 'fresh schema version includes the criteria migration');
+        check(str_contains((string)$db->query('SELECT build FROM ::dbversion')->fetchSingle(), 'globaljs'), 'fresh setup retains the pending globaljs build');
+
         echo "\n$checks update checks passed.\n";
     }
     finally { cleanup($temp); }

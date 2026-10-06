@@ -8,7 +8,7 @@ function check(bool $condition, string $message) : void {
     if (!$condition) throw new RuntimeException($message);
 }
 
-$modes = ['warning', 'debug-off', 'exception', 'fatal', 'database', 'failed-log', 'no-database', 'unknown-route', 'config', 'ignored', 'unsafe-source'];
+$modes = ['warning', 'debug-off', 'exception', 'fatal', 'database', 'database-capped', 'database-suppressed', 'failed-log', 'no-database', 'unknown-route', 'config', 'ignored', 'unsafe-source'];
 foreach (['web', 'cli'] as $context)
     foreach ($modes as $mode)
         foreach (['signup', 'update-password', 'reset-password', 'update-email'] as $command) {
@@ -29,8 +29,9 @@ foreach (['web', 'cli'] as $context)
                 check(!str_contains($encoded.$output.$error, 'SECRET_'), "$label: no secrets in DB, notes, session, stdout or stderr");
                 check($result['unchanged'], "$label: logging leaves all request globals unchanged");
                 check($result['ini'] === ['0', '0', '0'], "$label: native output cannot bypass the handlers");
-                $expectedCount = in_array($mode, ['failed-log', 'no-database', 'ignored'], true) ? 0 : ($mode === 'config' ? ($context === 'web' ? 3 : 0) : 1);
+                $expectedCount = in_array($mode, ['failed-log', 'no-database', 'ignored', 'database-suppressed'], true) ? 0 : ($mode === 'database-capped' ? 20 : ($mode === 'config' ? ($context === 'web' ? 3 : 0) : 1));
                 check(count($result['records']) === $expectedCount, "$label: each error is recorded once, including at DEBUG=0");
+                check($result['databaseErrors'] === (str_starts_with($mode, 'database') ? ($mode === 'database-capped' ? 25 : 1) : 0), "$label: DB failure counting survives suppressed/capped diagnostics");
                 if ($mode === 'debug-off') check($result['notes'][0] === [] && empty($result['session']['notes'][0][0]), "$label: DEBUG=0 suppresses staff notes");
                 if (in_array($mode, ['failed-log', 'no-database'], true)) check(str_contains($error, 'PHP_ERROR'), "$label: safe fallback preserves a diagnostic");
                 foreach ($result['records'] as $record) {

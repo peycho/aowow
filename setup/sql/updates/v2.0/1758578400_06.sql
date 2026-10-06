@@ -1,2 +1,3 @@
 ALTER TABLE `aowow_screenshots`
-    MODIFY COLUMN `caption` varchar(200) DEFAULT NULL;
+    -- Preserve legacy captions; new submissions retain the current interface limit.
+    MODIFY COLUMN `caption` mediumtext DEFAULT NULL;

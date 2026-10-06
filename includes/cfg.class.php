@@ -61,12 +61,34 @@ class Cfg
         'locales'                  => ['globaljs']
     );
 
-    public static function load() : void
+    // Only the update entrypoint uses this; legacy flags/defaults are interpreted after migration.
+    public static function loadForUpdate() : void
+    {
+        if (!CLI || !DB::isConnected(DB_AOWOW))
+            return;
+
+        self::$store = [];
+        self::$isLoaded = false;
+        $rows = DB::Aowow()->query("SELECT `key`, `value` FROM ::config WHERE `key` IN ('maintenance', 'locales')")->fetchPairs('key', 'value');
+        if (count($rows) !== 2 || !in_array((string)($rows['maintenance'] ?? ''), ['0', '1'], true) ||
+            !ctype_digit((string)($rows['locales'] ?? '')))
+            throw new \RuntimeException('Invalid update bootstrap configuration.');
+
+        foreach ($rows as $key => $value)
+            self::$store[$key] = [(int)$value, self::FLAG_TYPE_INT, self::CAT_SITE, null, ''];
+        self::$isLoaded = true;
+    }
+
+    public static function load(bool $required = false) : void
     {
         if (!DB::isConnected(DB_AOWOW))
             return;
 
+        self::$store = [];
+        self::$isLoaded = false;
         $sets = DB::Aowow()->selectAssoc('SELECT `key` AS ARRAY_KEY, `value` AS "0", `flags` AS "1", `cat` AS "2", `default` AS "3", `comment` AS "4" FROM ::config ORDER BY `key` ASC');
+        if ($required && !$sets)
+            throw new \RuntimeException('Configuration could not be loaded.');
         foreach ($sets as $key => [$value, $flags, $catg, $default, $comment])
         {
             $php = $flags & self::FLAG_PHP;

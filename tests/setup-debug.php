@@ -12,6 +12,8 @@ namespace Aowow {
     class DB {
         public static array $pending = ['sql' => '', 'build' => ''];
         public static int $acknowledgements = 0;
+        public static int $errors = 0;
+        public static function errorCount() : int { return self::$errors; }
         public static function isConnected(int $db) : bool { return true; }
         public static function Aowow() : self { return new self; }
         public function query(string $query, mixed ...$args) : FixtureResult {
@@ -40,10 +42,13 @@ namespace Aowow {
     class FixtureGenerator extends SetupScript {
         public int $calls = 0;
         public bool $requirements = true, $result = true, $throws = false;
+        public bool $databaseError = false, $customResult = true;
+        public function applyCustomData() : bool { return $this->customResult; }
         public function __construct(string $name) { $this->info = [$name => [[], 0, 'Synthetic generator']]; }
         public function fulfillRequirements() : bool { return $this->requirements; }
         public function generate() : bool {
             $this->calls++;
+            if ($this->databaseError) DB::$errors++;
             if ($this->throws) throw new \RuntimeException('SECRET_EXCEPTION SQL SELECT SECRET_QUERY', 42, new \LogicException('SECRET_CAUSE'));
             return $this->result;
         }
@@ -74,7 +79,7 @@ namespace {
         foreach ([false, true] as $debug) {
             [$code, $out] = process(['--parser', ...($debug ? ['--debug'] : [])]);
             check($code === 0 && json_decode($out, true, 512, JSON_THROW_ON_ERROR)['debug'] === $debug, 'Real parser recognizes opt-in debug flag');
-            foreach (['repeat', 'missing', 'requirements', 'false', 'throw', 'log'] as $mode) {
+            foreach (['repeat', 'missing', 'requirements', 'false', 'throw', 'log', 'sql-database', 'build-database', 'custom-false'] as $mode) {
                 [$code, $out] = process(['--worker', '--mode='.$mode, ...($debug ? ['--debug'] : [])]);
                 check($code === 0 && str_contains($out, 'WORKER PASS'), "$mode worker succeeds: $out");
                 check(!str_contains($out, 'SECRET_'), "$mode diagnostics exclude secrets even with debug enabled");
@@ -123,13 +128,19 @@ namespace {
         if ($mode === 'requirements') $tooltips->requirements = false;
         if ($mode === 'false') $tooltips->result = false;
         if ($mode === 'throw') $tooltips->throws = true;
+        if ($mode === 'sql-database') $sql->databaseError = true;
+        if ($mode === 'build-database') $tooltips->databaseError = true;
+        if ($mode === 'custom-false') $sql->customResult = false;
         $args = ['doSql' => explode(' ', DB::$pending['sql']), 'doBuild' => explode(' ', DB::$pending['build'])];
         $success = CLISetup::run('sync', $args);
         $expected = in_array($mode, ['repeat', 'log'], true);
         if ($success !== $expected) throw new RuntimeException('Sync outcome incorrect');
-        if ($sql->calls !== 2 || $globaljs->calls !== 2) throw new RuntimeException('Registered generators cannot run twice');
-        if (DB::$pending['sql'] !== '' || DB::$pending['build'] !== ($expected ? '' : ($mode === 'missing' ? 'globaljs tooltips missing_generator' : 'globaljs tooltips')))
+        $sqlFailed = in_array($mode, ['sql-database', 'custom-false'], true);
+        if ($sql->calls !== 2 || $globaljs->calls !== ($sqlFailed ? 1 : 2)) throw new RuntimeException('Registered generators cannot run twice');
+        if (DB::$pending['sql'] !== ($sqlFailed ? 'fixture_sql' : '') || DB::$pending['build'] !== ($expected ? '' : ($mode === 'missing' ? 'globaljs tooltips missing_generator' : 'globaljs tooltips')))
             throw new RuntimeException('Pending work not retained/acknowledged correctly');
+        if ($sqlFailed && ($args['doneSql'] ?? []) !== []) throw new RuntimeException('Failed SQL generator was acknowledged');
+        if ($mode === 'build-database' && in_array('tooltips', $args['doneBuild'] ?? [], true)) throw new RuntimeException('Failed build generator was acknowledged');
         if ($expected && CLI::errorCount() !== $errors) throw new RuntimeException('Debug changes error accounting');
         CLI::debug('synthetic trace', new RuntimeException('SECRET_LOG', 9, new LogicException('SECRET_CAUSE')));
         $log = file_get_contents($directory.'/debug.log');

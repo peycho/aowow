@@ -196,6 +196,14 @@ class CLISetup
     {
         self::evalOpts();
 
+        if (defined('AOWOW_SETUP'))
+        {
+            if (self::getOpt('update'))
+                Cfg::loadForUpdate();
+            else
+                Cfg::load();
+        }
+
         // optional logging
         if (isset(self::$opts['log']))
             CLI::initLogFile(trim(self::$opts['log']));
@@ -345,6 +353,7 @@ class CLISetup
         $args = array_pad($args, 4, null);
 
         $errors = CLI::errorCount();
+        $dbErrors = DB::errorCount();
         $started = microtime(true);
         $db = null;
         $lease = null;
@@ -357,6 +366,8 @@ class CLISetup
                 $lease = SqlUpdate::acquire($db);
             }
             $result = $us->run($args);
+            if (DB::errorCount() !== $dbErrors && CLI::errorCount() === $errors)
+                CLI::write('Setup command encountered database errors.', CLI::LOG_ERROR);
             CLI::debug('[run] '.$cmd.' returned '.($result ? 'true' : 'false').'; new CLI errors='.(CLI::errorCount() - $errors));
             $success = $result && CLI::errorCount() === $errors;
 
@@ -372,7 +383,7 @@ class CLISetup
                 return false;
             }
 
-            $success = $success && CLI::errorCount() === $errors;
+            $success = $success && CLI::errorCount() === $errors && DB::errorCount() === $dbErrors;
             if ($success)
                 if ($ff = $us->followupFn)
                     if (array_filter($args))
@@ -382,7 +393,7 @@ class CLISetup
                             $success = false;
                     }
 
-            return $success && CLI::errorCount() === $errors;
+            return $success && CLI::errorCount() === $errors && DB::errorCount() === $dbErrors;
         }
         catch (\Throwable $e)
         {

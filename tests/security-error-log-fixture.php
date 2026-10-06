@@ -95,7 +95,7 @@ namespace {
     ErrorLog::install();
     register_shutdown_function(function () use ($inputs, $sink) : void {
         file_put_contents($sink, json_encode([
-            'records' => LogConnection::$records, 'notes' => Util::getNotes(), 'session' => $_SESSION ?? [],
+            'records' => LogConnection::$records, 'notes' => Util::getNotes(), 'session' => $_SESSION ?? [], 'databaseErrors' => DB::errorCount(),
             'unchanged' => $inputs === [$_GET, $_POST, $_FILES, $_COOKIE, $_SERVER],
             'ini' => [ini_get('display_errors'), ini_get('display_startup_errors'), ini_get('log_errors')]
         ], JSON_THROW_ON_ERROR));
@@ -118,11 +118,18 @@ namespace {
             require __DIR__.'/security-error-log-fatal.php';
             break;
         case 'database':
+        case 'database-capped':
+        case 'database-suppressed':
             $event = new Dibi\Event;
             $event->result = new RuntimeException('SECRET_DATABASE_MESSAGE', 1062);
             $event->sql = "INSERT INTO accounts VALUES ('SECRET_SQL_PASSWORD')";
             $event->source = [__FILE__, __LINE__];
-            DB::errorLogger($event);
+            if ($mode === 'database-suppressed') {
+                $reporting = error_reporting(0);
+                DB::errorLogger($event);
+                error_reporting($reporting);
+            }
+            else for ($i=0; $i<($mode === 'database-capped' ? 25 : 1); ++$i) DB::errorLogger($event);
             foreach (['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REPLACE', 'ALTER', 'CREATE', 'DROP', 'TRUNCATE', 'SHOW', 'SET', 'START', 'COMMIT', 'ROLLBACK'] as $operation) {
                 dibi::$sql = $operation." 'SECRET_SQL_PASSWORD'";
                 DB::profiler($event);

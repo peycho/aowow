@@ -118,6 +118,7 @@ CLISetup::registerUtility(new class extends UtilityScript
 
             CLI::write('[build] gathering data for '.$cmd);
             $started = microtime(true);
+            $dbErrors = DB::errorCount();
 
             if ($scriptRef->fulfillRequirements())
             {
@@ -126,6 +127,7 @@ CLISetup::registerUtility(new class extends UtilityScript
             }
             else
                 CLI::debug('[build] '.$cmd.' requirements failed');
+            $success = $success && DB::errorCount() === $dbErrors;
             CLI::debug('[build] '.$cmd.' result='.($success ? 'true' : 'false').'; elapsed='.round(microtime(true) - $started, 3).'s');
 
             if (!$success)
