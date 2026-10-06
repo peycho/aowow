@@ -1,3 +1,4 @@
+-- InnoDB accepts only one new FULLTEXT index per ALTER TABLE on MySQL.
 SET SESSION innodb_ft_enable_stopword = OFF;
 
 ALTER TABLE aowow_creature
@@ -11,12 +12,13 @@ ALTER TABLE aowow_creature
   ADD INDEX idx_name3 (`name_loc3`),
   ADD INDEX idx_name4 (`name_loc4`),
   ADD INDEX idx_name6 (`name_loc6`),
-  ADD INDEX idx_name8 (`name_loc8`),
-  ADD FULLTEXT idx_ft_name0 (`name_loc0`),
-  ADD FULLTEXT idx_ft_name2 (`name_loc2`),
-  ADD FULLTEXT idx_ft_name3 (`name_loc3`),
-  ADD FULLTEXT idx_ft_name6 (`name_loc6`),
-  ADD FULLTEXT idx_ft_name8 (`name_loc8`);
+  ADD INDEX idx_name8 (`name_loc8`);
+
+ALTER TABLE aowow_creature ADD FULLTEXT idx_ft_name0 (`name_loc0`);
+ALTER TABLE aowow_creature ADD FULLTEXT idx_ft_name2 (`name_loc2`);
+ALTER TABLE aowow_creature ADD FULLTEXT idx_ft_name3 (`name_loc3`);
+ALTER TABLE aowow_creature ADD FULLTEXT idx_ft_name6 (`name_loc6`);
+ALTER TABLE aowow_creature ADD FULLTEXT idx_ft_name8 (`name_loc8`);
 
 ALTER TABLE aowow_items
   DROP INDEX idx_name0,
@@ -29,12 +31,13 @@ ALTER TABLE aowow_items
   ADD INDEX idx_name3 (`name_loc3`),
   ADD INDEX idx_name4 (`name_loc4`),
   ADD INDEX idx_name6 (`name_loc6`),
-  ADD INDEX idx_name8 (`name_loc8`),
-  ADD FULLTEXT idx_ft_name0 (`name_loc0`),
-  ADD FULLTEXT idx_ft_name2 (`name_loc2`),
-  ADD FULLTEXT idx_ft_name3 (`name_loc3`),
-  ADD FULLTEXT idx_ft_name6 (`name_loc6`),
-  ADD FULLTEXT idx_ft_name8 (`name_loc8`);
+  ADD INDEX idx_name8 (`name_loc8`);
+
+ALTER TABLE aowow_items ADD FULLTEXT idx_ft_name0 (`name_loc0`);
+ALTER TABLE aowow_items ADD FULLTEXT idx_ft_name2 (`name_loc2`);
+ALTER TABLE aowow_items ADD FULLTEXT idx_ft_name3 (`name_loc3`);
+ALTER TABLE aowow_items ADD FULLTEXT idx_ft_name6 (`name_loc6`);
+ALTER TABLE aowow_items ADD FULLTEXT idx_ft_name8 (`name_loc8`);
 
 ALTER TABLE aowow_objects
   DROP INDEX idx_name0,
@@ -47,12 +50,13 @@ ALTER TABLE aowow_objects
   ADD INDEX idx_name3 (`name_loc3`),
   ADD INDEX idx_name4 (`name_loc4`),
   ADD INDEX idx_name6 (`name_loc6`),
-  ADD INDEX idx_name8 (`name_loc8`),
-  ADD FULLTEXT idx_ft_name0 (`name_loc0`),
-  ADD FULLTEXT idx_ft_name2 (`name_loc2`),
-  ADD FULLTEXT idx_ft_name3 (`name_loc3`),
-  ADD FULLTEXT idx_ft_name6 (`name_loc6`),
-  ADD FULLTEXT idx_ft_name8 (`name_loc8`);
+  ADD INDEX idx_name8 (`name_loc8`);
+
+ALTER TABLE aowow_objects ADD FULLTEXT idx_ft_name0 (`name_loc0`);
+ALTER TABLE aowow_objects ADD FULLTEXT idx_ft_name2 (`name_loc2`);
+ALTER TABLE aowow_objects ADD FULLTEXT idx_ft_name3 (`name_loc3`);
+ALTER TABLE aowow_objects ADD FULLTEXT idx_ft_name6 (`name_loc6`);
+ALTER TABLE aowow_objects ADD FULLTEXT idx_ft_name8 (`name_loc8`);
 
 ALTER TABLE aowow_quests
   DROP INDEX idx_name0,
@@ -65,12 +69,13 @@ ALTER TABLE aowow_quests
   ADD INDEX idx_name3 (`name_loc3`),
   ADD INDEX idx_name4 (`name_loc4`),
   ADD INDEX idx_name6 (`name_loc6`),
-  ADD INDEX idx_name8 (`name_loc8`),
-  ADD FULLTEXT idx_ft_name0 (`name_loc0`),
-  ADD FULLTEXT idx_ft_name2 (`name_loc2`),
-  ADD FULLTEXT idx_ft_name3 (`name_loc3`),
-  ADD FULLTEXT idx_ft_name6 (`name_loc6`),
-  ADD FULLTEXT idx_ft_name8 (`name_loc8`);
+  ADD INDEX idx_name8 (`name_loc8`);
+
+ALTER TABLE aowow_quests ADD FULLTEXT idx_ft_name0 (`name_loc0`);
+ALTER TABLE aowow_quests ADD FULLTEXT idx_ft_name2 (`name_loc2`);
+ALTER TABLE aowow_quests ADD FULLTEXT idx_ft_name3 (`name_loc3`);
+ALTER TABLE aowow_quests ADD FULLTEXT idx_ft_name6 (`name_loc6`);
+ALTER TABLE aowow_quests ADD FULLTEXT idx_ft_name8 (`name_loc8`);
 
 ALTER TABLE aowow_spell
   DROP INDEX idx_name0,
@@ -83,9 +88,10 @@ ALTER TABLE aowow_spell
   ADD INDEX idx_name3 (`name_loc3`),
   ADD INDEX idx_name4 (`name_loc4`),
   ADD INDEX idx_name6 (`name_loc6`),
-  ADD INDEX idx_name8 (`name_loc8`),
-  ADD FULLTEXT idx_ft_name0 (`name_loc0`),
-  ADD FULLTEXT idx_ft_name2 (`name_loc2`),
-  ADD FULLTEXT idx_ft_name3 (`name_loc3`),
-  ADD FULLTEXT idx_ft_name6 (`name_loc6`),
-  ADD FULLTEXT idx_ft_name8 (`name_loc8`);
+  ADD INDEX idx_name8 (`name_loc8`);
+
+ALTER TABLE aowow_spell ADD FULLTEXT idx_ft_name0 (`name_loc0`);
+ALTER TABLE aowow_spell ADD FULLTEXT idx_ft_name2 (`name_loc2`);
+ALTER TABLE aowow_spell ADD FULLTEXT idx_ft_name3 (`name_loc3`);
+ALTER TABLE aowow_spell ADD FULLTEXT idx_ft_name6 (`name_loc6`);
+ALTER TABLE aowow_spell ADD FULLTEXT idx_ft_name8 (`name_loc8`);

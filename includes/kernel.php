@@ -171,7 +171,8 @@ if (file_exists('config/security.php'))
 Lang::load(Locale::EN);
 
 // load config from DB
-Cfg::load();
+if (!CLI || !defined('AOWOW_SETUP'))
+    Cfg::load();
 
 
 if (!CLI)

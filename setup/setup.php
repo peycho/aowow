@@ -21,6 +21,9 @@ require_once 'setup/tools/utilityScript.class.php';
 require_once 'setup/tools/CLISetup.class.php';
 require_once 'setup/tools/dbcreader.class.php';
 
+// Register update before init chooses its legacy configuration bootstrap. Generators
+// must still be constructed after init has selected locales and the extracted data path.
+require_once 'setup/tools/clisetup/update.us.php';
 CLISetup::init();
 CLISetup::loadScripts();
 

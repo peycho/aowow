@@ -7,6 +7,103 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-06
 
+### Legacy database upgrades
+
+`php aowow --update` now discovers SQL in `setup/sql/updates` and its version
+archives, orders all pending files by numeric date/part, and skips files at or
+before the stored marker. Duplicate pending identifiers are rejected. The
+confirmed legacy marker `1711739612 / 1 / sql=power / build=NULL` requires 53
+files from `v2.0`, beginning with `1713730806_01.sql` and ending with
+`1758578400_17.sql`. They precede the current series beginning with
+`1759504522_01.sql`. Target `052513a6efce69175937323386627c851250e843`
+requires 88 current files through `1791028800_01.sql`; this checkout has 89,
+ending with `1791142907_01.sql`. Older archives are not replayed.
+
+The CLI update bootstraps only maintenance and locale settings, so a legacy
+configuration table without `default` can reach its introducing migration,
+`1717076299_01.sql`. Full configuration is reloaded after SQL succeeds and
+before generators execute. Other setup commands and web requests continue to
+use the full configuration loader. CLI initialization still selects `--datasrc`
+and locales before constructing generators.
+
+Under the existing database update lock, the updater checks the actual version
+table engine and converts MyISAM metadata to InnoDB without changing its row.
+Migration checksums, durable statement progress, atomic version/journal
+completion and refusal to replay unfinished SQL remain enforced. The enclosing
+lock stays held through SQL/build generators and maintenance restoration. Pending
+work is cleared only after verified completion; the archived migration itself
+removes `power`. Failures retain maintenance and incomplete tasks. Success restores
+the state observed under the lock, which may already have been maintenance.
+
+Executing the complete historical corpus and checking its generator requests
+exposed additional blockers: `1718468660_01.sql` queued the table name
+`item_stats` instead of the shipped generator `stats`; `1718998554_01.sql`
+and `1725025019_01.sql` queued retired `markup`/`locales` generators whose
+output is now produced by `globaljs`;
+`1760911493_01.sql` used a nonexistent profiler `flags` column instead of
+`cuFlags`; `1768556688_01.sql` and `1770626911_01.sql` attempted multiple new
+InnoDB FULLTEXT indexes in a single ALTER, rejected by MySQL. The column reference
+and generator identifiers are corrected, and index additions are separate
+statements with the same resulting indexes. Journals checksum the corrected
+files when they are first applied;
+existing applied entries are retained and skipped. An unfinished entry from an
+older file still blocks replay, even after the SQL file has been corrected.
+
+Archived screenshot/video migrations `1758578400_06.sql` and
+`1758578400_08.sql` also retain legacy captions using `mediumtext`, avoiding
+silent truncation to 200 characters with AoWoW's non-strict SQL sessions.
+Existing text survives; new-submission interface limits and the fresh-install
+schema remain unchanged.
+
+To rehearse, restore the application database and uploads into an isolated copy
+and configure that checkout to use the restored application database. Keep the
+original backup unchanged. Install locked Composer dependencies and use the
+supported PHP CLI extensions. The update account needs the SELECT, INSERT,
+UPDATE, DELETE, CREATE, ALTER, DROP and INDEX permissions required by the pending
+migrations, plus access to the configured world database. It must be able to
+create the InnoDB journal and alter legacy version metadata. Ensure sufficient
+database space for engine/index rebuilds and writable generated-output directories.
+
+Provide a compatible TrinityCore 3.3.5a world database independently of the
+application database upgrade. This checkout requires world `cache_id >= 25101`
+and expects schema revision `26091`; the numeric minimum alone does not establish
+that all generator queries are compatible. Supply complete Wrath-format extracted
+DBC, textures and other inputs needed by the queued generators for the configured
+locales. Use an extraction already prepared according to the README. The application
+updater does not upgrade the world database or extract client files.
+
+From the isolated checkout root, the rehearsal command is:
+
+```sh
+php aowow --update --datasrc=/path/to/wrath-extraction/ --debug
+```
+
+Check the exit status, applied journal entries, final version, empty SQL/build
+queues, generated assets, and community records/upload references before accepting
+the rehearsal. If SQL was interrupted, restore a consistent copy or reconcile its
+recorded partial work before retrying; do not blindly replay it. Generator failures
+can be retried with the same command after correcting their prerequisites. A retry
+preserves maintenance if the failed run left it enabled. Do not manually advance
+the version, clear `power`, or load first-install SQL over an existing database.
+
+The [legacy regression suite](../tests/README.md#legacy-database-upgrade-compatibility)
+uses historical DDL and synthetic community records in disposable databases. It
+executes the real CLI/kernel/configuration, every pending SQL migration and sync
+accounting, substituting only generator data production. It covers both metadata
+engines, already-current runs, checksum/progress accounting, SQL/configuration and
+generator failures, retries, hard interruption, competing commands, and preserved
+accounts, comments, custom articles, screenshots, videos, favorites, preferences
+and upload references. Fixture success is not a migration of actual production
+data or validation of real world data and extracted assets. Rehearsal must also
+check production-specific content and custom schema changes against the upstream
+schema conversions.
+
+Validation used PHP 8.5.10, MySQL 8.4.10 and MariaDB 10.6.28. Both disposable
+database engines passed 820 legacy checks, 347 existing migration checks and
+the complete SQL CI group. Syntax, PHP/HTTP, JavaScript and browser regression
+groups passed, as did Composer validation and platform checks (with existing
+package-metadata warnings). No production migration was performed.
+
 ### Upstream synchronization procedure
 
 Added repository agent instructions and an [upstream-sync workflow](upstream-sync.md)

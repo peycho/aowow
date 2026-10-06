@@ -87,7 +87,7 @@ PY
     # shellcheck disable=SC2016 # PHP variables must be passed literally.
     php -r '
       $db = new mysqli(getenv("AOWOW_TEST_DB_HOST"), "root", "", "", (int)getenv("AOWOW_TEST_DB_PORT"));
-      foreach (["passwords", "screenshots", "updates", "resources"] as $suffix) {
+      foreach (["passwords", "screenshots", "updates", "resources", "legacy"] as $suffix) {
           $db->query("CREATE DATABASE IF NOT EXISTS aowow_security_test_".$suffix." CHARACTER SET utf8mb4");
       }
     '
@@ -97,6 +97,7 @@ PY
     done
     AOWOW_TEST_DATABASE=aowow_security_test_screenshots php tests/security-screenshot-completion.php
     AOWOW_TEST_DATABASE=aowow_security_test_updates php tests/security-updates.php
+    AOWOW_TEST_DATABASE=aowow_security_test_legacy php tests/legacy-updates.php
     AOWOW_TEST_DATABASE=aowow_security_test_resources php tests/security-contributions.php
     ;;
   apache)

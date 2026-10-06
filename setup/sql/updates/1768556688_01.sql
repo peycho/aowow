@@ -1,14 +1,9 @@
+-- InnoDB accepts only one new FULLTEXT index per ALTER TABLE on MySQL.
 ALTER TABLE `aowow_spell`
     DROP INDEX `items`,
     DROP INDEX `effects`,
     ADD INDEX `idx_skill1` (`skillLine1`),
     ADD INDEX `idx_skill2` (`skillLine2OrMask`),
-    ADD FULLTEXT `idx_name0` (`name_loc0`),
-    ADD FULLTEXT `idx_name2` (`name_loc2`),
-    ADD FULLTEXT `idx_name3` (`name_loc3`),
-    ADD FULLTEXT `idx_name4` (`name_loc4`),
-    ADD FULLTEXT `idx_name6` (`name_loc6`),
-    ADD FULLTEXT `idx_name8` (`name_loc8`),
     ADD INDEX `idx_spellfamily` (`spellFamilyId`),
     ADD INDEX `idx_miscvalue1` (`effect1MiscValue`),
     ADD INDEX `idx_miscvalue2` (`effect2MiscValue`),
@@ -18,6 +13,13 @@ ALTER TABLE `aowow_spell`
     ADD INDEX `idx_triggerspell3` (`effect3TriggerSpell`)
 ;
 
+ALTER TABLE `aowow_spell` ADD FULLTEXT `idx_name0` (`name_loc0`);
+ALTER TABLE `aowow_spell` ADD FULLTEXT `idx_name2` (`name_loc2`);
+ALTER TABLE `aowow_spell` ADD FULLTEXT `idx_name3` (`name_loc3`);
+ALTER TABLE `aowow_spell` ADD FULLTEXT `idx_name4` (`name_loc4`);
+ALTER TABLE `aowow_spell` ADD FULLTEXT `idx_name6` (`name_loc6`);
+ALTER TABLE `aowow_spell` ADD FULLTEXT `idx_name8` (`name_loc8`);
+
 ALTER TABLE `aowow_quests`
     MODIFY COLUMN `name_loc0` varchar(100) DEFAULT NULL,
     MODIFY COLUMN `name_loc2` varchar(100) DEFAULT NULL,
@@ -25,12 +27,6 @@ ALTER TABLE `aowow_quests`
     MODIFY COLUMN `name_loc4` varchar(100) DEFAULT NULL,
     MODIFY COLUMN `name_loc6` varchar(100) DEFAULT NULL,
     MODIFY COLUMN `name_loc8` varchar(100) DEFAULT NULL,
-    ADD FULLTEXT `idx_name0` (`name_loc0`),
-    ADD FULLTEXT `idx_name2` (`name_loc2`),
-    ADD FULLTEXT `idx_name3` (`name_loc3`),
-    ADD FULLTEXT `idx_name4` (`name_loc4`),
-    ADD FULLTEXT `idx_name6` (`name_loc6`),
-    ADD FULLTEXT `idx_name8` (`name_loc8`),
     ADD INDEX `idx_sourcespell` (`sourceSpellId`),
     ADD INDEX `idx_rewardspell` (`rewardSpell`),
     ADD INDEX `idx_rewardcastspell` (`rewardSpellCast`),
@@ -59,16 +55,17 @@ ALTER TABLE `aowow_quests`
     ADD INDEX `idx_event` (`eventId`)
 ;
 
+ALTER TABLE `aowow_quests` ADD FULLTEXT `idx_name0` (`name_loc0`);
+ALTER TABLE `aowow_quests` ADD FULLTEXT `idx_name2` (`name_loc2`);
+ALTER TABLE `aowow_quests` ADD FULLTEXT `idx_name3` (`name_loc3`);
+ALTER TABLE `aowow_quests` ADD FULLTEXT `idx_name4` (`name_loc4`);
+ALTER TABLE `aowow_quests` ADD FULLTEXT `idx_name6` (`name_loc6`);
+ALTER TABLE `aowow_quests` ADD FULLTEXT `idx_name8` (`name_loc8`);
+
 ALTER TABLE `aowow_creature`
     DROP INDEX `idx_name`,
     ADD INDEX `idx_trainer` (`trainerType`),
     ADD INDEX `idx_trainerrequirement` (`trainerRequirement`),
-    ADD FULLTEXT `idx_name0` (`name_loc0`),
-    ADD FULLTEXT `idx_name2` (`name_loc2`),
-    ADD FULLTEXT `idx_name3` (`name_loc3`),
-    ADD FULLTEXT `idx_name4` (`name_loc4`),
-    ADD FULLTEXT `idx_name6` (`name_loc6`),
-    ADD FULLTEXT `idx_name8` (`name_loc8`),
     ADD INDEX `idx_spell1` (`spell1`),
     ADD INDEX `idx_spell2` (`spell2`),
     ADD INDEX `idx_spell3` (`spell3`),
@@ -78,6 +75,13 @@ ALTER TABLE `aowow_creature`
     ADD INDEX `idx_spell7` (`spell7`),
     ADD INDEX `idx_spell8` (`spell8`)
 ;
+
+ALTER TABLE `aowow_creature` ADD FULLTEXT `idx_name0` (`name_loc0`);
+ALTER TABLE `aowow_creature` ADD FULLTEXT `idx_name2` (`name_loc2`);
+ALTER TABLE `aowow_creature` ADD FULLTEXT `idx_name3` (`name_loc3`);
+ALTER TABLE `aowow_creature` ADD FULLTEXT `idx_name4` (`name_loc4`);
+ALTER TABLE `aowow_creature` ADD FULLTEXT `idx_name6` (`name_loc6`);
+ALTER TABLE `aowow_creature` ADD FULLTEXT `idx_name8` (`name_loc8`);
 
 ALTER TABLE `aowow_items`
     DROP INDEX `spellId1`,
@@ -94,27 +98,29 @@ ALTER TABLE `aowow_items`
     ADD INDEX `idx_trigger4` (`spellTrigger4`),
     ADD INDEX `idx_trigger5` (`spellTrigger5`),
     ADD INDEX `idx_reqskill` (`requiredSkill`),
-    ADD FULLTEXT `idx_name0` (`name_loc0`),
-    ADD FULLTEXT `idx_name2` (`name_loc2`),
-    ADD FULLTEXT `idx_name3` (`name_loc3`),
-    ADD FULLTEXT `idx_name4` (`name_loc4`),
-    ADD FULLTEXT `idx_name6` (`name_loc6`),
-    ADD FULLTEXT `idx_name8` (`name_loc8`),
     ADD INDEX `idx_itemset` (`itemset`)
 ;
+
+ALTER TABLE `aowow_items` ADD FULLTEXT `idx_name0` (`name_loc0`);
+ALTER TABLE `aowow_items` ADD FULLTEXT `idx_name2` (`name_loc2`);
+ALTER TABLE `aowow_items` ADD FULLTEXT `idx_name3` (`name_loc3`);
+ALTER TABLE `aowow_items` ADD FULLTEXT `idx_name4` (`name_loc4`);
+ALTER TABLE `aowow_items` ADD FULLTEXT `idx_name6` (`name_loc6`);
+ALTER TABLE `aowow_items` ADD FULLTEXT `idx_name8` (`name_loc8`);
 
 ALTER TABLE `aowow_objects`
     DROP INDEX `idx_name`,
     ADD INDEX `idx_onusespell` (`onUseSpell`),
     ADD INDEX `idx_onsuccessspell` (`onSuccessSpell`),
     ADD INDEX `idx_auraspell` (`auraSpell`),
-    ADD INDEX `idx_triggeredspell` (`triggeredSpell`),
-    ADD FULLTEXT `idx_name0` (`name_loc0`),
-    ADD FULLTEXT `idx_name2` (`name_loc2`),
-    ADD FULLTEXT `idx_name3` (`name_loc3`),
-    ADD FULLTEXT `idx_name4` (`name_loc4`),
-    ADD FULLTEXT `idx_name6` (`name_loc6`),
-    ADD FULLTEXT `idx_name8` (`name_loc8`)
+    ADD INDEX `idx_triggeredspell` (`triggeredSpell`)
 ;
+
+ALTER TABLE `aowow_objects` ADD FULLTEXT `idx_name0` (`name_loc0`);
+ALTER TABLE `aowow_objects` ADD FULLTEXT `idx_name2` (`name_loc2`);
+ALTER TABLE `aowow_objects` ADD FULLTEXT `idx_name3` (`name_loc3`);
+ALTER TABLE `aowow_objects` ADD FULLTEXT `idx_name4` (`name_loc4`);
+ALTER TABLE `aowow_objects` ADD FULLTEXT `idx_name6` (`name_loc6`);
+ALTER TABLE `aowow_objects` ADD FULLTEXT `idx_name8` (`name_loc8`);
 
 UPDATE `aowow_dbversion` SET `sql` = CONCAT(IFNULL(`sql`, ''), ' achievementcriteria');

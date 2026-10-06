@@ -181,13 +181,21 @@ approved generated assets. See the [cache and build configuration details](docs/
 
 ### 9. Apply updates with verified migration accounting
 
-Back up the database and run:
+Back up the application database and uploads, rehearse on a restored copy with
+its own configuration, and run from the checkout root:
 
 ```sh
 php aowow --update
 ```
 
-Use a deployment account with the required schema permissions. Updates stop on
+The same command handles legacy databases: it selects only later archived and
+current migrations, prepares MyISAM version metadata for transactional accounting,
+then runs the queued generators. Generators need a compatible TrinityCore Wrath
+world database, extracted 3.3.5a inputs for the selected locales, and writable
+output directories. Use `--datasrc=/path/to/wrath-extraction/` for another input
+directory. See the [legacy upgrade prerequisites and rehearsal](docs/changelog.md#legacy-database-upgrades).
+
+Use an update account with the required schema permissions. Updates stop on
 SQL or generator failure and preserve pending work. An interrupted SQL migration
 must be restored or reconciled before replay; a failed generator can leave an
 already-applied migration with pending rebuilds. Check the journal and complete

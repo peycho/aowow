@@ -31,6 +31,7 @@ CLISetup::registerUtility(new class extends UtilityScript
     {
         CLI::write('[update] checking for sql updates...');
         $version = SqlUpdate::apply(DB::Aowow());
+        Cfg::load(true);                                    // migrated defaults/flags must be loaded before generator follow-ups
         foreach (['sql' => 'doSql', 'build' => 'doBuild'] as $column => $argument)
             $args[$argument] = trim((string)$version[$column]) ? array_values(array_unique(explode(' ', trim(preg_replace('/[^a-z_\-]+/i', ' ', $version[$column]))))) : [];
 
@@ -48,7 +49,7 @@ CLISetup::registerUtility(new class extends UtilityScript
     {
         CLI::write('  usage: php aowow --update', -1, false);
         CLI::write();
-        CLI::write('  Checks /setup/sql/updates for new *.sql files and applies them. If required by an applied update, the --sql and --build command are triggered afterwards.', -1, false);
+        CLI::write('  Applies pending SQL in /setup/sql/updates and its version archives in date/part order, then completes scheduled SQL and image/dataset builds.', -1, false);
         CLI::write('  Use this after fetching the latest rev. from Github.', -1, false);
 
         CLI::write();

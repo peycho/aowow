@@ -127,6 +127,47 @@ final class SqlUpdate
             throw new \RuntimeException('Unfinished migration journal: restore or reconcile before updating.');
     }
 
+    /** Enumerate pending SQL only; archives share the same global date/part sequence. */
+    public static function pendingFiles(int $date, int $part, string $directory = 'setup/sql/updates') : array
+    {
+        if (!is_dir($directory)) throw new \RuntimeException('SQL update directory is missing.');
+        $directories = [$directory];
+        foreach (new \DirectoryIterator($directory) as $entry)
+            if ($entry->isDir() && preg_match('/^v\d+(?:\.\d+)*$/D', $entry->getFilename()))
+                $directories[] = $entry->getPathname();
+
+        $pending = [];
+        foreach ($directories as $dir)
+        {
+            $files = glob($dir.'/*.sql');
+            if ($files === false) throw new \RuntimeException('Cannot enumerate SQL updates.');
+            foreach ($files as $path)
+            {
+                $name = basename($path);
+                if (!preg_match('/^(\d{10})_(\d{2})\.sql$/D', $name, $match)) continue;
+                [$nextDate, $nextPart] = [(int)$match[1], (int)$match[2]];
+                if ([$nextDate, $nextPart] <= [$date, $part]) continue;
+                if (isset($pending[$name])) throw new \RuntimeException('Duplicate SQL migration identifier.');
+                $pending[$name] = [$path, $nextDate, $nextPart];
+            }
+        }
+        uasort($pending, fn($a, $b) => [$a[1], $a[2]] <=> [$b[1], $b[2]]);
+        return array_values($pending);
+    }
+
+    // Engine conversion is idempotent preflight DDL under the same named lease as migration accounting.
+    private static function prepareVersion(DibiConnection $db, array $version) : void
+    {
+        $table = ($db->getConfig('substitutes')[''] ?? '').'dbversion';
+        $engine = strtoupper((string)$db->query('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', $table)->fetchSingle());
+        if ($engine === 'MYISAM')
+        {
+            $db->query('ALTER TABLE ::dbversion ENGINE=InnoDB');
+            if (self::version($db) !== $version)
+                throw new \RuntimeException('Database version changed during metadata preparation.');
+        }
+    }
+
     /** Only the final metadata transaction rolls back; earlier DDL/DML may already be durable. */
     public static function apply(DibiConnection $db, string $directory = 'setup/sql/updates') : array
     {
@@ -140,22 +181,17 @@ final class SqlUpdate
                 preg_match('/\b(?:NO_BACKSLASH_ESCAPES|ANSI_QUOTES)\b/', (string)$db->query('SELECT @@sql_mode')->fetchSingle()))
                 throw new \RuntimeException('Unsupported SQL session configuration.');
             $version = self::version($db);
-            if (!is_dir($directory)) throw new \RuntimeException('SQL update directory is missing.');
+            $files = self::pendingFiles((int)$version['date'], (int)$version['part'], $directory);
+            self::prepareVersion($db, $version);
             $journal = ($db->getConfig('substitutes')[''] ?? '').'sql_update_journal';
             if (!(int)$db->query('SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', $journal)->fetchSingle())
                 $db->query(self::JOURNAL_DDL);                // schema owners may pre-provision it without granting CLI CREATE
             self::checkMetadata($db);
-            $files = glob($directory.'/*.sql');
-            if ($files === false) throw new \RuntimeException('Cannot enumerate SQL updates.');
-            sort($files, SORT_STRING);
-            foreach ($files as $path)
+            foreach ($files as [$path, $date, $part])
             {
                 $name = basename($path);
                 $index = 0;
-                if (!preg_match('/^(\d{10})_(\d{2})\.sql$/D', $name, $match)) continue;
                 $file = $name;
-                [$date, $part] = [(int)$match[1], (int)$match[2]];
-                if ([$date, $part] <= [(int)$version['date'], (int)$version['part']]) continue;
                 $contents = file_get_contents($path);
                 if ($contents === false) throw new \RuntimeException('Cannot read SQL update.');
                 $statements = self::statements($contents);

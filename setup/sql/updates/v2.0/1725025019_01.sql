@@ -1,1 +1,1 @@
-UPDATE `aowow_dbversion` SET `build` = CONCAT(IFNULL(`build`, ''), ' tooltips markup locales');
+UPDATE `aowow_dbversion` SET `build` = CONCAT(IFNULL(`build`, ''), ' tooltips globaljs');

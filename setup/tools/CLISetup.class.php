@@ -196,6 +196,14 @@ class CLISetup
     {
         self::evalOpts();
 
+        if (defined('AOWOW_SETUP'))
+        {
+            if (self::getOpt('update'))
+                Cfg::loadForUpdate();
+            else
+                Cfg::load();
+        }
+
         // optional logging
         if (isset(self::$opts['log']))
             CLI::initLogFile(trim(self::$opts['log']));

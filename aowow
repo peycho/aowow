@@ -9,6 +9,7 @@ if (PHP_SAPI === 'cli' && getcwd().DIRECTORY_SEPARATOR.'aowow' != __FILE__)
     exit(1);
 }
 
+define('AOWOW_SETUP', true);                               // parse setup options before loading schema-dependent configuration
 require_once 'includes/kernel.php';
 
 require_once 'setup/setup.php';

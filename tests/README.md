@@ -646,6 +646,49 @@ below; A15 quotas/retention, writable-browser-asset persistence and optional
 profiling boundaries are not closed by these synthetic checks.
 
 
+## Legacy database upgrade compatibility
+
+Run the real legacy upgrade only against an isolated disposable fixture named
+`aowow_security_test_legacy`, using PHP 8.5, MySQLi, the normal CLI extensions,
+process functions and locked Composer dependencies. The fixture server uses an
+empty-password root account on `127.0.0.1`. This test drops all tables in that
+exact database; never use an application database or a shared server.
+
+```sh
+AOWOW_TEST_DATABASE=aowow_security_test_legacy \
+AOWOW_TEST_DB_HOST=127.0.0.1 AOWOW_TEST_DB_PORT=33062 \
+php tests/legacy-updates.php
+```
+
+The SQL CI group creates this database and runs the suite automatically. Historical
+DDL and shipped configuration are preserved in
+`fixtures/legacy-1711739612.sql`, with upstream provenance in its header. The test
+seeds the exact `1711739612 / 1 / power / NULL` marker and synthetic community
+records, then invokes the real `aowow --update` entrypoint, kernel, configuration
+loader, updater and sync. It applies all 53 later archived migrations and the
+entire current series, checking ordering, boundaries, checksums and durable
+completion. MySQL 8.4's restriction on the historical nonunique foreign key is
+relaxed only in the disposable fixture-restoration session; update connections
+retain their normal settings.
+
+Coverage includes MyISAM conversion and existing InnoDB metadata, configuration
+without `default`, migrated configuration available to generators, initialized
+locale/data paths at generator construction, the complete real registry and
+resolution of every queued migration task to a shipped generator, current
+databases, partial SQL and edited-file replay refusal, configuration reload
+failure, actual process interruption, competing commands, generator failures and
+completion/retry accounting. Community checks retain representative account
+identity/password hashes, comments, custom articles, screenshot/video ownership
+and long Unicode captions, favorites, preferences and upload references/bytes.
+The full corpus also exercises the corrected hunter refresh and MySQL-compatible
+index migrations.
+
+Only generator data production is substituted; their completion and lock checks
+remain in the real dispatcher/sync. This does not validate an actual restored
+production database, real world data, client extraction, all possible community
+content, or hosting behavior. Use the [single-command rehearsal workflow](../docs/changelog.md#legacy-database-upgrades)
+for those acceptance checks.
+
 ## SQL update and CLI failure accounting (A14)
 
 Run from the checkout root with PHP ≥ 8.4, mbstring, mysqli, process functions and

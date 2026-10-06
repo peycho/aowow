@@ -5,4 +5,5 @@ ALTER TABLE `aowow_videos`
     ADD COLUMN `width` smallint unsigned NOT NULL AFTER `url`,
     ADD COLUMN `height` smallint unsigned NOT NULL AFTER `width`,
     ADD COLUMN `name` varchar(64) DEFAULT NULL AFTER `height`,
-    MODIFY COLUMN `caption` varchar(200) DEFAULT NULL;
+    -- Preserve legacy captions; new submissions retain the current interface limit.
+    MODIFY COLUMN `caption` mediumtext DEFAULT NULL;

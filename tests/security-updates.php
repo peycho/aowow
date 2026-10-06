@@ -3,6 +3,8 @@
 // Guarded real-SQL suite: use only the dedicated disposable database documented in tests/README.md.
 namespace Aowow {
     class Cfg {
+        public static function load() : void {}
+        public static function loadForUpdate() : void {}
         public static function get(string $key) : mixed {
             return $key === 'MAINTENANCE' ? (int)DB::Aowow()->query("SELECT value FROM ::config WHERE `key` = 'maintenance'")->fetchSingle() : 1;
         }
@@ -165,12 +167,12 @@ SQL;
         SqlUpdate::apply($db, $dir);
         check((int)$db->query('SELECT COUNT(*) FROM ::fixture')->fetchSingle() === 1, 'acknowledged metadata prevents duplicate SQL');
 
-        foreach (['missing', 'duplicate', 'myisam', 'bad-journal', 'null-journal', 'mode', 'autocommit', 'syntax', 'empty'] as $failure) {
+        foreach (['missing', 'duplicate', 'myisam-journal', 'bad-journal', 'null-journal', 'mode', 'autocommit', 'syntax', 'empty'] as $failure) {
             resetDb();
             $sql='INSERT INTO aowow_fixture VALUES (1, "should not run");';
             if ($failure === 'missing') $db->query('DELETE FROM ::dbversion');
             if ($failure === 'duplicate') $db->query('INSERT INTO ::dbversion (`date`,`part`) VALUES (0,0)');
-            if ($failure === 'myisam') $db->query('ALTER TABLE ::dbversion ENGINE=MyISAM');
+            if ($failure === 'myisam-journal') { $db->query(SqlUpdate::JOURNAL_DDL); $db->query('ALTER TABLE ::sql_update_journal ENGINE=MyISAM'); }
             if ($failure === 'bad-journal') $db->query('CREATE TABLE ::sql_update_journal (date int) ENGINE=InnoDB');
             if ($failure === 'null-journal') { $db->query(SqlUpdate::JOURNAL_DDL); $db->query("ALTER TABLE ::sql_update_journal MODIFY status varchar(16) NULL"); $db->query("INSERT INTO ::sql_update_journal VALUES (1,1,'x',NULL,0)"); }
             if ($failure === 'mode') $db->query("SET SESSION sql_mode='NO_BACKSLASH_ESCAPES'");
