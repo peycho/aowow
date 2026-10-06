@@ -99,13 +99,13 @@ final class UIText
         // also, where the hell do they link to? For now strip the anchor tags and retain the contained text node.
         $text = preg_replace('/<a href="[^"]*">([^<]*)<\/a>/ui', '\1', $text);
 
-        // make tags fit the output format
-        $text = preg_replace_callback('/<(\/?)([a-z1-3]+) ?([^>]*)>/i', function ($m) use ($fmt) {
+        // make tags fit the output format; capture the self-closing slash separately
+        $text = preg_replace_callback('/<(\/?)([a-z1-3]+) ?([^>]*?)(\/?)>/i', function ($m) use ($fmt) {
             if ($fmt == Lang::FMT_RAW)
                 return '';
 
             if ($fmt == Lang::FMT_MARKUP && self::validateTag(...$m))
-                return '['.substr($m[0], 1, -1).']';
+                return '['.substr($m[0], 1, $m[4] ? -2 : -1).']'; // markup does not use trailing self-closing slashes
 
             if ($fmt == Lang::FMT_HTML && !self::validateTag(...$m))
                 return '&lt;'.substr($m[0], 1, -1).'&gt;';

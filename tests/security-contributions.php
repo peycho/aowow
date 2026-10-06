@@ -185,8 +185,9 @@ namespace {
         check((int)$db->query('SELECT COUNT(*) FROM ::comments')->fetchSingle()===500,'real CLI preserves all published comment rows');
         preg_match('/INSERT INTO `aowow_dbversion` VALUES .*?;/',file_get_contents($root.'/setup/sql/02-db_initial_data.sql'),$initial);
         $db->query('DELETE FROM ::dbversion');$db->nativeQuery($initial[0]);
+        $freshSeed=(array)$db->query('SELECT * FROM ::dbversion')->fetch();
         $fresh=Aowow\SqlUpdate::apply($db,$temp.'/updates');
-        check((int)$fresh['date']===1791000000 && $fresh['build']==='globaljs','fresh schema marker skips duplicate-index migration and retains JS build');
+        check((int)$fresh['date']===(int)$freshSeed['date'] && (int)$fresh['date']>=1791000000 && $fresh['build']==='globaljs','fresh schema marker skips duplicate-index migration and retains JS build');
         check((int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===1,'fresh marker does not replay the new migration');
     }
     finally {cleanup($temp);}

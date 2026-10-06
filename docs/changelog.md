@@ -7,6 +7,38 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-06
 
+### Sarjuuk upstream integration
+
+Reviewed and incorporated `Sarjuuk/aowow` master at
+`18ad819a3c7a0e072af1a80cacbeef6675d98e27`, starting from fork `dev` at
+`346bccb073015fb1c5d8e76172eb8be558f746b6`. Both imports use `cherry-pick -x`
+and retain Sarjuuk's author identity and dates, with source revisions in their
+commit messages. The integrator remains the new committer.
+
+| Upstream revision | Result revision | Decision and conflict resolution |
+| --- | --- | --- |
+| `a904053b9fbdc1796f6f1a76f1484aae394cb77a` | `457df7879db63d6fd6b00f1d27b2ad6bf2592835` | Adapted self-closing slash handling for generated markup. Retained the fork's attribute parser, empty-source rejection and standalone/paired break behavior; attribute and closing-anchor fixes were already present. |
+| `18ad819a3c7a0e072af1a80cacbeef6675d98e27` | `7679d0831a2bb899b4ac67e0aa899f08ab27ff60` | Imported achievement-criteria name widening from 50 to 150 characters in all six locales, including the regeneration migration. Resolved fresh-setup version metadata to `1791142907 / 1`, preserving pending `globaljs` generation and existing fork configuration defaults. |
+
+Focused regressions cover self-closing image/break markup, HTML and book output,
+long Unicode criteria, row preservation, pending setup work and migration replay.
+The existing fresh-install contribution regression now accepts newer schema
+markers while still verifying that an already included migration is skipped.
+
+Validation passed on PHP 8.5.10, Node 24 and disposable MySQL 8.4: repository
+`lint`, `php`, `javascript`, `browser` and `sql` groups, each run through
+`bash tests/ci/run.sh <group>`, plus `git diff --check`.
+Focused suites passed 85 UI text/image/anchor/book checks
+and 347 migration checks; the contribution SQL suite passed 653 checks.
+Apache checks are not repeated because access rules are unchanged. Local
+fixtures do not establish deployment acceptance.
+
+For an existing installation, apply the source changes before running the
+normal `php aowow --update` procedure. The new migration widens the columns and
+queues `achievementcriteria` regeneration, retaining previously pending work.
+The database migration and deployed data regeneration have not been executed
+as part of this source integration.
+
 ### Item loot-tab labels
 
 Item pages now retain trusted locale expressions through the loot-tab helper.
