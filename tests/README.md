@@ -140,7 +140,7 @@ start CI.
 The [GitHub workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)
 describes these push path filters.
 
-Each PHP 8.4/8.5 matrix job uses Node 24 and its own disposable MySQL 8.4 service.
+The PHP 8.5 job uses Node 24 and its own disposable MySQL 8.4 service.
 It installs `composer.lock` without plugins/scripts, verifies platform requirements,
 and runs PHP/JavaScript/Python/shell syntax, every standalone PHP/HTTP and Node
 suite, the generated browser fixtures and all SQL suites. Recovery,
