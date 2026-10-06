@@ -699,7 +699,7 @@ class ItemBaseResponse extends TemplateResponse implements ICache
         return $listviews;
     }
 
-    private function tabContains(string $lootTemplate, int $lootId, string $tabName, string $tabId, array $extraCols, array $hiddenCols = []) : ?Listview
+    private function tabContains(string $lootTemplate, int $lootId, string|JsExpression $tabName, string $tabId, array $extraCols, array $hiddenCols = []) : ?Listview
     {
         $lootTab = new LootByContainer($lootTemplate, $lootId);
         if (!$lootTab->formatListview())

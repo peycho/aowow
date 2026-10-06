@@ -34,6 +34,19 @@ They cover URL validation, enabled status, current settings on cached templates,
 script/HTML escaping, and menu filtering with translated labels and icons in all
 six supported JavaScript locales. Both suites run in CI.
 
+## Item loot-tab labels
+
+```sh
+php tests/security-item-tabs.php
+php tests/security-item-tabs.php --fixtures | node tests/security-item-tabs.mjs
+```
+
+These checks execute the real item loot-tab helper and Listview/Tabs serializers
+with synthetic loot data. They verify translated Contains, Prospecting, Milling
+and Disenchanting labels in all six shipped JavaScript locales, unchanged loot
+rows/columns/callbacks, empty-loot handling, and safe literal labels and row names.
+Both suites run in CI without a configured application database.
+
 ## Map generation
 
 ```sh

@@ -31,7 +31,7 @@ PY
       }
     '
     for suite in json talentcalc uitext guide-editor tokens error-log client-ip private-uploads guide-uploads \
-                 expressions cache builds video retention community-pages redirects admin-boundary; do
+                 expressions cache builds video retention community-pages redirects admin-boundary item-tabs; do
       php "tests/security-$suite.php"
     done
     php tests/security-csrf.php --http
@@ -47,6 +47,7 @@ PY
     php tests/retirement.php --fixtures | node tests/retirement.mjs
     php tests/security-json.php --fixtures | node tests/security-json.mjs
     php tests/security-talentcalc.php --fixtures | node tests/security-talentcalc.mjs
+    php tests/security-item-tabs.php --fixtures | node tests/security-item-tabs.mjs
     php tests/setup-maps.php --fixtures | node tests/setup-maps.mjs
     php tests/maps-picker.php --fixtures | node tests/maps-picker.mjs
     node tests/security-private-uploads.mjs

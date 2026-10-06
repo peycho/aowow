@@ -5,6 +5,23 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-06
+
+### Item loot-tab labels
+
+Item pages now retain trusted locale expressions through the loot-tab helper.
+Previously, its string-only label parameter coerced `JsExpression` objects into
+literal text, displaying labels such as `LANG.tab_disenchanting`. Contains,
+Prospecting, Milling and Disenchanting now use their translated labels while
+ordinary labels and loot names remain escaped data. Loot rows, percentages,
+hidden columns and the loot-table initializer retain their existing behavior.
+
+Regression checks execute the real item helper and Listview/Tabs serializers,
+then evaluate their output against all six shipped JavaScript locale tables.
+After applying the PHP change, previously cached item pages need to expire or
+be refreshed. An administrator, bureaucrat or developer can request the existing
+`?item=29254&refresh` URL to bypass both page-cache backends for that request.
+
 ## 2026-10-05
 
 ### Supplemented Wrath-format map data
