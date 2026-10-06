@@ -29,13 +29,31 @@ metadata. Extracted inputs, configured locales and a world database are not need
 Use this command alone; combining it with setup/update/build/SQL operations or
 their parameters is rejected. The usual `--debug`, `--log` and `--help` options work.
 
+The normal report groups differing attributes by table; `--debug` adds each
+column/index/foreign-key finding. Counts represent differing attributes, so one
+column can account for several findings. Initial-schema drift does not by itself
+mean a migration failed or the database cannot run. The legacy SQL regression
+now audits the completely migrated legacy fixture, rather than testing only
+fresh-install equality, and confirms that those are distinct outcomes.
+Some differences still affect application behavior: legacy account fields that
+are `NOT NULL` without defaults can reject the current signup INSERT under
+strict SQL mode. The SQL regression reproduces this using the real INSERT.
+Other differences are intentional, including legacy spell text widths and
+`MEDIUMTEXT` retained by migration `1791244800_01.sql`. Review each finding
+against its consumer rather than treating every difference as a failed upgrade.
+
 Every reference table is checked for missing/extra columns and their order,
 types and lengths, signedness, nullability, defaults, auto-increment flags,
 character sets/collations and generated expressions/storage. Index checks cover
 names, uniqueness, type, ordered columns, prefix lengths and visibility. Foreign
 keys include names, targets and update/delete actions. Table engines and default
-character sets/collations are checked too. Extra tables in the configured
+character sets/collations are checked too. Unknown extra tables in the configured
 application prefix are reported; other namespaces such as `dbc_*` are excluded.
+Tables declared by the shipped `TrDBCcopy` generators are identified separately.
+Their structures are not compared when no first-install definition exists; this
+is explicit in the report and is not a claim that those structures passed.
+Declaration discovery reads PHP tokens and the shipped Wrath DBC definitions
+without executing generator code, loading configuration or opening extracted files.
 An empty application prefix means all tables in that database are in scope.
 Foreign-key targets follow the configured prefix as well.
 
@@ -63,6 +81,7 @@ database. The guarded SQL fixture imports the complete initial schema only into
 a disposable database, then runs the real entrypoint with SELECT-only credentials,
 tests schema drift and legacy configuration, and verifies preservation of
 representative community records, maintenance, version metadata and journal data.
+It also covers recognized DBC-copy tables and concise versus detailed reporting.
 
 ### Maintenance page metadata
 

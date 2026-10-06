@@ -34,6 +34,10 @@ namespace Aowow {
                 $tables[$name] = ['TABLE_TYPE' => 'BASE TABLE', 'TABLE_COLLATION' => 'utf8mb4_unicode_ci', 'ddl' => $ddl];
             }
             if (self::$mode === 'legacy') $tables['aowow_config']['ddl'] = preg_replace('/^  `default`[^\n]*\n/m', '', $tables['aowow_config']['ddl']);
+            if (self::$mode === 'generated') {
+                foreach (SchemaValidator::generatedTables() as $command => $dbc)
+                    $tables['aowow_'.$command] ??= ['TABLE_TYPE'=>'BASE TABLE', 'TABLE_COLLATION'=>'utf8mb4_unicode_ci'];
+            }
             if ($sql === 'SELECT TABLE_NAME, TABLE_TYPE, TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()')
                 return new SchemaResult($tables);
             if ($sql === 'SHOW CREATE TABLE %n' && isset($tables[$args[0]]))
@@ -77,6 +81,19 @@ namespace {
     }
     $reference = SchemaValidator::parse(file_get_contents(SchemaValidator::REFERENCE));
     check(count($reference) === 108, 'Complete initial schema is parsed');
+    $copies = SchemaValidator::generatedTables();
+    check(count($copies) === 18 && $copies['soundemitters'] === 'soundemitters' && $copies['dungeonmap'] === 'dungeonmap', 'DBC-copy tables discovered from literal generator declarations');
+    $directory = sys_get_temp_dir().'/aowow-schema-declarations-'.bin2hex(random_bytes(6)); mkdir($directory,0700);
+    try {
+        file_put_contents($directory.'/real.ss.php', '<?php namespace Aowow; class Fixture { use TrDBCcopy; protected string $command="fixture_copy"; protected array $dbcSourceFiles=["dungeonmap"]; } throw new \\RuntimeException("Generator must never execute");');
+        file_put_contents($directory.'/comment.ss.php', '<?php namespace Aowow; /* use TrDBCcopy; */ class Fixture { protected string $command="fake_comment"; protected array $dbcSourceFiles=["dungeonmap"]; }');
+        file_put_contents($directory.'/import.ss.php', '<?php namespace Aowow; use TrDBCcopy; class Fixture { protected string $command="fake_import"; protected array $dbcSourceFiles=["dungeonmap"]; }');
+        file_put_contents($directory.'/unknown.ss.php', '<?php namespace Aowow; class Fixture { use TrDBCcopy; protected string $command="unknown_copy"; protected array $dbcSourceFiles=["nonexistent_dbc"]; }');
+        check(SchemaValidator::generatedTables($directory) === ['fixture_copy'=>'dungeonmap'], 'Comments, namespace imports and unknown formats cannot classify arbitrary extra tables; generator code never executes');
+    } finally {
+        foreach (glob($directory.'/*') as $file) unlink($file);
+        rmdir($directory);
+    }
     foreach ($reference as $name => $definition)
         check(SchemaValidator::differences($definition, $definition) === [], $name.' compares equally');
     $ddl = <<<'SQL'
@@ -132,12 +149,16 @@ SQL;
         check($rejected, 'Malformed/unsupported DDL rejected');
     }
     foreach ([false, true] as $debug) {
-        foreach (['match' => 0, 'legacy' => 1, 'denied' => 1] as $mode => $expectedExit) {
+        foreach (['match' => 0, 'generated' => 0, 'legacy' => 1, 'denied' => 1] as $mode => $expectedExit) {
             [$code, $out] = worker($mode, $debug ? ['--debug'] : []);
             check($code === $expectedExit, "$mode command exit ($code): $out");
             check(!str_contains($out, 'SECRET_'), 'Failure diagnostics exclude values and raw SQL');
             if ($mode === 'match') check(str_contains($out, '108/108 reference tables compared; 0 differences'), 'All tables inspected without config/generators');
-            if ($mode === 'legacy') check(str_contains($out, 'column default: missing'), 'Legacy config schema can be inspected without loading it');
+            if ($mode === 'legacy') {
+                check(str_contains($out, 'aowow_config: 1 attribute differences') && str_contains($out, 'initial-schema drift'), 'Default output gives compact table totals without implying migration failure');
+                check(str_contains($out, 'column default: missing') === $debug, 'Debug output retains individual missing-column findings');
+            }
+            if ($mode === 'generated') check(str_contains($out, '18 declared DBC-copy tables recognized') && !str_contains($out, 'extra (absent'), 'Completed setup DBC-copy tables are identified as unvalidated inputs rather than unexplained extras');
         }
     }
     foreach ([['--update'], ['--sql=spell'], ['--build=globaljs'], ['--force'], ['--delete'], ['--datasrc=/fixture/']] as $options) {

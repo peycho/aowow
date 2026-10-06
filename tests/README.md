@@ -2,14 +2,17 @@
 
 `php tests/schema-validator.php` exercises the complete initial-schema parser,
 normalization, column/index/FK/generated-column differences, safe diagnostics and
-the real read-only CLI initialization/dispatcher. It runs in the PHP CI group.
+the real read-only CLI initialization/dispatcher. It also checks token-based
+discovery of DBC-copy declarations without executing generators, generated-table
+classification and compact versus detailed reports. It runs in the PHP CI group.
 
 The SQL group also runs `tests/schema-validator-sql.php`, guarded to require
 `AOWOW_TEST_DATABASE=aowow_security_test_schema` on an isolated localhost fixture.
 It creates the complete 108-table initial schema, then checks real metadata with
 a SELECT-only account and invokes the actual `aowow --validate-schema` entrypoint.
 It covers MyISAM/InnoDB metadata, legacy config without `default`, missing/extra
-tables, column/index/FK drift, configured prefixes, help, mixed-option rejection
+tables, generated DBC-copy inputs, column/index/FK drift, configured prefixes,
+help, mixed-option rejection
 and unchanged community/config/version/journal records. MySQL fixture loading
 uses equivalent parenthesized literal TEXT defaults and temporarily permits the
 shipped historical nonunique foreign-key targets only on its disposable importer

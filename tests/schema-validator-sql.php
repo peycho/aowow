@@ -71,6 +71,23 @@ try {
     $report = SchemaValidator::inspect($reader, $root.'/setup/sql/01-db_structure.sql');
     check($report['expected'] === 108 && $report['checked'] === 108 && !$report['issues'], 'Full fresh schema matches real SHOW CREATE TABLE: '.json_encode($report['issues']));
 
+    // Real partial-column signup INSERT needs defaults/nullability that old schemas can lack.
+    preg_match('/qry\(\x27(INSERT INTO ::account .*?)\x27,\s*\n/s', file_get_contents($root.'/endpoints/account/signup.php'), $signup);
+    check(isset($signup[1]), 'Actual signup INSERT located without executing web or mail code');
+    $signupValues = ['fixture-signup', 'FIXTURE_HASH', 'Fixture Signup', 'signup@example.test', '127.0.0.1', 0, 16384, 1, 86400, str_repeat('b',40)];
+    $mode = $db->query('SELECT @@SESSION.sql_mode')->fetchSingle();
+    $db->query("SET SESSION sql_mode='STRICT_ALL_TABLES'");
+    $db->query($signup[1], ...$signupValues);
+    check($db->getAffectedRows() === 1, 'Fresh account schema accepts the actual signup INSERT in strict SQL mode');
+    $db->query("DELETE FROM ::account WHERE login='fixture-signup'");
+    $db->query('ALTER TABLE ::account MODIFY extId int unsigned NOT NULL, ALTER COLUMN curLogin DROP DEFAULT, ALTER COLUMN description DROP DEFAULT');
+    $rejected = false;
+    try { $db->query($signup[1], ...$signupValues); }
+    catch (\Dibi\Exception $error) { $rejected = (int)$error->getCode() === 1364; }
+    check($rejected, 'Reported legacy NOT NULL/no-default account fields break actual signup under strict SQL mode');
+    $db->query("ALTER TABLE ::account MODIFY extId int unsigned DEFAULT NULL, ALTER COLUMN curLogin SET DEFAULT 0, MODIFY description text NOT NULL DEFAULT ('')");
+    $db->query('SET SESSION sql_mode=%s', $mode);
+
     seed('account', ['id'=>1001, 'login'=>'fixture', 'username'=>'Fixture User', 'passHash'=>'SECRET_FIXTURE_HASH', 'email'=>'fixture@example.test']);
     seed('comments', ['id'=>1001, 'userId'=>1001, 'body'=>'SECRET_FIXTURE_COMMENT']);
     seed('articles', ['type'=>3, 'typeId'=>29254, 'locale'=>0, 'article'=>'SECRET_FIXTURE_ARTICLE']);
@@ -108,12 +125,20 @@ try {
     $db->query('CREATE TABLE ::fixture_extra (id int)');
     $db->query('CREATE TABLE unrelated_fixture (id int)');
     $db->query('CREATE TABLE dbc_fixture (id int)');
+    $db->query('CREATE TABLE ::dungeonmap (id int)');
+    $db->query('CREATE TABLE ::soundemitters (id int)');
     $report = SchemaValidator::inspect($reader, $root.'/setup/sql/01-db_structure.sql');
     foreach ([['aowow_spell', 'column rank_loc0', 'nullable differs'], ['aowow_items', 'index idx_model', 'missing'],
         ['aowow_items', 'index fixture_index', 'extra'], ['aowow_account_favorites', 'foreign key FK_acc_favorites', 'delete rule differs'],
         ['aowow_zones_sounds', 'table', 'missing'], ['aowow_fixture_extra', 'table', 'extra (absent from initial schema)']] as $issue)
         check(in_array($issue, $report['issues'], true), 'Detect actual table/column/index/FK drift');
     check(!in_array('unrelated_fixture', array_column($report['issues'],0), true) && !in_array('dbc_fixture', array_column($report['issues'],0), true), 'Other table namespaces are excluded');
+    ksort($report['generated']);
+    check($report['generated'] === ['aowow_dungeonmap'=>'dungeonmap', 'aowow_soundemitters'=>'soundemitters'] &&
+        !in_array('aowow_dungeonmap', array_column($report['issues'],0), true), 'Real DBC-copy tables are recognized separately without pretending to validate their absent reference structures');
+    [$code, $out] = invoke($temp, ['--validate-schema']);
+    check($code === 1 && str_contains($out, '2 declared DBC-copy tables recognized') && str_contains($out, 'aowow_spell:') &&
+        !str_contains($out, 'column rank_loc0:'), 'Real CLI produces compact summaries and keeps structural failures visible');
 
     // Prefix translation applies to both table names and FK targets, never to literal defaults.
     $schema = str_replace('`aowow_', '`custom_', file_get_contents($root.'/setup/sql/01-db_structure.sql'));

@@ -1,7 +1,7 @@
 <?php
 
 // Synthetic legacy schema/data only; real kernel, CLI, migration corpus, configuration and sync.
-use Aowow\{DB, DibiConnection, SqlUpdate};
+use Aowow\{DB, DibiConnection, SchemaValidator, SqlUpdate};
 
 if (getenv('AOWOW_TEST_DATABASE') !== 'aowow_security_test_legacy' ||
     (getenv('AOWOW_TEST_DB_HOST') ?: '127.0.0.1') !== '127.0.0.1') {
@@ -16,6 +16,7 @@ require $root.'/includes/components/errorlog.class.php';
 require $root.'/includes/database.php';
 require $root.'/includes/setup/cli.class.php';
 require $root.'/includes/setup/sqlupdate.class.php';
+require $root.'/includes/setup/schemavalidator.class.php';
 $options = ['driver'=>'mysqli', 'host'=>'127.0.0.1', 'port'=>(int)(getenv('AOWOW_TEST_DB_PORT') ?: 3306),
     'username'=>'root', 'password'=>'', 'database'=>'aowow_security_test_legacy', 'substitutes'=>[''=>'aowow_'], 'charset'=>'utf8mb4'];
 $db = new DibiConnection($options);
@@ -284,6 +285,10 @@ CODE;
             check($entry->status==='applied' && $entry->checksum===hash_file('sha256',$pending[$i][0]) && $entry->statements>0, 'durable journal retains source checksum and statement progress');
         }
         check((int)$db->query('SELECT COUNT(*) FROM aowow_fixture_generators')->fetchSingle()===2, 'SQL and build generators both complete');
+        $audit = SchemaValidator::inspect($db, $root.'/setup/sql/01-db_structure.sql');
+        check($audit['checked'] === 108 && $audit['issues'], 'Successfully updated real legacy fixture has initial-schema drift, despite completing every migration');
+        check(in_array(['aowow_account', 'column extId', 'nullable differs'], $audit['issues'], true), 'Account default/nullability drift remains visible after the complete migration corpus');
+        check(community() === $before && (int)$db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle() === 0, 'Auditing the migrated legacy fixture preserves community data and restored maintenance');
         foreach ($db->query('SELECT phase, tasks FROM aowow_fixture_generators')->fetchAll() as $call) {
             $missing=array_diff(explode(' ', $call->tasks), $registered[$call->phase]);
             check(!$missing, 'fixture corpus has unresolved generator identifiers: '.implode(', ', $missing));

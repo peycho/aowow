@@ -20,6 +20,8 @@ final class SchemaValidator
         $prefix = (string)($db->getConfig('substitutes')[''] ?? '');
         $tables = $db->query('SELECT TABLE_NAME, TABLE_TYPE, TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()')->fetchAssoc('TABLE_NAME');
         $issues = [];
+        $generated = [];
+        $knownGenerated = self::generatedTables();
         $checked = 0;
         $names = [];
         foreach ($expected as $name => $schema)
@@ -62,8 +64,57 @@ final class SchemaValidator
         }
         foreach ($tables as $name => $_)
             if (str_starts_with($name, $prefix) && !isset($names[$name]))
-                $issues[] = [$name, 'table', 'extra (absent from initial schema)'];
-        return ['expected' => count($expected), 'checked' => $checked, 'issues' => $issues];
+            {
+                $command = substr($name, strlen($prefix));
+                if (isset($knownGenerated[$command]) && $tables[$name]['TABLE_TYPE'] === 'BASE TABLE')
+                    $generated[$name] = $knownGenerated[$command];
+                else
+                    $issues[] = [$name, 'table', 'extra (absent from initial schema)'];
+            }
+        return ['expected' => count($expected), 'checked' => $checked, 'issues' => $issues, 'generated' => $generated];
+    }
+
+    /** Discover literal TrDBCcopy declarations without including or constructing generators. */
+    public static function generatedTables(string $directory = 'setup/tools/sqlgen', string $formats = 'setup/tools/dbc/12340.ini') : array
+    {
+        $definitions = parse_ini_file($formats, true, INI_SCANNER_RAW);
+        if ($definitions === false) throw new \RuntimeException('Cannot read DBC definitions.');
+        $out = [];
+        foreach (glob($directory.'/*.ss.php') as $file)
+        {
+            $source = file_get_contents($file);
+            if ($source === false) throw new \RuntimeException('Cannot read generator declaration.');
+            $tokens = array_values(array_filter(token_get_all($source, TOKEN_PARSE), fn($t) => !is_array($t) || !in_array($t[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)));
+            $copy = false; $command = ''; $dbc = ''; $depth = 0; $classes = []; $pendingClass = false;
+            foreach ($tokens as $i => $token)
+            {
+                if ($token === '{')
+                {
+                    ++$depth;
+                    if ($pendingClass) { $classes[] = $depth; $pendingClass = false; }
+                }
+                else if ($token === '}')
+                {
+                    if (end($classes) === $depth) array_pop($classes);
+                    --$depth;
+                }
+                if (!is_array($token)) continue;
+                if ($token[0] === T_CLASS && ($tokens[$i - 1][0] ?? null) !== T_DOUBLE_COLON) $pendingClass = true;
+                if (!in_array($depth, $classes, true)) continue;
+                if ($token[0] === T_USE && ($tokens[$i + 1][0] ?? null) === T_STRING &&
+                    $tokens[$i + 1][1] === 'TrDBCcopy' && ($tokens[$i + 2] ?? '') === ';') $copy = true;
+                if ($token[0] !== T_VARIABLE || ($tokens[$i + 1] ?? '') !== '=') continue;
+                if ($token[1] === '$command' && ($tokens[$i + 2][0] ?? null) === T_CONSTANT_ENCAPSED_STRING && ($tokens[$i + 3] ?? '') === ';')
+                    $command = self::tokens($tokens[$i + 2][1])[0][1];
+                if ($token[1] === '$dbcSourceFiles' && ($tokens[$i + 2] ?? '') === '[' &&
+                    ($tokens[$i + 3][0] ?? null) === T_CONSTANT_ENCAPSED_STRING && ($tokens[$i + 4] ?? '') === ']' && ($tokens[$i + 5] ?? '') === ';')
+                    $dbc = self::tokens($tokens[$i + 3][1])[0][1];
+            }
+            if (!$copy || !preg_match('/^[a-z][a-z0-9_]*$/D', $command) || !isset($definitions[$dbc])) continue;
+            if (isset($out[$command])) throw new \RuntimeException('Duplicate DBC-copy declaration.');
+            $out[$command] = $dbc;
+        }
+        return $out;
     }
 
     /** Parse only structure; DROP/SET/INSERT and dump comments are never run. */
