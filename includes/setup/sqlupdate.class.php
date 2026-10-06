@@ -168,6 +168,27 @@ final class SqlUpdate
         }
     }
 
+    // The legacy schema permits duplicate names/emails; the account migration
+    // introduces uniqueness. Detect conflicts before any migration SQL, without
+    // choosing an account owner or revealing account values in diagnostics.
+    private static function checkLegacyAccounts(DibiConnection $db, array $files) : void
+    {
+        if (!array_any($files, fn($file) => [$file[1], $file[2]] === [1753572319, 1]))
+            return;
+
+        foreach ([
+            'displayName' => 'SELECT 1 FROM ::account GROUP BY `displayName` HAVING COUNT(*) > 1 LIMIT 1',
+            'email' => "SELECT 1 FROM ::account WHERE `email` IS NOT NULL AND `email` <> '' GROUP BY `email` HAVING COUNT(*) > 1 LIMIT 1"
+        ] as $column => $query)
+        {
+            if (!$db->query($query)->fetchSingle())
+                continue;
+
+            CLI::write('[update] Legacy account uniqueness conflict in '.$column.'. Reconcile the conflicting account values privately on the restored copy before updating. No migration SQL was applied.', CLI::LOG_ERROR);
+            throw new \RuntimeException('Legacy account uniqueness preflight failed.');
+        }
+    }
+
     /** Only the final metadata transaction rolls back; earlier DDL/DML may already be durable. */
     public static function apply(DibiConnection $db, string $directory = 'setup/sql/updates') : array
     {
@@ -187,6 +208,7 @@ final class SqlUpdate
             if (!(int)$db->query('SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', $journal)->fetchSingle())
                 $db->query(self::JOURNAL_DDL);                // schema owners may pre-provision it without granting CLI CREATE
             self::checkMetadata($db);
+            self::checkLegacyAccounts($db, $files);
             foreach ($files as [$path, $date, $part])
             {
                 $name = basename($path);

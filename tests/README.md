@@ -683,6 +683,12 @@ and long Unicode captions, favorites, preferences and upload references/bytes.
 The full corpus also exercises the corrected hunter refresh and MySQL-compatible
 index migrations.
 
+Account preflight regressions cover duplicate nonempty emails and display names,
+case/accent/trailing-space collisions under the legacy collation, both metadata
+engines, account-value redaction, unchanged accounts/community rows, no migration
+progress or task acknowledgement, retained maintenance, and multiple blank email
+addresses successfully becoming NULL through the real account migration.
+
 Only generator data production is substituted; their completion and lock checks
 remain in the real dispatcher/sync. This does not validate an actual restored
 production database, real world data, client extraction, all possible community

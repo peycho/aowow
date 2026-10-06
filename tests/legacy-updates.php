@@ -173,7 +173,31 @@ CODE;
     check((int)$db->query('SELECT date FROM ::dbversion')->fetchSingle()===1711739612 && community()===$before &&
         (int)$db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle()===0, 'legacy help performs no migration or maintenance change');
     foreach (['MyISAM', 'InnoDB'] as $engine) {
+        foreach (['email', 'email-case', 'name', 'name-case', 'name-space', 'name-accent'] as $conflict) {
+            resetLegacy($engine); $before=community();
+            seed('account', ['id'=>1002, 'user'=>'fixture-second', 'displayName'=>match($conflict) {
+                'name'=>'Fixture User', 'name-case'=>'fixture user', 'name-space'=>'Fixture User ', 'name-accent'=>'Fíxture Usér', default=>'Fixture Second'
+            }, 'email'=>match($conflict) {
+                'email'=>'fixture@example.test', 'email-case'=>'FIXTURE@example.test', default=>'second@example.test'
+            }]);
+            $accounts=$db->query('SELECT * FROM ::account ORDER BY id')->fetchAll();
+            [$status,$output]=invoke($cli);
+            check($status===1 && str_contains($output,'Legacy account uniqueness conflict in '.(str_starts_with($conflict,'email')?'email':'displayName')), 'legacy account conflicts stop at an actionable preflight');
+            check(!str_contains($output,'fixture@example.test') && !str_contains($output,'Fixture User') && !str_contains($output,'second@example.test'), 'preflight reports no account values');
+            check($db->query('SELECT * FROM ::account ORDER BY id')->fetchAll()==$accounts && community()===$before, 'duplicate-account preflight preserves every account and community record');
+            check((int)$db->query('SELECT date FROM ::dbversion')->fetchSingle()===1711739612 &&
+                $db->query('SELECT `sql` FROM ::dbversion')->fetchSingle()==='power' &&
+                $db->query('SELECT build FROM ::dbversion')->fetchSingle()===null &&
+                (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===0, 'account preflight applies no migrations or task acknowledgements');
+            check(!$db->query("SHOW COLUMNS FROM ::config LIKE 'default'")->fetch() &&
+                (int)$db->query('SELECT COUNT(*) FROM aowow_fixture_generators')->fetchSingle()===0, 'account preflight prevents schema and generator changes');
+            check((int)$db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle()===1, 'account conflict retains maintenance');
+        }
+    }
+    foreach (['MyISAM', 'InnoDB'] as $engine) {
         resetLegacy($engine); $before=community();
+        seed('account', ['id'=>1002, 'user'=>'fixture-blank-one', 'displayName'=>'Fixture Blank One', 'email'=>'']);
+        seed('account', ['id'=>1003, 'user'=>'fixture-blank-two', 'displayName'=>'Fixture Blank Two', 'email'=>'']);
         check(!$db->query("SHOW COLUMNS FROM ::config LIKE 'default'")->fetch(), 'exact legacy config has no default column');
         [$status,$output]=invoke($cli);
         check($status===0, $engine.' legacy entrypoint succeeds: '.$output);
@@ -183,6 +207,7 @@ CODE;
         check((string)$db->query('SELECT login FROM ::account WHERE id=1001')->fetchSingle()==='fixture-login', 'account login survives rename');
         check((string)$db->query('SELECT username FROM ::account WHERE id=1001')->fetchSingle()==='Fixture User', 'display name survives rename');
         check((string)$db->query('SELECT wowicon FROM ::account WHERE id=1001')->fetchSingle()==='fixture_icon', 'account image reference survives rename');
+        check((int)$db->query('SELECT COUNT(*) FROM ::account WHERE id IN (1002,1003) AND email IS NULL')->fetchSingle()===2, 'multiple blank emails are valid and become NULL through the account migration');
         check((int)$db->query('SELECT stub FROM ::profiler_profiles WHERE id=1001')->fetchSingle()===1 &&
             (int)$db->query('SELECT cuFlags FROM ::profiler_profiles WHERE id=1001')->fetchSingle()===2 &&
             (int)$db->query('SELECT lastupdated FROM ::profiler_profiles WHERE id=1001')->fetchSingle()===0, 'hunter refresh uses existing cuFlags and retains unrelated bits');

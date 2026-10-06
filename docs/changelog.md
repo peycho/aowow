@@ -55,6 +55,21 @@ silent truncation to 200 characters with AoWoW's non-strict SQL sessions.
 Existing text survives; new-submission interface limits and the fresh-install
 schema remain unchanged.
 
+Before any pending migration SQL runs, the updater also checks legacy account
+uniqueness when `1753572319_01.sql` is pending. That migration introduces unique
+display names and email addresses; the legacy schema allows collisions, including
+case/accent/trailing-space variants under its column collation. A conflict now
+stops with a message identifying the field, without printing account values or
+changing accounts. Empty email addresses are excluded because the migration
+converts them to NULL. Metadata preparation and maintenance locking still occur;
+no migration is journaled or version advanced on this preflight failure.
+
+Recreating a rehearsal database removes a partially applied migration, but retains
+any conflicting account values from the source backup. Resolve those associations
+privately on the copy before another successful rehearsal. The updater cannot
+choose which account owns an email without changing sign-in/recovery behavior,
+so it does not merge accounts, erase addresses or weaken the unique constraint.
+
 To rehearse, restore the application database and uploads into an isolated copy
 and configure that checkout to use the restored application database. Keep the
 original backup unchanged. Install locked Composer dependencies and use the
@@ -99,7 +114,8 @@ check production-specific content and custom schema changes against the upstream
 schema conversions.
 
 Validation used PHP 8.5.10, MySQL 8.4.10 and MariaDB 10.6.28. Both disposable
-database engines passed 820 legacy checks, 347 existing migration checks and
+database engines passed 894 legacy checks, including account conflict preflight,
+347 existing migration checks and
 the complete SQL CI group. Syntax, PHP/HTTP, JavaScript and browser regression
 groups passed, as did Composer validation and platform checks (with existing
 package-metadata warnings). No production migration was performed.
