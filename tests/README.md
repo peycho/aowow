@@ -100,6 +100,8 @@ with synthetic text. It checks SimpleHTML images, local source rewriting,
 anchors with nested content and closing tags, quoted/unquoted attributes,
 missing/empty/malformed attributes, HTML/markup/raw output, ordinary text
 escaping, color sequences and book-page JSON. It runs in the PHP CI group.
+Self-closing images and breaks omit the closing slash in generated markup,
+while HTML, book pages and standalone/paired break handling stay compatible.
 
 ## Viewer retirement and local assets
 
@@ -658,6 +660,11 @@ AOWOW_TEST_DATABASE=aowow_security_test_updates \
 AOWOW_TEST_DB_HOST=127.0.0.1 AOWOW_TEST_DB_PORT=33062 \
 php tests/security-updates.php
 ```
+
+Criteria migration checks widen all six localized name columns, retain existing
+rows and pending SQL/build work, store long Unicode names without truncation,
+and prevent repeated regeneration requests. Fresh-install checks verify the
+widened schema and retained pending `globaljs` build.
 
 An isolated MySQL 8.4 fixture was exercised with PHP 8.5.10 and Dibi 5.1.1. Tests
 use real SQL/DDL/transactions, triggers for statement/accounting/persistence

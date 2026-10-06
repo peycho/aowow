@@ -36,6 +36,29 @@ namespace {
     check(simpleHtml($image, Lang::FMT_RAW) === '', 'Raw image output stays unformatted');
 
     foreach ([
+        ['<img src="picture"/>', '[img src="/static/images/wow/picture.png"]'],
+        ['<img src="picture" />', '[img src="/static/images/wow/picture.png" ]'],
+        ['<IMG src="picture" width="32" />', '[IMG src="/static/images/wow/picture.png" width="32" ]'],
+    ] as [$tag, $markup]) {
+        $html = str_replace('src="picture"', 'src="/static/images/wow/picture.png"', $tag);
+        check(simpleHtml($tag, Lang::FMT_MARKUP) === $markup, 'Self-closing images omit the closing slash in markup');
+        check(simpleHtml($tag, Lang::FMT_HTML) === $html, 'Self-closing image HTML retains its source and slash');
+        check(simpleHtml($tag, Lang::FMT_RAW) === '', 'Self-closing images disappear in raw text');
+        check((new Book(['<HTML><BODY>'.$tag.'</BODY></HTML>']))->jsonSerialize()['pages'] === [$html], 'Book pages preserve self-closing image HTML');
+    }
+
+    foreach (['<br/>', '<BR />'] as $tag) {
+        check(simpleHtml('First'.$tag.'Second', Lang::FMT_MARKUP) === 'First['.substr($tag, 1, -2).']Second', 'Self-closing breaks omit the closing slash in markup');
+        check(simpleHtml('First'.$tag.'Second', Lang::FMT_HTML) === 'First'.$tag.'Second', 'Self-closing break HTML is preserved');
+        check(simpleHtml('First'.$tag.'Second', Lang::FMT_RAW) === 'FirstSecond', 'Self-closing breaks retain existing raw output');
+    }
+    foreach (['<BR>', '<BR></BR>'] as $tag) {
+        check(simpleHtml('First'.$tag.'Second', Lang::FMT_MARKUP) === 'First[br]Second', 'Standalone and paired breaks retain markup normalization');
+        check(simpleHtml('First'.$tag.'Second', Lang::FMT_HTML) === 'First<br />Second', 'Standalone and paired breaks retain HTML normalization');
+        check(simpleHtml('First'.$tag.'Second', Lang::FMT_RAW) === "First\nSecond", 'Standalone and paired breaks retain raw line breaks');
+    }
+
+    foreach ([
         '<img SRC="picture" height="32" />',
         "<img src='picture' width='32'>",
         '<img width=32 src=picture>',

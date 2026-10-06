@@ -373,6 +373,46 @@ CODE;
             SqlUpdate::apply($db, $retirement);
             check($db->query('SELECT build FROM ::dbversion')->fetchSingle() === 'existing globaljs tooltips', 'journal prevents retirement migration replay');
         }
+        // Widen existing localized criteria without losing rows or queued work.
+        resetDb();
+        preg_match('/CREATE TABLE `aowow_achievementcriteria` \(.*?\) ENGINE=.*?;/s', file_get_contents($root.'/setup/sql/01-db_structure.sql'), $criteria);
+        $db->nativeQuery(str_replace('varchar(150)', 'varchar(50)', $criteria[0]));
+        $nameColumns = array_map(fn($locale) => 'name_loc'.$locale, [0, 2, 3, 4, 6, 8]);
+        $row = array_fill_keys(['id', 'refAchievementId', 'type', 'value1', 'value2', 'value3', 'value4', 'value5', 'value6', 'completionFlags', 'groupFlags', 'timeLimit', 'order'], 0);
+        $row['id'] = 1;
+        foreach ($nameColumns as $column) $row[$column] = 'Original '.$column;
+        $db->query('INSERT INTO ::achievementcriteria', $row);
+        $before = (array)$db->query('SELECT * FROM ::achievementcriteria')->fetch();
+        $db->query("UPDATE ::dbversion SET `sql`='existing', build='globaljs tooltips'");
+        $migration = files(['1791142907_01.sql' => file_get_contents($root.'/setup/sql/updates/1791142907_01.sql')]);
+        SqlUpdate::apply($db, $migration);
+        check(marker() === ['date'=>1791142907, 'part'=>1], 'criteria migration advances the verified version');
+        check((array)$db->query('SELECT * FROM ::achievementcriteria')->fetch() === $before, 'criteria migration preserves existing localized names and row data');
+        check($db->query('SELECT `sql` FROM ::dbversion')->fetchSingle() === 'existing achievementcriteria', 'criteria migration queues regeneration alongside existing SQL work');
+        check($db->query('SELECT build FROM ::dbversion')->fetchSingle() === 'globaljs tooltips', 'criteria migration preserves pending asset builds');
+        $types = $db->query('SHOW COLUMNS FROM ::achievementcriteria')->fetchPairs('Field', 'Type');
+        $db->query("SET SESSION sql_mode = 'STRICT_ALL_TABLES'");
+        foreach ($nameColumns as $column) {
+            check($types[$column] === 'varchar(150)', 'criteria migration widens '.$column);
+            $name = $column.' '.str_repeat('Ж', 120);
+            $db->query('UPDATE ::achievementcriteria SET %n = %s WHERE id=1', $column, $name);
+            check($db->query('SELECT %n FROM ::achievementcriteria WHERE id=1', $column)->fetchSingle() === $name, 'long Unicode criteria survive without truncation in '.$column);
+        }
+        $db->query("SET SESSION sql_mode = ''");
+        SqlUpdate::apply($db, $migration);
+        check($db->query('SELECT `sql` FROM ::dbversion')->fetchSingle() === 'existing achievementcriteria', 'criteria migration journal prevents duplicate regeneration requests');
+
+        // Fresh installs already have the widened schema and retain the fork's pending build.
+        resetDb();
+        $db->nativeQuery($criteria[0]);
+        $types = $db->query('SHOW COLUMNS FROM ::achievementcriteria')->fetchPairs('Field', 'Type');
+        foreach ($nameColumns as $column) check($types[$column] === 'varchar(150)', 'fresh criteria schema widens '.$column);
+        preg_match('/INSERT INTO `aowow_dbversion` VALUES .*?;/', file_get_contents($root.'/setup/sql/02-db_initial_data.sql'), $seed);
+        $db->query('TRUNCATE ::dbversion');
+        $db->nativeQuery($seed[0]);
+        check(marker()['date'] >= 1791142907, 'fresh schema version includes the criteria migration');
+        check(str_contains((string)$db->query('SELECT build FROM ::dbversion')->fetchSingle(), 'globaljs'), 'fresh setup retains the pending globaljs build');
+
         echo "\n$checks update checks passed.\n";
     }
     finally { cleanup($temp); }
