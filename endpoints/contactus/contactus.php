@@ -39,6 +39,12 @@ class ContactusBaseResponse extends TextResponse
             return;
         }
 
+        if ($this->_post['mode'] === Report::MODE_GENERAL && !Turnstile::verify('feedback', $_POST['cf-turnstile-response'] ?? null))
+        {
+            $this->result = Lang::main('captchaError');
+            return;
+        }
+
         $report = new Report($this->_post['mode'], $this->_post['reason'], $this->_post['id']);
         if ($report->create($this->_post['desc'], $this->_post['ua'], $this->_post['appname'], $this->_post['page'], $this->_post['relatedurl'], $this->_post['email']))
             $this->result = 0;

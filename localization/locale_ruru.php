@@ -229,6 +229,7 @@ $lang = array(
         'commentsPage' => 'Страница комментариев %d из %d',
         'previousComments' => 'Предыдущие комментарии',
         'nextComments' => 'Следующие комментарии',
+        'captchaError'  => "Проверка не удалась или истекла. Пройдите проверку и повторите попытку.",
         'intError'      => "[An internal error occured.]",
         'intError2'     => "[An internal error occured. (%s)]",
         'genericError'  => "Произошла ошибка; обновите страницу и попробуйте снова. Если ситуация повторяется, отправьте сообщение на <a href='#contact'>feedback</a>", # LANG.genericerror

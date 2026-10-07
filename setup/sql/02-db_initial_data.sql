@@ -65,6 +65,7 @@ INSERT INTO `aowow_config` VALUES ('logographic_ft_search','0','0',1,1156,'enabl
 INSERT INTO `aowow_config` (`key`, `value`, `default`, `cat`, `flags`, `comment`) VALUES ('searchplugins_enable','1','1',1,132,'enable/disable the Search Plugins page and browser discovery'),('searchbox_enable','1','1',1,132,'enable/disable the Search Box goodies page');
 INSERT INTO `aowow_config` (`key`, `value`, `default`, `cat`, `flags`, `comment`) VALUES ('missing_screenshots_enable','0','0',1,132,'enable/disable the public Missing Screenshots utility (uncached database listing)');
 INSERT INTO `aowow_config` (`key`, `value`, `default`, `cat`, `flags`, `comment`) VALUES ('feedback_enable','1','1',1,132,'enable/disable general Feedback links, form and submissions; content reports remain available');
+INSERT INTO `aowow_config` (`key`, `value`, `default`, `cat`, `flags`, `comment`) VALUES ('turnstile_registration_enable','0','0',3,132,'require Cloudflare Turnstile for registration'),('turnstile_login_enable','0','0',3,132,'require Cloudflare Turnstile for login'),('turnstile_password_recovery_enable','0','0',3,132,'require Cloudflare Turnstile for password recovery email requests'),('turnstile_username_recovery_enable','0','0',3,132,'require Cloudflare Turnstile for username recovery email requests'),('turnstile_resend_enable','0','0',3,132,'require Cloudflare Turnstile for activation email resend requests'),('turnstile_feedback_enable','0','0',1,132,'require Cloudflare Turnstile for general feedback submissions');
 /*!40000 ALTER TABLE `aowow_config` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -74,7 +75,7 @@ UNLOCK TABLES;
 
 LOCK TABLES `aowow_dbversion` WRITE;
 /*!40000 ALTER TABLE `aowow_dbversion` DISABLE KEYS */;
-INSERT INTO `aowow_dbversion` VALUES (1791331200,4,NULL,'globaljs');
+INSERT INTO `aowow_dbversion` VALUES (1791331200,5,NULL,'globaljs');
 /*!40000 ALTER TABLE `aowow_dbversion` ENABLE KEYS */;
 UNLOCK TABLES;
 

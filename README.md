@@ -252,6 +252,46 @@ and static origin, including subdirectory installations. See the
 
 ## Configuration
 
+Optional Cloudflare Turnstile protects registration, login, password/username
+recovery, activation email resend and general feedback. All six switches default
+to Disabled. Install them with `php8.5 aowow --update`, then configure the widget
+keys in the existing private `config/security.php`:
+
+```php
+define('AOWOW_TURNSTILE_SITE_KEY', 'YOUR_SITE_KEY');
+define('AOWOW_TURNSTILE_SECRET_KEY', 'YOUR_SECRET_KEY');
+```
+
+Authorize the hostname from `HOST_URL` in the Cloudflare widget (without a scheme,
+path or port), using separate widgets/keys for testing and production. Keep the
+secret out of database settings and version control. PHP needs cURL with
+asynchronous DNS, outbound HTTPS access to `challenges.cloudflare.com` and a
+working CA trust store; browsers need
+access to the Turnstile script and frames. If the host sets a Content Security
+Policy, allow that origin in `script-src` and `frame-src` as described in
+[Cloudflare's CSP guidance](https://developers.cloudflare.com/turnstile/reference/content-security-policy/).
+
+Enable the independent switches under Site Configuration:
+
+| Setting | Category | Protected submission |
+| --- | --- | --- |
+| `turnstile_registration_enable` | Account | Registration |
+| `turnstile_login_enable` | Account | Login |
+| `turnstile_password_recovery_enable` | Account | Password recovery email |
+| `turnstile_username_recovery_enable` | Account | Username recovery email |
+| `turnstile_resend_enable` | Account | Activation email resend |
+| `turnstile_feedback_enable` | Site | General feedback, when Feedback is enabled |
+
+The update installs feedback token handling with one `globaljs` build. Later
+toggles need no rebuild. Enabled protection rejects missing/invalid keys,
+verification failures and provider timeouts with a retry message; it never
+silently bypasses verification or enables maintenance. Only protected form
+submissions call Siteverify, with a five-second maximum timeout. Widgets load
+when a protected form is shown; ordinary pages do not call Siteverify. Existing
+attempt limits, CSRF, activation/recovery links, comments, uploads and content
+reporting retain their behavior. See the
+[Turnstile integration details](docs/changelog.md#cloudflare-turnstile).
+
 `feedback_enable` under Site Configuration → Site controls the Feedback link,
 general contact form and general submissions to `?contactus`. It defaults to
 Enabled. When disabled, general requests return HTTP 404; reports about comments,

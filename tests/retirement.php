@@ -60,6 +60,7 @@ namespace {
     define('CLI', true);
     $root = dirname(__DIR__);
     require $root.'/includes/defines.php';
+    require $root.'/includes/components/turnstile.class.php';
     require $root.'/includes/locale.class.php';
     require $root.'/includes/utilities.php';
     require $root.'/includes/cfg.class.php';
@@ -89,6 +90,7 @@ namespace {
                'rep_req_border_uncommon'=>0, 'rep_req_border_rare'=>0,
                'rep_req_border_epic'=>0, 'rep_req_border_legendary'=>0, 'profiler_enable'=>0,
                'searchplugins_enable'=>1, 'searchbox_enable'=>1, 'missing_screenshots_enable'=>0, 'feedback_enable'=>1];
+    foreach (Aowow\Turnstile::ACTIONS as $action) $config['turnstile_'.$action.'_enable'] = 0;
     $store = [];
     foreach ($config as $key => $value)
         $store[$key] = [$value, is_int($value) ? Cfg::FLAG_TYPE_INT : Cfg::FLAG_TYPE_STRING, 0, null, 'fixture'];
@@ -260,10 +262,14 @@ namespace {
         $store[$key] = [1, Cfg::FLAG_TYPE_BOOL | Cfg::FLAG_PERSISTENT, 1, '1', 'fixture'];
     $store['missing_screenshots_enable'] = [0, Cfg::FLAG_TYPE_BOOL | Cfg::FLAG_PERSISTENT, 1, '0', 'fixture'];
     $store['feedback_enable'] = [1, Cfg::FLAG_TYPE_BOOL | Cfg::FLAG_PERSISTENT, 1, '1', 'fixture'];
+    foreach (Aowow\Turnstile::ACTIONS as $action)
+        $store['turnstile_'.$action.'_enable'] = [0, Cfg::FLAG_TYPE_BOOL | Cfg::FLAG_PERSISTENT, 3, '0', 'fixture'];
     (new ReflectionProperty(Cfg::class, 'store'))->setValue(null, $store);
     (new ReflectionProperty(Cfg::class, 'isLoaded'))->setValue(null, true);
     DB::$result = 1;
-    foreach (['searchplugins_enable', 'searchbox_enable', 'missing_screenshots_enable', 'feedback_enable'] as $key) foreach ([0, 1] as $enabled) {
+    $keys = array_merge(['searchplugins_enable', 'searchbox_enable', 'missing_screenshots_enable', 'feedback_enable'],
+        array_map(fn($action) => 'turnstile_'.$action.'_enable', Aowow\Turnstile::ACTIONS));
+    foreach ($keys as $key) foreach ([0, 1] as $enabled) {
         $builds = []; DB::$writes = [];
         check(Cfg::set($key, $enabled, $builds) === '' && !$builds && Cfg::get($key) === $enabled &&
               DB::$writes === [['UPDATE ::config SET `value` = %s WHERE `key` = %s', [$enabled, $key]]], 'Saving a feature switch persists without dataset generation: '.$key);

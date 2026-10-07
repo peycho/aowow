@@ -280,6 +280,7 @@ CODE;
         check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key` IN ('searchplugins_enable','searchbox_enable') AND value='1' AND `default`='1' AND cat=1 AND flags=132")->fetchSingle()===2, 'complete legacy upgrade enables both goodies with persistent site boolean metadata');
         check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key`='missing_screenshots_enable' AND value='0' AND `default`='0' AND cat=1 AND flags=132")->fetchSingle()===1, 'complete legacy upgrade disables missing screenshots with persistent site boolean metadata');
         check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key`='feedback_enable' AND value='1' AND `default`='1' AND cat=1 AND flags=132")->fetchSingle()===1, 'complete legacy upgrade preserves Feedback through an enabled persistent site switch');
+        check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key` LIKE 'turnstile\\_%\\_enable' AND value='0' AND `default`='0' AND cat IN (1,3) AND flags=132")->fetchSingle()===6, 'complete legacy upgrade leaves six independent Turnstile form switches disabled');
         $journal=$db->query('SELECT * FROM ::sql_update_journal ORDER BY date, part')->fetchAll();
         check(count($journal)===count($pending), 'every pending archive/current file is journaled exactly once');
         foreach ($journal as $i=>$entry) {

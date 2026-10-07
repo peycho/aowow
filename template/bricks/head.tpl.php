@@ -67,6 +67,14 @@ endif;
 ?>
     </script>
 
+<?php
+$turnstile = \Aowow\Turnstile::clientConfig();
+if ($turnstile['actions']):
+?>
+    <script>var g_turnstile = <?=\Aowow\Util::toJSON($turnstile);?>;</script>
+    <script src="<?=$this->gStaticUrl;?>/js/turnstile.js?v=<?=AOWOW_REVISION;?>.1"></script>
+<?php endif; ?>
+
 <?php if ($this->hasAnalytics): ?>
     <script>
         $WH.Track.gaInit();

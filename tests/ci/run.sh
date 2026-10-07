@@ -31,7 +31,7 @@ PY
       }
     '
     for suite in json talentcalc uitext guide-editor tokens error-log client-ip private-uploads guide-uploads \
-                 expressions cache builds video retention community-pages redirects admin-boundary item-tabs; do
+                 expressions cache builds video turnstile retention community-pages redirects admin-boundary item-tabs; do
       php "tests/security-$suite.php"
     done
     php tests/security-csrf.php --http
@@ -45,6 +45,7 @@ PY
     php tests/retirement.php
     ;;
   javascript)
+    node tests/security-turnstile.mjs
     node tests/external-links.mjs
     php tests/retirement.php --fixtures | node tests/retirement.mjs
     php tests/security-json.php --fixtures | node tests/security-json.mjs
@@ -68,7 +69,8 @@ PY
     php tests/security-json.php --fixtures | node tests/security-json.mjs --browser > "$fixture_root/json.html"
     php tests/security-guide-editor.php --browser > "$fixture_root/guide-editor.html"
     php tests/security-csrf.php --browser > "$fixture_root/csrf.html"
-    for fixture in json guide-editor csrf; do
+    node tests/security-turnstile.mjs --browser > "$fixture_root/turnstile.html"
+    for fixture in json guide-editor csrf turnstile; do
       timeout 45s "$browser" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage \
         --disable-background-networking \
         --dump-dom "file://$fixture_root/$fixture.html" > "$fixture_root/$fixture.dom"

@@ -228,6 +228,7 @@ $lang = array(
         'commentsPage' => 'Kommentarseite %d von %d',
         'previousComments' => 'Vorherige Kommentare',
         'nextComments' => 'Weitere Kommentare',
+        'captchaError'  => "Die Überprüfung ist fehlgeschlagen oder abgelaufen. Bitte erneut bestätigen und versuchen.",
         'intError'      => "Ein interner Fehler ist aufgetreten.",
         'intError2'     => "Ein interner Fehler ist aufgetreten. (%s)",
         'genericError'  => "Ein Fehler trat auf; aktualisiert die Seite und versucht es nochmal. Wenn der Fehler bestehen bleibt, bitte meldet es bei <a href='#contact'>feedback</a>", # LANG.genericerror

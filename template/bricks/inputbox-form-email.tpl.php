@@ -42,6 +42,8 @@
                         <?=Lang::account('email').Lang::main('colon'); ?><input type="text" name="email" value="" id="email-generic" style="width: 12em" />
                         <div class="pad2"></div>
 
+                        <?php $this->brick('turnstile', ['turnstileAction' => $turnstileAction ?? '']); ?>
+
                         <input type="submit" value="<?=Lang::account('continue'); ?>" />
                     </div>
 

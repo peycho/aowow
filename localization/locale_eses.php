@@ -229,6 +229,7 @@ $lang = array(
         'commentsPage' => 'Página de comentarios %d de %d',
         'previousComments' => 'Comentarios anteriores',
         'nextComments' => 'Comentarios siguientes',
+        'captchaError'  => "La verificación falló o caducó. Complétala y vuelve a intentarlo.",
         'intError'      => "Un error interno ha ocurrido.",
         'intError2'     => "Un error interno ha ocurrido. (%s)",
         'genericError'  => "Ha ocurrido un error; refresca la página e inténtalo de nuevo. Si el error persiste manda un correo a <a href='#contact'>feedback</a>", # LANG.genericerror

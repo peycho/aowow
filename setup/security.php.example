@@ -18,3 +18,9 @@ define('AOWOW_CACHE_KEY', 'REPLACE_WITH_64_RANDOM_HEXADECIMAL_CHARACTERS');
 // List up to 64 exact operator IPv4/IPv6 addresses, without CIDRs, wildcards, ports or forwarded headers.
 // Replace this empty list in config/security.php; do not enable access for a shared reverse proxy's IP.
 define('AOWOW_OPERATOR_IPS', []);
+
+// Optional Cloudflare Turnstile. Configure the widget's allowed hostname in Cloudflare.
+// Keep the secret here, never in a database setting, generated JavaScript or version control.
+// Form switches under Site Configuration remain disabled until explicitly enabled.
+define('AOWOW_TURNSTILE_SITE_KEY', '');
+define('AOWOW_TURNSTILE_SECRET_KEY', '');

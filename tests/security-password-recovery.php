@@ -39,6 +39,7 @@ namespace {
     define('AOWOW_REVISION', 58);
     define('CLI', true);
     require __DIR__.'/../includes/defines.php';
+    require __DIR__.'/../includes/components/turnstile.class.php';
     require __DIR__.'/../includes/locale.class.php';
     require __DIR__.'/../localization/lang.class.php';
     require __DIR__.'/../localization/datetime.class.php';

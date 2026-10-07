@@ -108,6 +108,9 @@ class AccountSignupResponse extends TemplateResponse
         if (!User::$ip)
             return Lang::main('intError');
 
+        if (!Turnstile::verify('registration', $_POST['cf-turnstile-response'] ?? null))
+            return Lang::main('captchaError');
+
         // limit account creation
         if (DB::Aowow()->selectRow('SELECT 1 FROM ::account_bannedips WHERE `type` = %i AND `ip` = %s AND `count` >= %i AND `unbanDate` >= UNIX_TIMESTAMP()', IP_BAN_TYPE_REGISTRATION_ATTEMPT, User::$ip, Cfg::get('ACC_FAILED_AUTH_COUNT')))
         {

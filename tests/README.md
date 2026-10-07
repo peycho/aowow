@@ -149,6 +149,20 @@ while HTML, book pages and standalone/paired break handling stay compatible.
 
 ## Viewer retirement and local assets
 
+Turnstile coverage runs with `php tests/security-turnstile.php`,
+`node tests/security-turnstile.mjs` and the browser gate. The PHP fixture redirects
+only the fixed Siteverify origin to disposable loopback TLS and uses dummy keys;
+it checks strict success, hostname/action binding, consumed/expired tokens,
+bounded bodies/headers, redirect refusal, TLS failures and real timeouts. Actual
+endpoint methods must reject missing/invalid verification before account or mail
+work, while disabled switches and content reports preserve their original paths.
+The browser fixture uses the real DOM with a local widget/API spy to exercise six
+native forms and feedback AJAX, expiry/error/timeout callbacks, retry and dialog
+cleanup without contacting Cloudflare. The SQL gate checks fresh/legacy defaults,
+preservation of enabled choices, durable migration accounting and one-time client
+generator completion. These fixtures do not prove acceptance with live widget
+keys; verify each enabled form on the deployed testing hostname before production.
+
 ```sh
 php tests/retirement.php
 php tests/retirement.php --fixtures | node tests/retirement.mjs
