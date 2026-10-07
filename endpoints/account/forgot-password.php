@@ -58,7 +58,8 @@ class AccountforgotpasswordResponse extends TemplateResponse
                 'head'   => Lang::account('inputbox', 'head', 'recoverPass', [1]),
                 'error'  => $msg,
                 'action' => '?account=forgot-password&next='.$this->getNext(),
-                'email'  => $this->_post['email'] ?? ''
+                'email'  => $this->_post['email'] ?? '',
+                'turnstileAction' => 'password_recovery'
             )];
     }
 
@@ -71,6 +72,9 @@ class AccountforgotpasswordResponse extends TemplateResponse
         // truncated due to validation fail
         if (!$this->_post['email'])
             return Lang::account('emailInvalid');
+
+        if (!Turnstile::verify('password_recovery', $_POST['cf-turnstile-response'] ?? null))
+            return Lang::main('captchaError');
 
         $timeout = DB::Aowow()->selectCell('SELECT `unbanDate` FROM ::account_bannedips WHERE `ip` = %s AND `type` = %i AND `count` > %i AND `unbanDate` > UNIX_TIMESTAMP()', User::$ip, IP_BAN_TYPE_PASSWORD_RECOVERY, Cfg::get('ACC_FAILED_AUTH_COUNT'));
 

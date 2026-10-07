@@ -108,7 +108,7 @@ endif;
             <a href="?aboutus"><?=Lang::main('aboutUs'); ?></a><?php if ($githubUrl = \Aowow\ExternalLinks::url('github')): ?>|<a href="<?=$this->escHTML($githubUrl);?>" target="_blank" rel="noopener noreferrer">Github</a><?php endif; ?>|<a href="#" id="footer-links-language"><?=Lang::main('language'); ?></a>
         </div>
         <div class="footer-copy">
-            &#12484; 2026 Aowow<br />rev. <?=AOWOW_REVISION; ?>
+            &#12484; <?=date('Y'); ?> <a href="https://github.com/Sarjuuk/aowow" target="_blank" rel="noopener noreferrer">Aowow</a> | rev. <?=AOWOW_REVISION; ?> | World of Warcraft WOTLK Database
         </div>
     </div>
 

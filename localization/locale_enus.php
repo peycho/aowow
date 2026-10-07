@@ -229,6 +229,7 @@ $lang = array(
         'commentsPage' => 'Comments page %d of %d',
         'previousComments' => 'Previous comments',
         'nextComments' => 'Next comments',
+        'captchaError'  => "Verification failed or expired. Please complete the verification and try again.",
         'intError'      => "An internal error has occurred.",
         'intError2'     => "An internal error has occurred. (%s)",
         'genericError'  => "An error has occurred; refresh the page and try again. If the error persists email <a href=\"#contact\">feedback</a>", # LANG.genericerror

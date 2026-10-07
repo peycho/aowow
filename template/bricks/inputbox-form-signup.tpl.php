@@ -100,6 +100,8 @@
                         </tr>
                     </table>
 
+                    <?php $this->brick('turnstile', ['turnstileAction' => 'registration']); ?>
+
                 </div>
                 <?=$this->csrfField();?>
             </form>

@@ -76,16 +76,20 @@ var ContactTool = new function()
         alert(message);
     }
 
-    this.onShow = function()
+    this.onShow = function(form)
     {
         if (location.hash && location.hash != '#contact')
             oldHash = location.hash;
         if (this.data.mode == 0)
+        {
             location.replace('#contact');
+            if (typeof AowowTurnstile !== 'undefined') AowowTurnstile.mount(form, 'feedback');
+        }
     }
 
-    this.onHide = function()
+    this.onHide = function(form)
     {
+        if (typeof AowowTurnstile !== 'undefined') AowowTurnstile.remove(form);
         if (oldHash && (oldHash.indexOf('screenshots:') == -1 || oldHash.indexOf('videos:') == -1))
             location.replace(oldHash);
         else
@@ -99,6 +103,13 @@ var ContactTool = new function()
 
         if (data.submitting)
             return false;
+
+        var captcha = '';
+        if (data.mode == 0 && typeof AowowTurnstile !== 'undefined' && AowowTurnstile.enabled('feedback'))
+        {
+            captcha = AowowTurnstile.token(form, 'feedback');
+            if (!captcha) return false;
+        }
 
         for (var i = 0; i < form.elements.length; ++i)
             form.elements[i].disabled = true;
@@ -115,6 +126,7 @@ var ContactTool = new function()
 
         if (data.mode == 0)  // contact us
         {
+            if (captcha) params.push('cf-turnstile-response=' + $WH.urlencode(captcha));
             if (data.relatedurl)
                 params.push('relatedurl=' + $WH.urlencode(data.relatedurl));
             if (data.email)
@@ -161,6 +173,7 @@ var ContactTool = new function()
                 alert('Failure submitting contact request: ' + xhr.statusText);
             },
             onComplete: function(xhr, opt) {
+                if (data.mode == 0 && typeof AowowTurnstile !== 'undefined') AowowTurnstile.reset(form);
                 for (var i = 0; i < form.elements.length; ++i)
                     form.elements[i].disabled = false;
 

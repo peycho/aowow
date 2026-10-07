@@ -56,6 +56,7 @@ class AccountResendResponse extends TemplateResponse
                 'message' => Lang::account('inputbox', 'message', 'resendMail'),
                 'error'   => $msg,
                 'action'  => '?account=resend',
+                'turnstileAction' => 'resend',
         )];
     }
 
@@ -68,6 +69,9 @@ class AccountResendResponse extends TemplateResponse
         // truncated due to validation fail
         if (!$this->_post['email'])
             return Lang::account('emailInvalid');
+
+        if (!Turnstile::verify('resend', $_POST['cf-turnstile-response'] ?? null))
+            return Lang::main('captchaError');
 
         $timeout = DB::Aowow()->selectCell('SELECT `unbanDate` FROM ::account_bannedips WHERE `ip` = %s AND `type` = %i AND `count` > %i AND `unbanDate` > UNIX_TIMESTAMP()', User::$ip, IP_BAN_TYPE_REGISTRATION_ATTEMPT, Cfg::get('ACC_FAILED_AUTH_COUNT'));
 

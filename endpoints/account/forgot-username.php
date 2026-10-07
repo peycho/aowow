@@ -57,7 +57,8 @@ class AccountforgotusernameResponse extends TemplateResponse
             $this->inputbox = ['inputbox-form-email', array(
                 'head'   => Lang::account('inputbox', 'head', 'recoverUser'),
                 'error'  => $msg,
-                'action' => '?account=forgot-username'
+                'action' => '?account=forgot-username',
+                'turnstileAction' => 'username_recovery'
             )];
     }
 
@@ -70,6 +71,9 @@ class AccountforgotusernameResponse extends TemplateResponse
         // truncated due to validation fail
         if (!$this->_post['email'])
             return Lang::account('emailInvalid');
+
+        if (!Turnstile::verify('username_recovery', $_POST['cf-turnstile-response'] ?? null))
+            return Lang::main('captchaError');
 
         $timeout = DB::Aowow()->selectCell('SELECT `unbanDate` FROM ::account_bannedips WHERE `ip` = %s AND `type` = %i AND `count` > %i AND `unbanDate` > UNIX_TIMESTAMP()', User::$ip, IP_BAN_TYPE_USERNAME_RECOVERY, Cfg::get('ACC_FAILED_AUTH_COUNT'));
 

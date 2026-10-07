@@ -6,6 +6,7 @@ namespace Aowow {
         public static bool $searchplugins = true, $searchbox = true;
         public static bool $missingScreenshots = false;
         public static bool $feedback = true;
+        public static array $turnstile = [];
         public static function get(string $key) : mixed {
             return match ($key) {
                 'PROFILER_ENABLE' => self::$profiler,
@@ -13,13 +14,14 @@ namespace Aowow {
                 'SEARCHBOX_ENABLE' => self::$searchbox,
                 'MISSING_SCREENSHOTS_ENABLE' => self::$missingScreenshots,
                 'FEEDBACK_ENABLE' => self::$feedback,
-                'HOST_URL' => 'https://example.com', 'STATIC_URL' => '/static', default => 0
+                'HOST_URL' => 'https://example.com', 'STATIC_URL' => '/static', default => self::$turnstile[$key] ?? 0
             };
         }
     }
     class Lang {
         public static function getLocale() : Locale { return Locale::EN; }
         public static function main(string $key) : string { return $key; }
+        public static function account(string $key) : string { return $key; }
     }
     class User {
         public static function isLoggedIn() : bool { return false; }
@@ -34,7 +36,10 @@ namespace {
     use Aowow\Template\PageTemplate;
 
     define('AOWOW_REVISION', 68);
+    define('AOWOW_TURNSTILE_SITE_KEY', 'SITE_FIXTURE');
+    define('AOWOW_TURNSTILE_SECRET_KEY', 'SECRET_FIXTURE');
     require __DIR__.'/../includes/defines.php';
+    require __DIR__.'/../includes/components/turnstile.class.php';
     require __DIR__.'/../includes/locale.class.php';
     require __DIR__.'/../includes/utilities.php';
     require __DIR__.'/../includes/components/csrf.class.php';
@@ -83,7 +88,8 @@ namespace {
         $reflection->getProperty($key)->setValue($page, $value);
     $page->__wakeup();
     $cached = serialize($page);
-    $render = function (string $file) : string {
+    $render = function (string $file, array $vars = []) : string {
+        extract($vars, EXTR_SKIP);
         ob_start();
         try {
             include $file;
@@ -95,6 +101,7 @@ namespace {
     mkdir($scratch.'/template/bricks', 0700, true);
     foreach (['head', 'announcement', 'headerMenu', 'pageTemplate'] as $brick)
         file_put_contents($scratch.'/template/bricks/'.$brick.'.tpl.php', '');
+    copy($root.'/template/bricks/turnstile.tpl.php', $scratch.'/template/bricks/turnstile.tpl.php');
     $cwd = getcwd();
     try {
         chdir($scratch);
@@ -146,6 +153,31 @@ namespace {
             check(str_contains($head, 'var g_missingScreenshotsEnabled = '.($enabled ? 'true' : 'false').';') &&
                   str_contains($head, 'g_applyMissingScreenshotsMenu(mn_tools, g_missingScreenshotsEnabled)'), 'Same cached page reflects the current missing-screenshots switch without rebuilding');
         }
+        foreach (\Aowow\Turnstile::ACTIONS as $action) {
+            Aowow\Cfg::$feedback = true;
+            Aowow\Cfg::$turnstile = ['TURNSTILE_'.strtoupper($action).'_ENABLE'=>1];
+            $page = unserialize($cached);
+            $head = $render->call($page, $root.'/template/bricks/head.tpl.php');
+            preg_match('/var g_turnstile = (.+);/', $head, $match);
+            $config = json_decode($match[1], true, flags: JSON_THROW_ON_ERROR);
+            check($config['actions'] === [$action] && $config['siteKey'] === 'SITE_FIXTURE' && !str_contains($head, 'SECRET_FIXTURE'), 'Cached headers reflect each independent Turnstile choice without leaking the secret');
+            if ($action !== 'feedback') {
+                $form = match ($action) { 'login'=>'signin', 'registration'=>'signup', default=>'email' };
+                $vars = ['hasRecovery'=>false, 'turnstileAction'=>$action];
+                $html = $render->call($page, $root.'/template/bricks/inputbox-form-'.$form.'.tpl.php', $vars);
+                check(str_contains($html, 'data-turnstile-action="'.$action.'"'), 'Actual '.$action.' form receives the corresponding widget');
+                Aowow\Cfg::$turnstile = [];
+                $html = $render->call($page, $root.'/template/bricks/inputbox-form-'.$form.'.tpl.php', $vars);
+                check(!str_contains($html, 'data-turnstile-action'), 'Disabled '.$action.' form has no widget');
+            }
+            Aowow\Cfg::$turnstile = [];
+            $head = $render->call(unserialize($cached), $root.'/template/bricks/head.tpl.php');
+            check(!str_contains($head, '/js/turnstile.js') && !str_contains($head, 'var g_turnstile'), 'Disabled switches remove client setup from the same cached page');
+        }
+        Aowow\Cfg::$turnstile = ['TURNSTILE_FEEDBACK_ENABLE'=>1];
+        Aowow\Cfg::$feedback = false;
+        $head = $render->call(unserialize($cached), $root.'/template/bricks/head.tpl.php');
+        check(!str_contains($head, '/js/turnstile.js'), 'Disabled Feedback never loads its captcha setup');
     }
     finally {
         chdir($cwd);

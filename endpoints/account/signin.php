@@ -94,6 +94,12 @@ class AccountSigninResponse extends TemplateResponse
             return false;
         }
 
+        if (!Turnstile::verify('login', $_POST['cf-turnstile-response'] ?? null))
+        {
+            $error = Lang::main('captchaError');
+            return false;
+        }
+
         $error = match (User::authenticate($this->_post['username'], $this->_post['password']))
         {
             AUTH_OK, AUTH_BANNED => $this->onAuthSuccess(),

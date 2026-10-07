@@ -7,6 +7,47 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-07
 
+### Cloudflare Turnstile
+
+Six independent, persistent boolean settings protect registration, login,
+password recovery email, username recovery email, activation email resend and
+general feedback. They default to Disabled and preserve existing choices through
+`1791331200_05.sql`. Keys remain in deployment-owned `config/security.php`; the
+public client configuration contains only the site key, enabled actions and a
+localized retry message. Enable the account switches under Site Configuration →
+Account and the feedback switch under Site Configuration → Site.
+
+The shared verifier makes a fixed HTTPS POST to Cloudflare Siteverify and checks
+strict success, the configured `HOST_URL` hostname and the expected form action.
+It rejects absent/malformed/expired/reused tokens, missing keys, mismatched
+responses and provider/transport failures before authentication, account creation
+or mail/report work. TLS checks remain required, redirects are disabled, response
+headers/body are bounded and the total timeout is five seconds with asynchronous
+DNS required. Failure is a form error with no raw provider messages, secrets or
+tokens in diagnostics, and does not activate maintenance mode.
+
+Native forms render widgets independently, block pending/expired submissions and
+refresh expired challenges. The general feedback dialog mounts a widget on show,
+sends its token with AJAX, resets after submission and removes it on close.
+Comments, uploads and content-report modes do not require Turnstile. Client flags
+are read at render time for cached pages; switches do not queue builds. The update
+queues a single `globaljs` build to install feedback dialog integration. Existing
+CSRF, attempt budgets, password policy, email activation and recovery authority
+remain intact. Email confirmation/reset links themselves require no new captcha.
+
+Setup prerequisites and switches are documented in the
+[README](../README.md#configuration). Provider semantics follow
+[Cloudflare's server validation documentation](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/).
+
+Validation: full PHP 8.5, JavaScript, lint and MySQL 8.4 regression gates passed
+with disposable fixtures. Focused coverage includes real bounded cURL/TLS,
+missing/malformed/expired/replayed tokens, action/hostname mismatch, transport
+failures and timeouts, all six endpoint boundaries and cached form/settings
+rendering. Chromium passed 75 real DOM checks for native and AJAX submissions,
+expiry, script failure/retry and dialog cleanup. No live Cloudflare keys or
+application databases were used; deployed widget acceptance remains to be tested
+on each enabled form with its authorized hostname.
+
 ### Feedback switch
 
 `feedback_enable` is an enabled-by-default persistent boolean under Site

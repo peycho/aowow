@@ -229,6 +229,7 @@ $lang = array(
         'commentsPage' => '评论第 %d 页，共 %d 页',
         'previousComments' => '上一页评论',
         'nextComments' => '下一页评论',
+        'captchaError'  => "验证失败或已过期。请完成验证后重试。",
         'intError'      => "发生内部错误。",
         'intError2'     => "发生内部错误。(%s)",
         'genericError'  => "发生错误，请刷新页面再试一次。如果错误持续存在，请联系<a href=\"#contact\">反馈</a>。", # LANG.genericerror

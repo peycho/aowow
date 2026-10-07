@@ -208,6 +208,7 @@ try {
     check(count($flags)===2 && array_reduce($flags,fn($ok,$row)=>$ok && $row->value==='1' && $row->default==='1' && (int)$row->cat===1 && (int)$row->flags===132,true),'Fresh install seeds both goodies as persistent, enabled site booleans');
     check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key`='missing_screenshots_enable' AND value='0' AND `default`='0' AND cat=1 AND flags=132")->fetchSingle()===1,'Fresh install seeds missing screenshots as a persistent, disabled site boolean');
     check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key`='feedback_enable' AND value='1' AND `default`='1' AND cat=1 AND flags=132")->fetchSingle()===1,'Fresh install seeds Feedback as a persistent, enabled site boolean');
+    check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key` LIKE 'turnstile\\_%\\_enable' AND value='0' AND `default`='0' AND cat IN (1,3) AND flags=132")->fetchSingle()===6,'Fresh install seeds six disabled persistent Turnstile form switches');
     SqlUpdate::apply($db);
     check(!(int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle(),'Fresh version metadata already includes reconciliation');
     $db->query('UPDATE ::dbversion SET date=1791244800');SqlUpdate::apply($db);
@@ -224,7 +225,7 @@ try {
     check((int)$entry->date===1791331200 && (int)$entry->part===2 && $entry->status==='applied' &&
         $entry->checksum===hash_file('sha256',$root.'/setup/sql/updates/1791331200_02.sql'),'Settings migration uses ordinary durable update accounting');
     [$code,$out]=invoke($temp);
-    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===3 &&
+    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===4 &&
         $db->query("SELECT value FROM ::config WHERE `key`='searchplugins_enable'")->fetchSingle()==='0','Already-current update retains goodies choices without replay');
     $db->query("DELETE FROM ::config WHERE `key`='missing_screenshots_enable'");
     $db->query('UPDATE ::dbversion SET date=1791331200, part=2');
@@ -241,14 +242,14 @@ try {
     [$code,$out]=invoke($temp);
     check($code===0 && $db->query("SELECT value FROM ::config WHERE `key`='missing_screenshots_enable'")->fetchSingle()==='1','Migration preserves an existing explicitly enabled choice');
     [$code,$out]=invoke($temp);
-    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===2 &&
+    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===3 &&
         $db->query("SELECT value FROM ::config WHERE `key`='missing_screenshots_enable'")->fetchSingle()==='1','Already-current update preserves the switch without replay');
     $db->query("DELETE FROM ::config WHERE `key`='feedback_enable'");
     $db->query('UPDATE ::dbversion SET date=1791331200, part=3');
     $db->query('TRUNCATE ::sql_update_journal');
     [$code,$out]=invoke($temp);
     check($code===0 && (int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key`='feedback_enable' AND value='1' AND `default`='1' AND cat=1 AND flags=132")->fetchSingle()===1,'Real --update installs enabled Feedback with persistent boolean metadata: '.$out);
-    $entry=$db->query('SELECT * FROM ::sql_update_journal')->fetch();
+    $entry=$db->query('SELECT * FROM ::sql_update_journal WHERE date=1791331200 AND part=4')->fetch();
     check((int)$entry->part===4 && $entry->status==='applied' && (int)$entry->statements===2 &&
         $entry->checksum===hash_file('sha256',$root.'/setup/sql/updates/1791331200_04.sql'),'Feedback migration retains durable checksummed accounting');
     check(str_contains(file_get_contents($temp.'/static/js/global.js'), 'typeof g_feedbackEnabled') &&
@@ -259,7 +260,22 @@ try {
     [$code,$out]=invoke($temp);
     check($code===0 && $db->query("SELECT value FROM ::config WHERE `key`='feedback_enable'")->fetchSingle()==='0','Feedback migration preserves an existing disabled choice');
     [$code,$out]=invoke($temp);
-    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===1 &&
+    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===2 &&
         $db->query("SELECT value FROM ::config WHERE `key`='feedback_enable'")->fetchSingle()==='0','Already-current update preserves Feedback without replay');
+    $db->query("UPDATE ::config SET value='1' WHERE `key`='turnstile_login_enable'");
+    $db->query("DELETE FROM ::config WHERE `key`='turnstile_resend_enable'");
+    $db->query('UPDATE ::dbversion SET date=1791331200, part=4');
+    $db->query('TRUNCATE ::sql_update_journal');
+    [$code,$out]=invoke($temp);
+    check($code===0 && $db->query("SELECT value FROM ::config WHERE `key`='turnstile_login_enable'")->fetchSingle()==='1' &&
+        $db->query("SELECT value FROM ::config WHERE `key`='turnstile_resend_enable'")->fetchSingle()==='0','Real --update installs missing Turnstile choices without overwriting enabled ones: '.$out);
+    $entry=$db->query('SELECT * FROM ::sql_update_journal')->fetch();
+    check((int)$entry->part===5 && $entry->status==='applied' && (int)$entry->statements===7 &&
+        $entry->checksum===hash_file('sha256',$root.'/setup/sql/updates/1791331200_05.sql'),'Turnstile migration retains checksummed accounting');
+    check(str_contains(file_get_contents($temp.'/static/js/global.js'), 'AowowTurnstile.token') &&
+        !$db->query('SELECT build FROM ::dbversion')->fetchSingle(),'Turnstile update installs feedback client guards and verifies build completion');
+    [$code,$out]=invoke($temp);
+    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===1 &&
+        $db->query("SELECT value FROM ::config WHERE `key`='turnstile_login_enable'")->fetchSingle()==='1','Already-current update retains Turnstile choices without replay');
     echo 'PASS: '.$checks.' guarded reconciliation/parity/community/enum/concurrency checks ('.$db->query('SELECT VERSION()')->fetchSingle().")\n";
 } finally { clean($temp); }
