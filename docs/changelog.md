@@ -7,6 +7,36 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-07
 
+### Optional header image
+
+Added `HEADER_IMAGE_ENABLE` (default Disabled), `HEADER_IMAGE_URL` and
+`HEADER_IMAGE_LINK` (default empty) under Site Configuration → Site. The shared
+page header displays one linked image at its top right with a 468×60 area. The
+homepage uses its own layout and does not display it. Images retain their aspect
+ratio inside that area; a 468×60 source is recommended.
+
+Run the existing `php8.5 aowow --update` to install `1791331200_07.sql`. It preserves
+existing choices and queued SQL/build work. Fresh installs seed the same settings.
+Enable the switch after setting both absolute HTTP/HTTPS URLs. Empty or invalid
+URLs suppress the entire placement. Links open in a new tab with
+`noopener noreferrer`, and image/link attributes and settings input values are
+escaped. Credentials, control bytes and non-web schemes are rejected at render
+time. The server does not fetch or upload the image; the visitor's browser loads
+the configured URL. HTTPS image URLs are recommended for an HTTPS site.
+
+Settings are read from already-loaded configuration when rendering, including
+cached templates. Changing them requires no build, cache flush or additional
+database query and does not change maintenance mode. The markup uses ordinary
+`header-image` names, CSS sizing without advertising-size HTML attributes, and no
+advertising scripts or containers. Browser extensions
+can still apply URL, size or user-defined filters, so universal visibility cannot
+be guaranteed.
+
+Validation: PHP 8.5 lint, PHP and JavaScript regression gates and the full SQL
+gate passed on disposable MySQL 8.4 databases. The complete first-install SQL
+scripts imported successfully. Local Chrome fixtures verified the size and
+position at 980- and 1366-pixel widths; no deployment was performed.
+
 ### Optional site sounds
 
 Added the persistent boolean `SOUNDS_ENABLE` (Site category), default Enabled.

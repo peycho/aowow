@@ -220,6 +220,27 @@ class PageTemplate
         return Util::htmlEscape($varRef ? $this->$var : $var);
     }
 
+    // Read current settings when rendering, including serialized page templates.
+    private function headerImage() : ?array
+    {
+        if (!Cfg::get('HEADER_IMAGE_ENABLE'))
+            return null;
+
+        $urls = [Cfg::get('HEADER_IMAGE_URL'), Cfg::get('HEADER_IMAGE_LINK')];
+        foreach ($urls as $url)
+        {
+            if (!is_string($url) || preg_match('/[\x00-\x20\x7f\\\\]/', $url) || !filter_var($url, FILTER_VALIDATE_URL))
+                return null;
+
+            $parts = parse_url($url);
+            if (!$parts || !in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https'], true) ||
+                isset($parts['user']) || isset($parts['pass']))
+                return null;
+        }
+
+        return ['image' => $urls[0], 'link' => $urls[1]];
+    }
+
     // Read at render time, including cached templates, so tokens remain session-specific.
     private function csrfField() : string
     {

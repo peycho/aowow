@@ -44,6 +44,7 @@ PY
     php tests/setup-maps.php
     php tests/maps-picker.php
     php tests/external-links.php
+    php tests/header-image.php
     php tests/retirement.php
     ;;
   javascript)
@@ -73,7 +74,8 @@ PY
     php tests/security-guide-editor.php --browser > "$fixture_root/guide-editor.html"
     php tests/security-csrf.php --browser > "$fixture_root/csrf.html"
     node tests/security-turnstile.mjs --browser > "$fixture_root/turnstile.html"
-    for fixture in json guide-editor csrf turnstile; do
+    php tests/header-image.php --browser > "$fixture_root/header-image.html"
+    for fixture in json guide-editor csrf turnstile header-image; do
       timeout 45s "$browser" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage \
         --disable-background-networking \
         --dump-dom "file://$fixture_root/$fixture.html" > "$fixture_root/$fixture.dom"

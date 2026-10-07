@@ -978,3 +978,14 @@ sources. The existing cache suite checks enabled/disabled cache separation; the
 journaled SQL suite checks installation, existing choices and a single queued
 build on disposable databases. These checks are included in the usual PHP,
 JavaScript and SQL CI gates.
+
+## Linked header image
+
+`php tests/header-image.php` renders the real standard header and homepage with
+synthetic settings, including cached templates, URL edits/toggles, safe new-tab
+attributes, 468×60 dimensions, invalid URL suppression and administrator input
+escaping. The SQL update and schema reconciliation suites exercise fresh seeds,
+preserved operator choices, checksummed migration accounting and the normal
+`--update` command on disposable databases.
+The browser gate renders `php tests/header-image.php --browser` with the real CSS,
+checking the 468×60 geometry, top-right alignment and separation from the logo.

@@ -433,6 +433,26 @@ CODE;
             check($db->query('SELECT build FROM ::dbversion')->fetchSingle() === 'existing globaljs', 'Journal prevents duplicate sound builds');
         }
 
+        $headerMigration = files(['1791331200_07.sql' => file_get_contents($root.'/setup/sql/updates/1791331200_07.sql')]);
+        foreach ([null, '0', '1'] as $choice) {
+            resetDb();
+            $db->query('ALTER TABLE ::config ADD `default` text, ADD cat int, ADD flags int, ADD comment text');
+            if ($choice !== null) {
+                $db->query("INSERT INTO ::config (`key`,value) VALUES ('header_image_enable',%s)", $choice);
+                $db->query("INSERT INTO ::config (`key`,value) VALUES ('header_image_url','https://images.example.test/custom.gif'), ('header_image_link','https://example.test/destination')");
+            }
+            $db->query("UPDATE ::dbversion SET `sql`='existing', build='existing'");
+            SqlUpdate::apply($db,$headerMigration);
+            check($db->query("SELECT value FROM ::config WHERE `key`='header_image_enable'")->fetchSingle() === ($choice ?? '0'), 'Header image migration defaults to disabled and preserves choices');
+            check($db->query("SELECT value FROM ::config WHERE `key`='header_image_url'")->fetchSingle() === ($choice === null ? '' : 'https://images.example.test/custom.gif'), 'Header image migration preserves configured image URL');
+            check($db->query("SELECT value FROM ::config WHERE `key`='header_image_link'")->fetchSingle() === ($choice === null ? '' : 'https://example.test/destination'), 'Header image migration preserves destination URL');
+            check($db->query('SELECT build FROM ::dbversion')->fetchSingle() === 'existing' && $db->query('SELECT `sql` FROM ::dbversion')->fetchSingle() === 'existing', 'Header image migration leaves queued work unchanged');
+            check($db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle() === '0', 'Header image migration leaves maintenance unchanged');
+            if ($choice === null) check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE cat=1 AND ((`key`='header_image_enable' AND flags=132) OR (`key` IN ('header_image_url','header_image_link') AND flags=136))")->fetchSingle() === 3, 'Header image settings have persistent site metadata');
+            SqlUpdate::apply($db,$headerMigration);
+            check((int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle() === 1, 'Journal prevents header image migration replay');
+        }
+
         echo "\n$checks update checks passed.\n";
     }
     finally { cleanup($temp); }
