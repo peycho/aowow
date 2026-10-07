@@ -36,3 +36,31 @@ for (const file of readdirSync('static/js').filter(file => /^locale_.*\.js$/.tes
     }
 }
 console.log(`PASS: ${checks} external link menu scenarios across all locales`);
+
+for (const file of ['locale_enus.js', 'locale_frfr.js', 'locale_dede.js', 'locale_zhcn.js', 'locale_eses.js', 'locale_ruru.js']) {
+    for (const enabled of [false, true]) {
+        const context = vm.createContext({g_staticUrl: '/static'});
+        vm.runInContext(readFileSync(`static/js/${file}`, 'utf8'), context);
+        vm.runInContext(readFileSync('static/js/external-links.js', 'utf8'), context);
+        const tools = context.mn_tools, more = context.mn_more;
+        const originalTools = JSON.stringify(tools), originalMore = JSON.stringify(more);
+        context.g_applyProfilerMenus(tools, more, enabled);
+        assert.equal(context.mn_path.find(entry => entry[0] === 1)[3], tools);
+        assert.equal(context.mn_path.find(entry => entry[0] === 2)[3], more);
+        if (enabled) {
+            assert.equal(JSON.stringify(tools), originalTools);
+            assert.equal(JSON.stringify(more), originalMore);
+        } else {
+            assert.equal(tools.find(entry => entry[0] === 5), undefined);
+            const help = more.find(entry => entry[0] === 13)[3];
+            assert.equal(help.find(entry => entry[0] === 6), undefined);
+            assert.ok(help.some(entry => entry[2] === '?help=stat-weighting'));
+            for (const id of [0, 2, 3, 1, 8]) assert.ok(tools.some(entry => entry[0] === id));
+            assert.ok(!JSON.stringify([tools, more]).match(/\?profiler|\?profiles|\?guilds|\?arena-teams|\?profile&new|\?help=profiler/));
+        }
+        const once = JSON.stringify([tools, more]);
+        context.g_applyProfilerMenus(tools, more, enabled);
+        assert.equal(JSON.stringify([tools, more]), once);
+    }
+}
+console.log('PASS: 12 profiler navigation scenarios across all locales');

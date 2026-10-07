@@ -2,8 +2,10 @@
 
 namespace Aowow {
     class Cfg {
+        public static bool $profiler = false;
         public static function get(string $key) : mixed {
             return match ($key) {
+                'PROFILER_ENABLE' => self::$profiler,
                 'HOST_URL' => 'https://example.com', 'STATIC_URL' => '/static', default => 0
             };
         }
@@ -96,6 +98,13 @@ namespace {
         preg_match('/var g_externalLinks = (.+);/', $head, $match);
         check(json_decode($match[1], true, 512, JSON_THROW_ON_ERROR) === ExternalLinks::urls(), 'Head emits current configured URLs');
         check(str_contains($head, 'g_applyExternalLinks(mn_community, g_externalLinks)'), 'Head applies configuration before body navigation');
+        check(str_contains($head, '/js/external-links.js?v='.AOWOW_REVISION.'.1'), 'Updated navigation script bypasses the prior revision-only browser cache');
+        check(str_contains($head, 'var g_profilerEnabled = false;') && str_contains($head, 'g_applyProfilerMenus(mn_tools, mn_more, g_profilerEnabled)'), 'Cached page hides profiler navigation using the current server configuration');
+        Aowow\Cfg::$profiler = true;
+        $page = unserialize($cached);
+        $enabledHead = $render->call($page, $root.'/template/bricks/head.tpl.php');
+        check(str_contains($enabledHead, 'var g_profilerEnabled = true;'), 'Same cached page reflects profiler enablement without a rebuild or database discovery');
+        Aowow\Cfg::$profiler = false;
         $home = $render->call($page, $root.'/template/pages/home.tpl.php');
         check(str_contains($home, 'href="'.htmlspecialchars($url, ENT_QUOTES | ENT_HTML5).'"'), 'Homepage GitHub URL is HTML escaped');
 

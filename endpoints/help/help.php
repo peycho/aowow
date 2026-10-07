@@ -26,6 +26,9 @@ class HelpBaseResponse extends TemplateResponse
         if (!$rawParam)
             $this->generateError();
 
+        if ($rawParam === 'profiler' && !Cfg::get('PROFILER_ENABLE'))
+            $this->generateError();
+
         $pageId = array_search($rawParam, $this->validCats);
         if ($pageId === false)
             $this->generateError();

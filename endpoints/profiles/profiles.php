@@ -35,12 +35,12 @@ class ProfilesBaseResponse extends TemplateResponse implements IProfilerList
 
     public function __construct(string $rawParam)
     {
+        if (!Cfg::get('PROFILER_ENABLE'))
+            $this->generateError();
+
         $this->getSubjectFromUrl($rawParam);
 
         parent::__construct($rawParam);
-
-        if (!Cfg::get('PROFILER_ENABLE'))
-            $this->generateError();
 
         $realms = [];
         foreach (Profiler::getRealms() as $idx => $r)

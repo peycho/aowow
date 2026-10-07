@@ -45,10 +45,12 @@ endif;
     </script>
 
 <?=$this->renderArray('js', 4); ?>
-    <script src="<?=$this->gStaticUrl;?>/js/external-links.js?v=<?=AOWOW_REVISION;?>"></script>
+    <script src="<?=$this->gStaticUrl;?>/js/external-links.js?v=<?=AOWOW_REVISION;?>.1"></script>
     <script type="text/javascript">
         var g_externalLinks = <?=\Aowow\Util::toJSON(\Aowow\ExternalLinks::urls());?>;
         g_applyExternalLinks(mn_community, g_externalLinks);
+        var g_profilerEnabled = <?=\Aowow\Cfg::get('PROFILER_ENABLE') ? 'true' : 'false';?>;
+        g_applyProfilerMenus(mn_tools, mn_more, g_profilerEnabled);
         var g_user = <?=$this->gUser; ?>;
 <?php
 if ($this->gFavorites):

@@ -248,6 +248,13 @@ and static origin, including subdirectory installations. See the
 
 ## Configuration
 
+The database setting `profiler_enable` controls profiler URLs and navigation.
+Set it to Disabled in Site Configuration → Profiler to hide Characters, Guilds,
+Arena Teams, profile creation and profiler help, and reject their direct URLs.
+The checks use configuration already loaded for the request; they add no database
+queries or character-database availability checks. See the
+[profiler switch details](docs/changelog.md#profiler-switch-and-navigation).
+
 Configure Community-menu links and the homepage GitHub link through
 `$AoWoWconf['externalLinks']` in `config/config.php`. Entries support an `enabled`
 boolean and an absolute HTTP/HTTPS `url`; disabled, empty or invalid entries are

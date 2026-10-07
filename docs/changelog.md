@@ -7,6 +7,38 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-07
 
+### Profiler switch and navigation
+
+The existing `aowow_config.profiler_enable` setting is the single switch for
+profiler navigation and routes. Set it to Disabled in Site Configuration →
+Profiler, or use this query against the configured application database
+(substitute the actual table prefix if necessary):
+
+```sql
+UPDATE aowow_config SET value = '0' WHERE `key` = 'profiler_enable';
+```
+
+Disabled navigation removes Tools → Profiler and its Characters, Guilds,
+Arena Teams and New entries, along with Help → Profiler, in all six languages.
+Profile/list/detail and action endpoints retain their server-side rejection;
+profiler help now rejects direct access as well. Character browsing checks the
+switch before interpreting realm URLs, avoiding realm discovery when disabled.
+Talent calculators, item comparison and stat weighting remain available.
+Stored profiles and community data are unchanged.
+
+Normal startup already loads the application's configuration. Subsequent
+`Cfg::get('PROFILER_ENABLE')` calls read the loaded PHP array: no extra SQL,
+auth/character database probes or per-request realm discovery are added by this
+switch. It is explicit and does not automatically change based on connection
+availability. Menu visibility reads the current value while rendering, including
+cached page templates, so toggling it needs no JavaScript rebuild for visibility.
+The existing admin setting still rebuilds realm datasets when changed.
+
+Deploy the updated navigation script, head template and endpoints together.
+Regression coverage exercises cached-template toggling, all six languages,
+direct route rejection before realm discovery, enabled routes and repeated
+configuration reads without database calls.
+
 ### Historical schema reconciliation
 
 Historical structure differences now have an explicit, guarded update path in

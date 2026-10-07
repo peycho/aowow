@@ -38,12 +38,17 @@ namespace Aowow {
     }
     // Replace only the article-loading parent; the actual help route and page renderer are exercised.
     class TemplateResponse {
-        public const int TAB_MORE = 2;
+        public const int TAB_MORE = 2, TAB_TOOLS = 1;
         public array $title = [];
         public string $h1 = '', $articleUrl = '';
         public function __construct(string $param) {}
         protected function generate() : void {}
         public function generateError() : never { throw new \RuntimeException('Invalid help route'); }
+    }
+    trait TrListPage {}
+    class Profiler {
+        public const array REGIONS = ['eu'=>[]];
+        public static function getRealms() : never { throw new \RuntimeException('Realm discovery reached'); }
     }
 }
 
@@ -56,6 +61,7 @@ namespace {
     require $root.'/includes/locale.class.php';
     require $root.'/includes/utilities.php';
     require $root.'/includes/cfg.class.php';
+    require $root.'/includes/type.class.php';
     require $root.'/includes/components/jsexpression.class.php';
     require $root.'/includes/components/guidemgr.class.php';
     foreach (['SmartAI', 'SmartEvent', 'SmartAction', 'SmartTarget'] as $class)
@@ -79,7 +85,7 @@ namespace {
     $config = ['host_url'=>'http://127.0.0.1', 'static_url'=>'/static', 'debug'=>0,
                'contact_email'=>'fixture@example.test', 'gtag_measurement_id'=>'', 'ua_measurement_key'=>'',
                'rep_req_border_uncommon'=>0, 'rep_req_border_rare'=>0,
-               'rep_req_border_epic'=>0, 'rep_req_border_legendary'=>0];
+               'rep_req_border_epic'=>0, 'rep_req_border_legendary'=>0, 'profiler_enable'=>0];
     $store = [];
     foreach ($config as $key => $value)
         $store[$key] = [$value, is_int($value) ? Cfg::FLAG_TYPE_INT : Cfg::FLAG_TYPE_STRING, 0, null, 'fixture'];
@@ -165,5 +171,30 @@ namespace {
         rmdir($scratch.'/template/bricks'); rmdir($scratch.'/template'); rmdir($scratch);
     }
     check(BUTTON_UPGRADE === 1 && BUTTON_COMPARE === 2 && BUTTON_LINKS === 4, 'Remaining red button IDs are stable');
+
+    // Execute the real HTML endpoint guards, with a sentinel at the realm-discovery boundary.
+    foreach (['profiler/profiler', 'profiles/profiles', 'guilds/guilds', 'arena-teams/arena-teams',
+              'profile/profile', 'profile/profile_new', 'guild/guild', 'arena-team/arena-team'] as $route) {
+        require $root.'/endpoints/'.$route.'.php';
+        $class = 'Aowow\\'.match ($route) {
+            'profile/profile_new'=>'ProfileNewResponse',
+            default=>str_replace('-', '', ucfirst(explode('/', $route)[0])).'BaseResponse'
+        };
+        $error = '';
+        try { new $class('eu.fixture.fixture'); } catch (RuntimeException $e) { $error = $e->getMessage(); }
+        check($error === 'Invalid help route', 'Disabled '.$route.' is rejected before realm discovery');
+    }
+    $error='';try { new Aowow\HelpBaseResponse('profiler'); } catch (RuntimeException $e) { $error=$e->getMessage(); }
+    check($error === 'Invalid help route', 'Disabled profiler help URL is rejected');
+    // Reading the already-loaded dedicated switch requires no DB methods or realm discovery.
+    for ($i=0;$i<1000;++$i) if (Cfg::get('PROFILER_ENABLE')) throw new RuntimeException('Unexpected enabled profiler');
+    check(true, 'Repeated reads of the profiler switch use loaded configuration only');
+    $store['profiler_enable'][0]=1;
+    (new ReflectionProperty(Cfg::class, 'store'))->setValue(null, $store);
+    check((new Aowow\HelpBaseResponse('profiler'))->articleUrl === 'help=profiler', 'Enabled profiler help URL remains available');
+    check(new Aowow\ProfilerBaseResponse('') instanceof Aowow\ProfilerBaseResponse, 'Enabled profiler landing route remains available');
+    check(new Aowow\ProfileNewResponse('') instanceof Aowow\ProfileNewResponse, 'Enabled custom profile builder remains available');
+    $error='';try { new Aowow\ProfilesBaseResponse('eu.fixture'); } catch (RuntimeException $e) { $error=$e->getMessage(); }
+    check($error === 'Realm discovery reached', 'Enabled character browsing continues through its normal discovery path');
     echo "PASS: $checks retirement build/account/help checks\n";
 }
