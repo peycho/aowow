@@ -75,7 +75,8 @@ PY
     php tests/security-csrf.php --browser > "$fixture_root/csrf.html"
     node tests/security-turnstile.mjs --browser > "$fixture_root/turnstile.html"
     php tests/header-image.php --browser > "$fixture_root/header-image.html"
-    for fixture in json guide-editor csrf turnstile header-image; do
+    php tests/maintenance-response.php --browser > "$fixture_root/maintenance.html"
+    for fixture in json guide-editor csrf turnstile header-image maintenance; do
       timeout 45s "$browser" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage \
         --disable-background-networking \
         --dump-dom "file://$fixture_root/$fixture.html" > "$fixture_root/$fixture.dom"

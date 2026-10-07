@@ -7,6 +7,21 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-07
 
+### Maintenance page
+
+Replaced the maintenance page's gnome background with a new Wrath-themed archive
+repair illustration, optimized as WebP. The existing logo, heading, message and
+artwork now occupy separate rows, preventing overlap. The page adapts to narrow
+viewports and displays “Maintenance in progress” with a request to check back
+later, without promising a completion time. HTTP 503 and Retry-After handling
+remain unchanged. No SQL update or generator rebuild is required.
+
+The [artwork notes](artwork/maintenance.md) record the generation prompt and asset.
+Validation: PHP 8.5 lint and the full PHP regression gate passed, including 181
+maintenance response/template checks. Local Chrome checks at 1280 and 375 pixels
+confirmed image loading and separate logo, text and artwork with no horizontal
+overflow. No deployment was performed.
+
 ### Optional header image
 
 Added `HEADER_IMAGE_ENABLE` (default Disabled), `HEADER_IMAGE_URL` and

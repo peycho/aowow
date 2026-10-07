@@ -769,7 +769,7 @@ class TemplateResponse extends BaseResponse
         exit;
     }
 
-    // display brb gnomes
+    // Display the maintenance page, including the exception-handler fallback.
     public function generateMaintenance() : never
     {
         $this->result = new Template\PageTemplate('maintenance', $this);

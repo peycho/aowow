@@ -1,5 +1,11 @@
 # Security regressions
 
+`php tests/maintenance-response.php` exercises maintenance response construction,
+metadata and the rendered page across all six locales. HTTP 503/Retry-After,
+separate logo/artwork elements, current copy and the optimized asset are checked.
+The browser gate uses `--browser` to verify images load, the logo/text/artwork do
+not overlap and the layout does not overflow horizontally.
+
 `tests/schema-reconciliation.php` belongs to the SQL CI group and is guarded by
 `AOWOW_TEST_DATABASE=aowow_security_test_reconciliation` on an isolated localhost
 database. Its sanitized historical structure fixture contains no rows, comments,
