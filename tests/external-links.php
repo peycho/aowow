@@ -4,11 +4,13 @@ namespace Aowow {
     class Cfg {
         public static bool $profiler = false;
         public static bool $searchplugins = true, $searchbox = true;
+        public static bool $missingScreenshots = false;
         public static function get(string $key) : mixed {
             return match ($key) {
                 'PROFILER_ENABLE' => self::$profiler,
                 'SEARCHPLUGINS_ENABLE' => self::$searchplugins,
                 'SEARCHBOX_ENABLE' => self::$searchbox,
+                'MISSING_SCREENSHOTS_ENABLE' => self::$missingScreenshots,
                 'HOST_URL' => 'https://example.com', 'STATIC_URL' => '/static', default => 0
             };
         }
@@ -101,7 +103,7 @@ namespace {
         preg_match('/var g_externalLinks = (.+);/', $head, $match);
         check(json_decode($match[1], true, 512, JSON_THROW_ON_ERROR) === ExternalLinks::urls(), 'Head emits current configured URLs');
         check(str_contains($head, 'g_applyExternalLinks(mn_community, g_externalLinks)'), 'Head applies configuration before body navigation');
-        check(str_contains($head, '/js/external-links.js?v='.AOWOW_REVISION.'.2'), 'Updated navigation script bypasses the previous browser cache');
+        check(str_contains($head, '/js/external-links.js?v='.AOWOW_REVISION.'.3'), 'Updated navigation script bypasses the previous browser cache');
         check(str_contains($head, 'var g_profilerEnabled = false;') && str_contains($head, 'g_applyProfilerMenus(mn_tools, mn_more, g_profilerEnabled)'), 'Cached page hides profiler navigation using the current server configuration');
         Aowow\Cfg::$profiler = true;
         $page = unserialize($cached);
@@ -127,6 +129,13 @@ namespace {
             check(str_contains($head, 'var g_searchpluginsEnabled = '.($searchplugins ? 'true' : 'false').';') &&
                   str_contains($head, 'var g_searchboxEnabled = '.($searchbox ? 'true' : 'false').';') &&
                   str_contains($head, 'g_applyGoodiesMenus(mn_more, g_searchpluginsEnabled, g_searchboxEnabled)'), 'Cached head reflects both independent goodies switches without rebuilding');
+        }
+        foreach ([false, true, false] as $enabled) {
+            Aowow\Cfg::$missingScreenshots = $enabled;
+            $page = unserialize($cached);
+            $head = $render->call($page, $root.'/template/bricks/head.tpl.php');
+            check(str_contains($head, 'var g_missingScreenshotsEnabled = '.($enabled ? 'true' : 'false').';') &&
+                  str_contains($head, 'g_applyMissingScreenshotsMenu(mn_tools, g_missingScreenshotsEnabled)'), 'Same cached page reflects the current missing-screenshots switch without rebuilding');
         }
     }
     finally {

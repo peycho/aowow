@@ -86,7 +86,7 @@ namespace {
                'contact_email'=>'fixture@example.test', 'gtag_measurement_id'=>'', 'ua_measurement_key'=>'',
                'rep_req_border_uncommon'=>0, 'rep_req_border_rare'=>0,
                'rep_req_border_epic'=>0, 'rep_req_border_legendary'=>0, 'profiler_enable'=>0,
-               'searchplugins_enable'=>1, 'searchbox_enable'=>1];
+               'searchplugins_enable'=>1, 'searchbox_enable'=>1, 'missing_screenshots_enable'=>0];
     $store = [];
     foreach ($config as $key => $value)
         $store[$key] = [$value, is_int($value) ? Cfg::FLAG_TYPE_INT : Cfg::FLAG_TYPE_STRING, 0, null, 'fixture'];
@@ -215,16 +215,36 @@ namespace {
         }
     }
     check(!DB::$writes, 'Goodies route switches read loaded configuration without database calls');
+    require $root.'/endpoints/missing-screenshots/missing-screenshots.php';
+    class MissingScreenshotsProbe extends Aowow\MissingscreenshotsBaseResponse {
+        public function run() : void { $this->generate(); }
+        protected function generate() : void { throw new RuntimeException('Missing screenshot listing reached'); }
+    }
+    // The real constructor must reject every disabled URL before listing generation can run.
+    foreach ([0, 1, 0] as $enabled) {
+        $store['missing_screenshots_enable'][0] = $enabled;
+        (new ReflectionProperty(Cfg::class, 'store'))->setValue(null, $store);
+        foreach (['', 'ignored', '0'] as $param) {
+            $error = '';
+            try { (new MissingScreenshotsProbe($param))->run(); } catch (RuntimeException $e) { $error = $e->getMessage(); }
+            check($error === ($enabled ? 'Missing screenshot listing reached' : 'Invalid help route'), 'Missing screenshots obeys the current switch before listing generation');
+        }
+        $error = '';
+        try { (new MissingScreenshotsProbe())->run(); } catch (RuntimeException $e) { $error = $e->getMessage(); }
+        check($error === ($enabled ? 'Missing screenshot listing reached' : 'Invalid help route'), 'Missing screenshots preserves construction without a URL parameter');
+    }
+    check(!DB::$writes, 'Missing-screenshots guard reads loaded configuration without database calls');
     // Real settings writes persist the independent switches without queuing a dataset build.
     foreach (['searchplugins_enable', 'searchbox_enable'] as $key)
         $store[$key] = [1, Cfg::FLAG_TYPE_BOOL | Cfg::FLAG_PERSISTENT, 1, '1', 'fixture'];
+    $store['missing_screenshots_enable'] = [0, Cfg::FLAG_TYPE_BOOL | Cfg::FLAG_PERSISTENT, 1, '0', 'fixture'];
     (new ReflectionProperty(Cfg::class, 'store'))->setValue(null, $store);
     (new ReflectionProperty(Cfg::class, 'isLoaded'))->setValue(null, true);
     DB::$result = 1;
-    foreach (['searchplugins_enable', 'searchbox_enable'] as $key) foreach ([0, 1] as $enabled) {
+    foreach (['searchplugins_enable', 'searchbox_enable', 'missing_screenshots_enable'] as $key) foreach ([0, 1] as $enabled) {
         $builds = []; DB::$writes = [];
         check(Cfg::set($key, $enabled, $builds) === '' && !$builds && Cfg::get($key) === $enabled &&
-              DB::$writes === [['UPDATE ::config SET `value` = %s WHERE `key` = %s', [$enabled, $key]]], 'Saving a goodies switch persists without dataset generation: '.$key);
+              DB::$writes === [['UPDATE ::config SET `value` = %s WHERE `key` = %s', [$enabled, $key]]], 'Saving a feature switch persists without dataset generation: '.$key);
     }
     echo "PASS: $checks retirement build/account/help/feature switch checks\n";
 }

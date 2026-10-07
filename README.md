@@ -248,6 +248,12 @@ and static origin, including subdirectory installations. See the
 
 ## Configuration
 
+`missing_screenshots_enable` under Site Configuration → Site defaults to Disabled.
+It hides Tools → Utilities → Missing Screenshots and rejects `?missing-screenshots`
+before generating the listing. Install the setting with `php aowow --update`;
+toggling it needs no rebuild. See the
+[missing screenshots switch](docs/changelog.md#missing-screenshots-switch).
+
 The independent `searchplugins_enable` and `searchbox_enable` settings under
 Site Configuration → Site control the corresponding Goodies menu entries and
 page URLs. Both default to Enabled. Apply new settings to an existing installation

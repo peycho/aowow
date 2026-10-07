@@ -204,6 +204,7 @@ try {
     check(!$fresh['issues'],'Fresh install imports natively on this engine and matches the same baseline');
     $flags=$db->query("SELECT `key`, value, `default`, cat, flags FROM ::config WHERE `key` IN ('searchplugins_enable','searchbox_enable') ORDER BY `key`")->fetchAll();
     check(count($flags)===2 && array_reduce($flags,fn($ok,$row)=>$ok && $row->value==='1' && $row->default==='1' && (int)$row->cat===1 && (int)$row->flags===132,true),'Fresh install seeds both goodies as persistent, enabled site booleans');
+    check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key`='missing_screenshots_enable' AND value='0' AND `default`='0' AND cat=1 AND flags=132")->fetchSingle()===1,'Fresh install seeds missing screenshots as a persistent, disabled site boolean');
     SqlUpdate::apply($db);
     check(!(int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle(),'Fresh version metadata already includes reconciliation');
     $db->query('UPDATE ::dbversion SET date=1791244800');SqlUpdate::apply($db);
@@ -216,11 +217,28 @@ try {
     check($code===0,'Real --update installs the goodies settings from the preceding marker: '.$out);
     check($db->query("SELECT value FROM ::config WHERE `key`='searchplugins_enable'")->fetchSingle()==='0' &&
         $db->query("SELECT value FROM ::config WHERE `key`='searchbox_enable'")->fetchSingle()==='1','Settings migration preserves an existing disabled choice and adds missing settings');
-    $entry=$db->query('SELECT * FROM ::sql_update_journal')->fetch();
+    $entry=$db->query('SELECT * FROM ::sql_update_journal WHERE date=1791331200 AND part=2')->fetch();
     check((int)$entry->date===1791331200 && (int)$entry->part===2 && $entry->status==='applied' &&
         $entry->checksum===hash_file('sha256',$root.'/setup/sql/updates/1791331200_02.sql'),'Settings migration uses ordinary durable update accounting');
     [$code,$out]=invoke($temp);
-    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===1 &&
+    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===2 &&
         $db->query("SELECT value FROM ::config WHERE `key`='searchplugins_enable'")->fetchSingle()==='0','Already-current update retains goodies choices without replay');
+    $db->query("DELETE FROM ::config WHERE `key`='missing_screenshots_enable'");
+    $db->query('UPDATE ::dbversion SET date=1791331200, part=2');
+    $db->query('TRUNCATE ::sql_update_journal');
+    [$code,$out]=invoke($temp);
+    check($code===0,'Real --update adds the missing-screenshots switch from the preceding marker: '.$out);
+    check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key`='missing_screenshots_enable' AND value='0' AND `default`='0' AND cat=1 AND flags=132")->fetchSingle()===1,'Settings migration disables missing screenshots by default with correct boolean metadata');
+    $entry=$db->query('SELECT * FROM ::sql_update_journal')->fetch();
+    check((int)$entry->date===1791331200 && (int)$entry->part===3 && $entry->status==='applied' &&
+        $entry->checksum===hash_file('sha256',$root.'/setup/sql/updates/1791331200_03.sql') && (int)$entry->statements===1,'Missing-screenshots migration uses ordinary durable update accounting');
+    $db->query("UPDATE ::config SET value='1' WHERE `key`='missing_screenshots_enable'");
+    $db->query('UPDATE ::dbversion SET date=1791331200, part=2');
+    $db->query('TRUNCATE ::sql_update_journal');
+    [$code,$out]=invoke($temp);
+    check($code===0 && $db->query("SELECT value FROM ::config WHERE `key`='missing_screenshots_enable'")->fetchSingle()==='1','Migration preserves an existing explicitly enabled choice');
+    [$code,$out]=invoke($temp);
+    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===1 &&
+        $db->query("SELECT value FROM ::config WHERE `key`='missing_screenshots_enable'")->fetchSingle()==='1','Already-current update preserves the switch without replay');
     echo 'PASS: '.$checks.' guarded reconciliation/parity/community/enum/concurrency checks ('.$db->query('SELECT VERSION()')->fetchSingle().")\n";
 } finally { clean($temp); }

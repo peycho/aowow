@@ -74,7 +74,9 @@ script/HTML escaping, and menu filtering with translated labels and icons in all
 six supported JavaScript locales. They also cover the profiler switch and all four
 Search Plugins/Search Box switch combinations, including cached headers,
 OpenSearch discovery, independent localized menu filtering and preservation of
-other tools. Both suites run in CI.
+other tools. Missing-screenshots menu coverage tests both flag values alongside
+the profiler switch in all six locales and checks current flags on cached
+headers. Both suites run in CI.
 
 ## Item loot-tab labels
 
@@ -158,6 +160,9 @@ configuration, tests account saves with absent/legacy viewer fields, and renders
 the retained help URL/banner without altering the article in all six locales.
 It exercises direct profiler and goodies page guards against loaded
 configuration, including independent toggles and invalid goodies parameters.
+The real missing-screenshots constructor is also checked against a listing
+generation sentinel, including disabling it again after enabling it. Settings
+saves must persist these switches without scheduling a dataset build.
 Node checks the generated asset syntax and real markup parser: local defaults,
 explicit external sources, original post links, configurable forum rules, escaped
 model fallbacks, and menus.

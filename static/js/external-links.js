@@ -41,3 +41,17 @@ function g_applyGoodiesMenus(more, searchpluginsEnabled, searchboxEnabled) {
             (more[i][0] === 16 && searchboxEnabled !== true))
             more.splice(i, 1);
 }
+
+/* Gate the public missing-screenshots utility without removing other contribution tools. */
+function g_applyMissingScreenshotsMenu(tools, enabled) {
+    if (enabled === true)
+        return;
+    for (var i = 0; i < tools.length; ++i) {
+        if (tools[i][0] !== 8 || !Array.isArray(tools[i][3]))
+            continue;
+        var utilities = tools[i][3];
+        for (var j = utilities.length - 1; j >= 0; --j)
+            if (utilities[j][0] === 13)
+                utilities.splice(j, 1);
+    }
+}

@@ -7,6 +7,32 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-07
 
+### Missing screenshots switch
+
+`missing_screenshots_enable` is a persistent boolean in Site Configuration → Site,
+defaulting to Disabled on fresh installs and upgrades. Run `php aowow --update`
+to apply `1791331200_03.sql`; existing explicit choices are retained.
+
+Disabled mode removes Tools → Utilities → Missing Screenshots in all six languages
+and returns HTTP 404 for direct `?missing-screenshots` requests before listing
+generation. Other screenshot pages, uploads and utility menus remain available.
+The switch uses loaded configuration, without additional database queries or
+dataset builds; cached templates reflect its current value when rendered.
+Deploy the endpoint, head template and navigation script together.
+
+Enabling it retains the existing public, uncached listing and its 200-result limit
+per entity type. That limit bounds returned rows, not rows examined by MySQL.
+This change provides an explicit off switch; it does not optimize the enabled
+listing or add request throttling. Regression coverage checks the guard before
+listing generation, menu filtering alongside the profiler switch, cached headers,
+settings saves without builds, fresh/legacy defaults and preservation of choices.
+
+Validation passed the full PHP 8.5, JavaScript and lint groups, plus the full SQL
+group on disposable MySQL 8.0.46, MySQL 8.4.10 and MariaDB 10.6.28 databases.
+Each database passed 950 legacy-upgrade checks across 53 archived and 93 current
+migrations, and 66 reconciliation/settings checks. These are fixture results;
+production data and deployment have not been exercised.
+
 ### Goodies switches
 
 `searchplugins_enable` and `searchbox_enable` are independent persistent boolean
