@@ -85,7 +85,8 @@ namespace {
     $config = ['host_url'=>'http://127.0.0.1', 'static_url'=>'/static', 'debug'=>0,
                'contact_email'=>'fixture@example.test', 'gtag_measurement_id'=>'', 'ua_measurement_key'=>'',
                'rep_req_border_uncommon'=>0, 'rep_req_border_rare'=>0,
-               'rep_req_border_epic'=>0, 'rep_req_border_legendary'=>0, 'profiler_enable'=>0];
+               'rep_req_border_epic'=>0, 'rep_req_border_legendary'=>0, 'profiler_enable'=>0,
+               'searchplugins_enable'=>1, 'searchbox_enable'=>1];
     $store = [];
     foreach ($config as $key => $value)
         $store[$key] = [$value, is_int($value) ? Cfg::FLAG_TYPE_INT : Cfg::FLAG_TYPE_STRING, 0, null, 'fixture'];
@@ -196,5 +197,34 @@ namespace {
     check(new Aowow\ProfileNewResponse('') instanceof Aowow\ProfileNewResponse, 'Enabled custom profile builder remains available');
     $error='';try { new Aowow\ProfilesBaseResponse('eu.fixture'); } catch (RuntimeException $e) { $error=$e->getMessage(); }
     check($error === 'Realm discovery reached', 'Enabled character browsing continues through its normal discovery path');
-    echo "PASS: $checks retirement build/account/help checks\n";
+    require $root.'/endpoints/searchplugins/searchplugins.php';
+    require $root.'/endpoints/searchbox/searchbox.php';
+    DB::$writes = [];
+    foreach ([0, 1] as $searchplugins) foreach ([0, 1] as $searchbox) {
+        $store['searchplugins_enable'][0] = $searchplugins;
+        $store['searchbox_enable'][0] = $searchbox;
+        (new ReflectionProperty(Cfg::class, 'store'))->setValue(null, $store);
+        foreach (['Searchplugins' => $searchplugins, 'Searchbox' => $searchbox] as $route => $enabled) {
+            $class = 'Aowow\\'.$route.'BaseResponse';
+            $error = '';
+            try { $response = new $class(''); } catch (RuntimeException $e) { $error = $e->getMessage(); }
+            check($enabled ? !$error && $response instanceof $class : $error === 'Invalid help route', 'Goodies direct route follows its own switch: '.$route);
+            $error = '';
+            try { new $class('invalid'); } catch (RuntimeException $e) { $error = $e->getMessage(); }
+            check($error === 'Invalid help route', 'Goodies route retains parameter validation: '.$route);
+        }
+    }
+    check(!DB::$writes, 'Goodies route switches read loaded configuration without database calls');
+    // Real settings writes persist the independent switches without queuing a dataset build.
+    foreach (['searchplugins_enable', 'searchbox_enable'] as $key)
+        $store[$key] = [1, Cfg::FLAG_TYPE_BOOL | Cfg::FLAG_PERSISTENT, 1, '1', 'fixture'];
+    (new ReflectionProperty(Cfg::class, 'store'))->setValue(null, $store);
+    (new ReflectionProperty(Cfg::class, 'isLoaded'))->setValue(null, true);
+    DB::$result = 1;
+    foreach (['searchplugins_enable', 'searchbox_enable'] as $key) foreach ([0, 1] as $enabled) {
+        $builds = []; DB::$writes = [];
+        check(Cfg::set($key, $enabled, $builds) === '' && !$builds && Cfg::get($key) === $enabled &&
+              DB::$writes === [['UPDATE ::config SET `value` = %s WHERE `key` = %s', [$enabled, $key]]], 'Saving a goodies switch persists without dataset generation: '.$key);
+    }
+    echo "PASS: $checks retirement build/account/help/feature switch checks\n";
 }

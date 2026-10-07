@@ -277,6 +277,7 @@ CODE;
         check([(int)$version['date'],(int)$version['part']]===[$latest[1],$latest[2]], 'complete corpus reaches latest marker');
         check($version['sql']==='' && $version['build']==='', 'only verified completed generators clear pending work');
         check((int)$db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle()===0, 'complete legacy upgrade restores previous maintenance');
+        check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key` IN ('searchplugins_enable','searchbox_enable') AND value='1' AND `default`='1' AND cat=1 AND flags=132")->fetchSingle()===2, 'complete legacy upgrade enables both goodies with persistent site boolean metadata');
         $journal=$db->query('SELECT * FROM ::sql_update_journal ORDER BY date, part')->fetchAll();
         check(count($journal)===count($pending), 'every pending archive/current file is journaled exactly once');
         foreach ($journal as $i=>$entry) {

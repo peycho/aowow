@@ -248,6 +248,12 @@ and static origin, including subdirectory installations. See the
 
 ## Configuration
 
+The independent `searchplugins_enable` and `searchbox_enable` settings under
+Site Configuration → Site control the corresponding Goodies menu entries and
+page URLs. Both default to Enabled. Apply new settings to an existing installation
+with `php aowow --update`; toggling them needs no asset rebuild. See the
+[goodies switch details](docs/changelog.md#goodies-switches).
+
 The database setting `profiler_enable` controls profiler URLs and navigation.
 Set it to Disabled in Site Configuration → Profiler to hide Characters, Guilds,
 Arena Teams, profile creation and profiler help, and reject their direct URLs.

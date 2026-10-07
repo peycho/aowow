@@ -170,9 +170,10 @@ try {
     check($generated['nodes']===[['id'=>301,'type'=>0,'typeId'=>0,'name_loc8'=>'Задание'],['id'=>302,'type'=>1,'typeId'=>9001,'name_loc8'=>'Полёт']] &&
         $generated['visible']===[302] && $generated['paths']===1,'Real generator preserves scripted/NPC identities, localized names, map filtering and paths');
     check((int)$db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle()===0,'Successful reconciliation restores prior maintenance');
-    $entry=$db->query('SELECT * FROM ::sql_update_journal')->fetch();
+    $entry=$db->query('SELECT * FROM ::sql_update_journal WHERE date=%i AND part=1',SchemaUpdate::DATE)->fetch();
     check($entry->status==='applied' && $entry->checksum===hash_file('sha256',$migration) && (int)$entry->statements===count(SqlUpdate::statements(file_get_contents($migration))),'All ALTER statements retain durable checksum/progress accounting');
-    [$code,$out]=invoke($temp);check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===1,'Already-current rerun performs no replay');
+    $journalCount=(int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle();
+    [$code,$out]=invoke($temp);check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===$journalCount,'Already-current rerun performs no replay');
 
     // A failure after DDL still uses the existing partial-application refusal, even if columns now match.
     $dir=$temp.'/broken';mkdir($dir);$sql=file_get_contents($migration)."\nSELECT nonexistent_fixture_column FROM aowow_account;";
@@ -201,9 +202,25 @@ try {
     resetSchema($root.'/setup/sql/01-db_structure.sql');
     $fresh=SchemaValidator::inspect($db,$root.'/setup/sql/01-db_structure.sql');
     check(!$fresh['issues'],'Fresh install imports natively on this engine and matches the same baseline');
+    $flags=$db->query("SELECT `key`, value, `default`, cat, flags FROM ::config WHERE `key` IN ('searchplugins_enable','searchbox_enable') ORDER BY `key`")->fetchAll();
+    check(count($flags)===2 && array_reduce($flags,fn($ok,$row)=>$ok && $row->value==='1' && $row->default==='1' && (int)$row->cat===1 && (int)$row->flags===132,true),'Fresh install seeds both goodies as persistent, enabled site booleans');
     SqlUpdate::apply($db);
     check(!(int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle(),'Fresh version metadata already includes reconciliation');
     $db->query('UPDATE ::dbversion SET date=1791244800');SqlUpdate::apply($db);
     check(!SchemaValidator::inspect($db,$root.'/setup/sql/01-db_structure.sql')['issues'],'Reconciliation also supports an already-matching schema at the preceding marker');
+    $db->query("UPDATE ::config SET value='0' WHERE `key`='searchplugins_enable'");
+    $db->query("DELETE FROM ::config WHERE `key`='searchbox_enable'");
+    $db->query("UPDATE ::dbversion SET date=1791331200, part=1");
+    $db->query('TRUNCATE ::sql_update_journal');
+    [$code,$out]=invoke($temp);
+    check($code===0,'Real --update installs the goodies settings from the preceding marker: '.$out);
+    check($db->query("SELECT value FROM ::config WHERE `key`='searchplugins_enable'")->fetchSingle()==='0' &&
+        $db->query("SELECT value FROM ::config WHERE `key`='searchbox_enable'")->fetchSingle()==='1','Settings migration preserves an existing disabled choice and adds missing settings');
+    $entry=$db->query('SELECT * FROM ::sql_update_journal')->fetch();
+    check((int)$entry->date===1791331200 && (int)$entry->part===2 && $entry->status==='applied' &&
+        $entry->checksum===hash_file('sha256',$root.'/setup/sql/updates/1791331200_02.sql'),'Settings migration uses ordinary durable update accounting');
+    [$code,$out]=invoke($temp);
+    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===1 &&
+        $db->query("SELECT value FROM ::config WHERE `key`='searchplugins_enable'")->fetchSingle()==='0','Already-current update retains goodies choices without replay');
     echo 'PASS: '.$checks.' guarded reconciliation/parity/community/enum/concurrency checks ('.$db->query('SELECT VERSION()')->fetchSingle().")\n";
 } finally { clean($temp); }

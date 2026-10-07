@@ -7,6 +7,33 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-07
 
+### Goodies switches
+
+`searchplugins_enable` and `searchbox_enable` are independent persistent boolean
+settings in Site Configuration → Site. Both default to Enabled for fresh installs
+and existing databases. Run `php aowow --update` to apply
+`1791331200_02.sql`, which adds missing settings while retaining existing choices.
+
+Disabling a setting hides its More → Goodies menu entry in all six languages and
+returns HTTP 404 for its direct page URL (`?searchplugins` or `?searchbox`).
+Search Plugins also controls the OpenSearch discovery link in page headers.
+Normal database search and Tooltips remain available. Previously generated static
+files, installed browser plugins and embedded search boxes remain usable; these
+switches control page access and discovery, not revocation of static assets.
+
+These checks use configuration already loaded at startup, without extra database
+queries. Cached page templates read the current flags when rendered, so toggling
+them needs no JavaScript rebuild. Deploy the head template, navigation script and
+endpoints together. Regression coverage exercises both switches independently,
+cached templates, localized menus, direct routes, fresh and legacy settings, and
+preservation of existing choices through the ordinary journaled updater.
+
+Validation passed the full PHP 8.5, JavaScript and lint groups, plus the full SQL
+group on disposable MySQL 8.0.46, MySQL 8.4.10 and MariaDB 10.6.28 databases.
+Each database passed 943 legacy-upgrade checks over 53 archived and 92 current
+migrations, and 60 reconciliation/settings checks. These are fixture results;
+the changes have not been deployed or tested against production data.
+
 ### Profiler switch and navigation
 
 The existing `aowow_config.profiler_enable` setting is the single switch for

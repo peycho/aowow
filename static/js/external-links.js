@@ -33,3 +33,11 @@ function g_applyProfilerMenus(tools, more, enabled) {
                 help.splice(j, 1);
     }
 }
+
+/* Keep goodies navigation in sync with the independent server-side page switches. */
+function g_applyGoodiesMenus(more, searchpluginsEnabled, searchboxEnabled) {
+    for (var i = more.length - 1; i >= 0; --i)
+        if ((more[i][0] === 8 && searchpluginsEnabled !== true) ||
+            (more[i][0] === 16 && searchboxEnabled !== true))
+            more.splice(i, 1);
+}

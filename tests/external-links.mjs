@@ -64,3 +64,30 @@ for (const file of ['locale_enus.js', 'locale_frfr.js', 'locale_dede.js', 'local
     }
 }
 console.log('PASS: 12 profiler navigation scenarios across all locales');
+
+for (const file of ['locale_enus.js', 'locale_frfr.js', 'locale_dede.js', 'locale_zhcn.js', 'locale_eses.js', 'locale_ruru.js']) {
+    for (const searchplugins of [false, true]) for (const searchbox of [false, true]) {
+        const context = vm.createContext({g_staticUrl: '/static'});
+        vm.runInContext(readFileSync(`static/js/${file}`, 'utf8'), context);
+        vm.runInContext(readFileSync('static/js/external-links.js', 'utf8'), context);
+        const more = context.mn_more;
+        const original = more.map(entry => [...entry]);
+        const tools = JSON.stringify(context.mn_tools);
+        context.g_applyGoodiesMenus(more, searchplugins, searchbox);
+        assert.equal(context.mn_path.find(entry => entry[0] === 2)[3], more, `${file}: shared menu reference remains intact`);
+        for (const entry of original.filter(entry => entry[0] != null)) {
+            const current = more.find(item => item[0] === entry[0]);
+            if ((entry[0] === 8 && !searchplugins) || (entry[0] === 16 && !searchbox))
+                assert.equal(current, undefined, `${file}: disabled goodies entry is absent`);
+            else
+                assert.equal(JSON.stringify(current), JSON.stringify(entry), `${file}: enabled and unrelated entries retain their labels and URLs`);
+        }
+        assert.equal(JSON.stringify(context.mn_tools), tools, `${file}: ordinary search and other tools remain unchanged`);
+        const once = JSON.stringify(more);
+        context.g_applyGoodiesMenus(more, searchplugins, searchbox);
+        assert.equal(JSON.stringify(more), once, `${file}: repeated application is stable`);
+        context.g_applyProfilerMenus(context.mn_tools, more, false);
+        assert.ok(more.some(entry => entry[0] === 10), `${file}: tooltips remain available alongside the profiler switch`);
+    }
+}
+console.log('PASS: 24 independent goodies navigation scenarios across all locales');

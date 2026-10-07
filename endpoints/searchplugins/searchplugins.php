@@ -17,7 +17,7 @@ class SearchpluginsBaseResponse extends TemplateResponse
     {
         parent::__construct($rawParam);
 
-        if ($rawParam)
+        if (!Cfg::get('SEARCHPLUGINS_ENABLE') || $rawParam)
             $this->generateError();
     }
 

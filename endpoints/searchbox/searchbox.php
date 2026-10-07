@@ -17,7 +17,7 @@ class SearchboxBaseResponse extends TemplateResponse
     {
         parent::__construct($rawParam);
 
-        if ($rawParam)
+        if (!Cfg::get('SEARCHBOX_ENABLE') || $rawParam)
             $this->generateError();
     }
 

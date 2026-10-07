@@ -71,7 +71,10 @@ node tests/external-links.mjs
 
 They cover URL validation, enabled status, current settings on cached templates,
 script/HTML escaping, and menu filtering with translated labels and icons in all
-six supported JavaScript locales. Both suites run in CI.
+six supported JavaScript locales. They also cover the profiler switch and all four
+Search Plugins/Search Box switch combinations, including cached headers,
+OpenSearch discovery, independent localized menu filtering and preservation of
+other tools. Both suites run in CI.
 
 ## Item loot-tab labels
 
@@ -153,6 +156,8 @@ bash tests/ci/run.sh browser
 The PHP suite executes the real `globaljs`/`tooltips` generators with synthetic
 configuration, tests account saves with absent/legacy viewer fields, and renders
 the retained help URL/banner without altering the article in all six locales.
+It exercises direct profiler and goodies page guards against loaded
+configuration, including independent toggles and invalid goodies parameters.
 Node checks the generated asset syntax and real markup parser: local defaults,
 explicit external sources, original post links, configurable forum rules, escaped
 model fallbacks, and menus.
