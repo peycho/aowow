@@ -133,6 +133,10 @@ class CLISetup
 
     public static function loadScripts() : void
     {
+        // Schema inspection needs no generators, extracted inputs or migrated configuration.
+        if (self::getOpt('validate-schema'))
+            return;
+
         foreach (glob('setup/tools/clisetup/*.us.php') as $file)
             include_once $file;
 
@@ -195,6 +199,14 @@ class CLISetup
     public static function init() : void
     {
         self::evalOpts();
+
+        if (self::getOpt('validate-schema'))
+        {
+            if (isset(self::$opts['log']))
+                CLI::initLogFile(trim(self::$opts['log']));
+            CLI::debug('[runtime] PHP='.PHP_VERSION.'; revision='.AOWOW_REVISION.'; read-only schema inspection');
+            return;
+        }
 
         if (defined('AOWOW_SETUP'))
         {
@@ -263,6 +275,12 @@ class CLISetup
 
         if (CLI::errorCount())
             return false;                                   // initialization/dependency errors must prevent mutations
+
+        if (self::getOpt('validate-schema') && count(self::getOpt(1 << self::OPT_GRP_SETUP | 1 << self::OPT_GRP_UTIL)) !== 1)
+        {
+            CLI::write('[validate-schema] cannot combine schema inspection with another setup command.', CLI::LOG_ERROR);
+            return false;
+        }
 
         // get arguments present in argGroup 1 or 2, if set. Pick first.
         $cmd   = self::getOpt(1 << self::OPT_GRP_SETUP | 1 << self::OPT_GRP_UTIL)[0];

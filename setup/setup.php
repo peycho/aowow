@@ -24,6 +24,7 @@ require_once 'setup/tools/dbcreader.class.php';
 // Register update before init chooses its legacy configuration bootstrap. Generators
 // must still be constructed after init has selected locales and the extracted data path.
 require_once 'setup/tools/clisetup/update.us.php';
+require_once 'setup/tools/clisetup/validate-schema.us.php';
 CLISetup::init();
 CLISetup::loadScripts();
 
@@ -38,7 +39,7 @@ else if (!CLISetup::getOpt(1 << CLISetup::OPT_GRP_SETUP | 1 << CLISetup::OPT_GRP
     exit(CLI::errorCount() ? 1 : 0);
 }
 
-if (CLISetup::getOpt('delete'))                             // generated with TEMPORARY keyword. Manual deletion is not needed
+if (CLISetup::getOpt('delete') && !CLISetup::getOpt('validate-schema')) // generated with TEMPORARY keyword. Manual deletion is not needed
     CLI::write('generated dbc_* - tables have been deleted.', CLI::LOG_INFO);
 
 $success = CLISetup::runInitial();

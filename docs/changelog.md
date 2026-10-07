@@ -7,6 +7,82 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-06
 
+### Database schema validation
+
+Run the independent setup utility from the checkout root:
+
+```sh
+php aowow --validate-schema
+php aowow --validate-schema --log=/path/to/schema-validation.log
+php aowow --validate-schema --help
+```
+
+The reference is `setup/sql/01-db_structure.sql` in the current checkout. The
+validator parses its CREATE TABLE definitions and reads `information_schema`
+and `SHOW CREATE TABLE` from the configured application database. It never runs
+the reference SQL, migrations or generators, and does not change maintenance,
+version markers, pending work or community records. It deliberately bypasses
+configuration loading so an older `aowow_config` without `default` can be checked.
+Only the application database is required; a SELECT-only account can run the
+check. A configured connection must be able to see every application table's
+metadata. Extracted inputs, configured locales and a world database are not needed.
+Use this command alone; combining it with setup/update/build/SQL operations or
+their parameters is rejected. The usual `--debug`, `--log` and `--help` options work.
+
+The normal report groups differing attributes by table; `--debug` adds each
+column/index/foreign-key finding. Counts represent differing attributes, so one
+column can account for several findings. Initial-schema drift does not by itself
+mean a migration failed or the database cannot run. The legacy SQL regression
+now audits the completely migrated legacy fixture, rather than testing only
+fresh-install equality, and confirms that those are distinct outcomes.
+Some differences still affect application behavior: legacy account fields that
+are `NOT NULL` without defaults can reject the current signup INSERT under
+strict SQL mode. The SQL regression reproduces this using the real INSERT.
+Other differences are intentional, including legacy spell text widths and
+`MEDIUMTEXT` retained by migration `1791244800_01.sql`. Review each finding
+against its consumer rather than treating every difference as a failed upgrade.
+
+Every reference table is checked for missing/extra columns and their order,
+types and lengths, signedness, nullability, defaults, auto-increment flags,
+character sets/collations and generated expressions/storage. Index checks cover
+names, uniqueness, type, ordered columns, prefix lengths and visibility. Foreign
+keys include names, targets and update/delete actions. Table engines and default
+character sets/collations are checked too. Unknown extra tables in the configured
+application prefix are reported; other namespaces such as `dbc_*` are excluded.
+Tables declared by the shipped `TrDBCcopy` generators are identified separately.
+Their structures are not compared when no first-install definition exists; this
+is explicit in the report and is not a claim that those structures passed.
+Declaration discovery reads PHP tokens and the shipped Wrath DBC definitions
+without executing generator code, loading configuration or opening extracted files.
+An empty application prefix means all tables in that database are in scope.
+Foreign-key targets follow the configured prefix as well.
+
+Integer display widths, explicit/default BTREE and ASC, quoted numeric defaults,
+MySQL's parenthesized literal TEXT defaults and matching charset prefixes,
+`utf8`/`utf8mb3` aliases and equivalent
+RESTRICT/NO ACTION rules are normalized. Tables that omit a charset/collation in
+the initial SQL inherit the database defaults. Comments, row formats, current
+auto-increment counters and physical storage options are excluded. Unsupported
+custom DDL produces an explicit failed comparison rather than a false match.
+Diagnostics identify objects and differing attributes without printing default
+values, table contents, credentials or raw SQL.
+
+Exit `0` means all 108 current reference tables match; exit `1` means structural
+differences or a comparison failure. This is a comparison with the first-install
+schema, not a repair command or proof of migration/generator completion. Custom
+columns/indexes and wider legacy text columns retained by migrations can produce
+intentional differences. Review those differences individually. Run against a
+settled schema after updates/builds finish, since concurrent manual DDL can change
+metadata during the check. Continue using `php aowow --update` for upgrades; do
+not import initial SQL over an existing application database to resolve a report.
+
+The focused PHP fixture checks parsing and the actual CLI dispatcher without a
+database. The guarded SQL fixture imports the complete initial schema only into
+a disposable database, then runs the real entrypoint with SELECT-only credentials,
+tests schema drift and legacy configuration, and verifies preservation of
+representative community records, maintenance, version metadata and journal data.
+It also covers recognized DBC-copy tables and concise versus detailed reporting.
+
 ### Maintenance page metadata
 
 The maintenance response now uses `Lang::meta('description', 'home')`, matching

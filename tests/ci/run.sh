@@ -37,6 +37,7 @@ PY
     php tests/security-csrf.php --http
     php tests/setup-sounds.php
     php tests/setup-debug.php
+    php tests/schema-validator.php
     php tests/maintenance-response.php
     php tests/setup-maps.php
     php tests/maps-picker.php
@@ -88,7 +89,7 @@ PY
     # shellcheck disable=SC2016 # PHP variables must be passed literally.
     php -r '
       $db = new mysqli(getenv("AOWOW_TEST_DB_HOST"), "root", "", "", (int)getenv("AOWOW_TEST_DB_PORT"));
-      foreach (["passwords", "screenshots", "updates", "resources", "legacy"] as $suffix) {
+      foreach (["passwords", "screenshots", "updates", "resources", "legacy", "schema"] as $suffix) {
           $db->query("CREATE DATABASE IF NOT EXISTS aowow_security_test_".$suffix." CHARACTER SET utf8mb4");
       }
     '
@@ -99,6 +100,7 @@ PY
     AOWOW_TEST_DATABASE=aowow_security_test_screenshots php tests/security-screenshot-completion.php
     AOWOW_TEST_DATABASE=aowow_security_test_updates php tests/security-updates.php
     AOWOW_TEST_DATABASE=aowow_security_test_legacy php tests/legacy-updates.php
+    AOWOW_TEST_DATABASE=aowow_security_test_schema php tests/schema-validator-sql.php
     AOWOW_TEST_DATABASE=aowow_security_test_resources php tests/security-contributions.php
     ;;
   apache)

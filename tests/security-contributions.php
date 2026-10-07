@@ -172,6 +172,7 @@ namespace {
         foreach(['setupScript.class.php','utilityScript.class.php','CLISetup.class.php','dbcreader.class.php'] as $file)symlink($root.'/setup/tools/'.$file,$cli.'/setup/tools/'.$file);
         symlink($root.'/setup/tools/clisetup/prune.us.php',$cli.'/setup/tools/clisetup/prune.us.php');
         symlink($root.'/setup/tools/clisetup/update.us.php',$cli.'/setup/tools/clisetup/update.us.php');
+        symlink($root.'/setup/tools/clisetup/validate-schema.us.php',$cli.'/setup/tools/clisetup/validate-schema.us.php');
         $file=$cli.'/static/uploads/temp/owner-1-1-'.str_repeat('a',16);file_put_contents($file,'fixture');touch($file,time()-3*DAY);
         $db->query("INSERT INTO ::errors (date,version,phpError,file,line,query,post,userGroups) VALUES (UNIX_TIMESTAMP()-2592001,67,1,'expired-cli',1,'','',0)");
         [$code,$out]=runCli(['--prune'],$cli);
