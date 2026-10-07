@@ -5,6 +5,18 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-07
+
+### Historical schema reconciliation
+
+Historical structure differences now have an explicit, guarded update path in
+`1791331200_01.sql`; see [schema reconciliation](schema-reconciliation.md).
+The initial SQL retains historical text capacity, includes the ordinary Chinese
+spell-name index and agrees with the reconciled structural fixture and complete
+legacy migration corpus. Unsafe conversions stop before this migration's first
+ALTER. Strict execution and post-DDL verification retain the existing journal,
+update locks and maintenance guarantees.
+
 ## 2026-10-06
 
 ### Database schema validation
@@ -33,8 +45,8 @@ The normal report groups differing attributes by table; `--debug` adds each
 column/index/foreign-key finding. Counts represent differing attributes, so one
 column can account for several findings. Initial-schema drift does not by itself
 mean a migration failed or the database cannot run. The legacy SQL regression
-now audits the completely migrated legacy fixture, rather than testing only
-fresh-install equality, and confirms that those are distinct outcomes.
+audits the migrated fixture as well as fresh-install equality. The reconciliation
+regression verifies agreement after migration `1791331200_01.sql`.
 Some differences still affect application behavior: legacy account fields that
 are `NOT NULL` without defaults can reject the current signup INSERT under
 strict SQL mode. The SQL regression reproduces this using the real INSERT.

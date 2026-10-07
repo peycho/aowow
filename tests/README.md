@@ -1,5 +1,14 @@
 # Security regressions
 
+`tests/schema-reconciliation.php` belongs to the SQL CI group and is guarded by
+`AOWOW_TEST_DATABASE=aowow_security_test_reconciliation` on an isolated localhost
+database. Its sanitized historical structure fixture contains no rows, comments,
+auto-increment counters or environment headers. Synthetic records exercise the
+real update entrypoint, 108-table fresh/legacy schema agreement, enum ordinal
+mapping, long captions/text and community/upload preservation. Data preflight
+rejection, strict-mode restoration, concurrency, maintenance handling and refusal
+to replay partial SQL are covered. See [schema reconciliation](../docs/schema-reconciliation.md).
+
 `php tests/schema-validator.php` exercises the complete initial-schema parser,
 normalization, column/index/FK/generated-column differences, safe diagnostics and
 the real read-only CLI initialization/dispatcher. It also checks token-based

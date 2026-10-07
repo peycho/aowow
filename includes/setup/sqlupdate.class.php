@@ -196,6 +196,7 @@ final class SqlUpdate
         $file = 'preflight';
         $index = 0;
         $transaction = false;
+        $restoreMode = null;
         try
         {
             if ((int)$db->query('SELECT @@autocommit')->fetchSingle() !== 1 ||
@@ -219,6 +220,13 @@ final class SqlUpdate
                 $statements = self::statements($contents);
                 if (!$statements) throw new \RuntimeException('Empty SQL update.');
                 $checksum = hash('sha256', $contents);
+                if ([$date, $part] === [1791331200, 1])
+                {
+                    require_once __DIR__.'/schemaupdate.class.php';
+                    SchemaUpdate::preflight($db, $contents);
+                    $restoreMode = (string)$db->query('SELECT @@SESSION.sql_mode')->fetchSingle();
+                    $db->query('SET SESSION sql_mode = %s', implode(',', array_unique(array_filter([...explode(',', $restoreMode), 'STRICT_ALL_TABLES']))));
+                }
                 $db->query("INSERT INTO ::sql_update_journal (`date`, `part`, `checksum`, `status`) VALUES (%i, %i, %s, 'running')", $date, $part, $checksum);
                 if ($db->getAffectedRows() !== 1) throw new \RuntimeException('Journal start was not recorded.');
                 foreach ($statements as $statement)
@@ -227,6 +235,12 @@ final class SqlUpdate
                     $db->nativeQuery($statement);            // raw SQL: percent signs are not Dibi placeholders
                     $db->query("UPDATE ::sql_update_journal SET `statements` = %i WHERE `date` = %i AND `part` = %i AND `status` = 'running'", $index, $date, $part);
                     if ($db->getAffectedRows() !== 1) throw new \RuntimeException('Journal progress was not recorded.');
+                }
+                if ($restoreMode !== null)
+                {
+                    SchemaUpdate::verify($db, $contents);
+                    $db->query('SET SESSION sql_mode = %s', $restoreMode);
+                    $restoreMode = null;
                 }
                 $db->query('START TRANSACTION');
                 $transaction = true;
@@ -259,7 +273,11 @@ final class SqlUpdate
         }
         finally
         {
-            self::release($db, $lease);
+            try
+            {
+                if ($restoreMode !== null) $db->query('SET SESSION sql_mode = %s', $restoreMode);
+            }
+            finally { self::release($db, $lease); }
         }
     }
 }

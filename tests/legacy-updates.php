@@ -230,7 +230,6 @@ CODE;
         resetLegacy($engine); $before=community();
         $longSpellText=str_repeat('Synthetic текст ',5000);
         seed('spell', ['id'=>90001, 'description_loc0'=>$longSpellText]);
-        $db->query('ALTER TABLE ::spell MODIFY name_loc0 varchar(512) COLLATE utf8mb4_bin NOT NULL');
         // The legacy positional layout gets four aura fields through archived/current SQL.
         // Reproduce the reported NULL failure independently of that later layout change.
         $legacySpell=(array)$db->query('SELECT * FROM ::spell WHERE id=90001')->fetch();
@@ -247,7 +246,7 @@ CODE;
         check(community()===$before, 'representative community content and upload owner/IDs survive every migration');
         $textColumns=$db->query("SELECT COLUMN_NAME, IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aowow_spell' AND COLUMN_NAME REGEXP '^(name|rank|description|buff)_loc[0-9]+$'")->fetchPairs();
         check(count($textColumns)===24 && array_unique(array_values($textColumns))===['YES'], 'every localized spell string accepts valid empty DBC strings');
-        check($db->query("SELECT COLUMN_TYPE, COLLATION_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aowow_spell' AND COLUMN_NAME='name_loc0'")->fetchPairs()===['varchar(512)'=>'utf8mb4_bin'], 'custom larger spell width and collation are preserved');
+        check($db->query("SELECT COLUMN_TYPE, COLLATION_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aowow_spell' AND COLUMN_NAME='name_loc0'")->fetchPairs()===['varchar(115)'=>'utf8mb4_unicode_ci'], 'ordinary spell width and collation converge with the canonical schema');
         check((int)$db->query("SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aowow_spell' AND COLUMN_NAME='name_loc8'")->fetchSingle()>=184, 'short legacy locale width is widened for current extracted strings');
         $projection=spellProjection();
         $projection['description_loc0']=$longSpellText;
@@ -286,8 +285,10 @@ CODE;
         }
         check((int)$db->query('SELECT COUNT(*) FROM aowow_fixture_generators')->fetchSingle()===2, 'SQL and build generators both complete');
         $audit = SchemaValidator::inspect($db, $root.'/setup/sql/01-db_structure.sql');
-        check($audit['checked'] === 108 && $audit['issues'], 'Successfully updated real legacy fixture has initial-schema drift, despite completing every migration');
-        check(in_array(['aowow_account', 'column extId', 'nullable differs'], $audit['issues'], true), 'Account default/nullability drift remains visible after the complete migration corpus');
+        $reference = SchemaValidator::parse(file_get_contents($root.'/setup/sql/01-db_structure.sql'));
+        $referenceIssues = array_values(array_filter($audit['issues'], fn($issue) => isset($reference[$issue[0]])));
+        check($audit['checked'] === 108 && !$referenceIssues, 'Complete legacy upgrade converges with all fresh-install reference definitions: '.json_encode($referenceIssues));
+        check(!in_array(['aowow_account', 'column extId', 'nullable differs'], $audit['issues'], true), 'Account default/nullability drift is repaired by the explicit migration');
         check(community() === $before && (int)$db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle() === 0, 'Auditing the migrated legacy fixture preserves community data and restored maintenance');
         foreach ($db->query('SELECT phase, tasks FROM aowow_fixture_generators')->fetchAll() as $call) {
             $missing=array_diff(explode(' ', $call->tasks), $registered[$call->phase]);
@@ -311,12 +312,14 @@ CODE;
     resetLegacy(); $before=community();
     $longSpellText=str_repeat('Synthetic текст ',5000);
     seed('spell', ['id'=>90001, 'description_loc0'=>$longSpellText]);
+    $db->query('ALTER TABLE ::spell MODIFY name_loc0 varchar(512) COLLATE utf8mb4_bin NOT NULL');
     $db->query("UPDATE ::dbversion SET date=1791142907, part=1, `sql`='', build='talenticons'");
     $concatLimit=(int)$db->query('SELECT @@SESSION.group_concat_max_len')->fetchSingle();
     $repairVersion=SqlUpdate::apply($db,$repair);
     $repairSql=preg_split('/\s+/',trim($repairVersion['sql']));
     $repairBuild=preg_split('/\s+/',trim($repairVersion['build']));
     check($db->query('SELECT description_loc0 FROM ::spell WHERE id=90001')->fetchSingle()===$longSpellText && community()===$before, 'repair ALTER preserves preexisting long spell text and community records');
+    check($db->query("SELECT COLUMN_TYPE, COLLATION_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aowow_spell' AND COLUMN_NAME='name_loc0'")->fetchPairs()===['varchar(512)'=>'utf8mb4_bin'], 'earlier spell repair preserves intentional custom width and collation');
     check(!array_diff(['spell','items','stats','itemset','source','search'],$repairSql), 'repair schedules data generation even when prior SQL tasks were cleared');
     check(!array_diff(['talenticons','enchants','globaljs','tooltips','profiler'],$repairBuild), 'repair retains pending builds and schedules affected output');
     check((int)$db->query('SELECT @@SESSION.group_concat_max_len')->fetchSingle()===$concatLimit, 'repair restores the session aggregation limit');
