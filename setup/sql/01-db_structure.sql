@@ -3197,7 +3197,7 @@ CREATE TABLE `aowow_taxinodes` (
   `areaId` smallint(5) unsigned NOT NULL,
   `areaX` float unsigned NOT NULL,
   `areaY` float unsigned NOT NULL,
-  `type` enum('NPC','GOBJECT') NOT NULL,
+  `type` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT '0: scripted; 1: NPC; 2: GOBJECT',
   `typeId` mediumint(8) unsigned NOT NULL,
   `reactA` tinyint(4) NOT NULL,
   `reactH` tinyint(4) NOT NULL,

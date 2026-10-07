@@ -66,7 +66,16 @@ final class SchemaUpdate
                 $integerBits = ['tinyint'=>8, 'smallint'=>16, 'mediumint'=>24, 'int'=>32, 'bigint'=>64];
                 if (isset($integerBits[$type]))
                 {
-                    if (!isset($integerBits[$old['type'][0]])) self::refuse($table, $name, 'unsupported numeric conversion');
+                    // Scripted taxi flights deliberately use zero. Older numeric tables and
+                    // the initial ENUM schema both store the same ordinals, consumed by maps.
+                    $taxiType = $table === 'aowow_taxinodes' && $name === 'type';
+                    if ($taxiType && $old['type'][0] === 'enum')
+                    {
+                        $labels = array_column(array_filter($old['type'][1], fn($token) => $token[0] === 'string'), 1);
+                        if ($labels !== ['NPC', 'GOBJECT']) self::refuse($table, $name, 'unsupported taxi enum label mapping');
+                    }
+                    else if (!isset($integerBits[$old['type'][0]])) self::refuse($table, $name, 'unsupported numeric conversion');
+                    if ($taxiType) $checks[] = [$name, 'invalid taxi type codes', '('.$field.' + 0) < 0 OR ('.$field.' + 0) > 2'];
                     if ($old['type'] === $definition['type'] && $old['unsigned'] === $definition['unsigned']) continue;
                     $bits = $integerBits[$type];
                     $minimum = $definition['unsigned'] ? '0' : ($bits === 64 ? '-9223372036854775808' : (string)-(2 ** ($bits - 1)));

@@ -7,7 +7,10 @@ auto-increment counters or environment headers. Synthetic records exercise the
 real update entrypoint, 108-table fresh/legacy schema agreement, enum ordinal
 mapping, long captions/text and community/upload preservation. Data preflight
 rejection, strict-mode restoration, concurrency, maintenance handling and refusal
-to replay partial SQL are covered. See [schema reconciliation](../docs/schema-reconciliation.md).
+to replay partial SQL are covered. Its guarded `fixtures/taxi-generator.php`
+helper runs the real generator with synthetic DBC/world inputs under strict SQL
+mode, verifying scripted nodes, flightmasters and map filtering.
+See [schema reconciliation](../docs/schema-reconciliation.md).
 
 `php tests/schema-validator.php` exercises the complete initial-schema parser,
 normalization, column/index/FK/generated-column differences, safe diagnostics and

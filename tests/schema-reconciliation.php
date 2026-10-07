@@ -56,6 +56,7 @@ function snapshot() : array {
     // Enum ordinal/ownership/value relationships must survive normalization of label spelling.
     $out['excludes']=$db->query('SELECT userId, type, typeId, mode+0 AS mode FROM ::account_excludes')->fetchAll();
     $out['ratings']=$db->query('SELECT type+0 AS type, entry, userId, value FROM ::user_ratings')->fetchAll();
+    $out['taxi']=$db->query('SELECT id, type+0 AS type, typeId, name_loc0 FROM ::taxinodes ORDER BY id')->fetchAll();
     return $out;
 }
 function invoke(string $dir, array $arguments=['--update']) : array {
@@ -98,12 +99,14 @@ try {
         seed('sounds_files',['id'=>$code,'file'=>'fixture'.$code,'type'=>$code]);
         seed('taxinodes',['id'=>$code,'type'=>$code]);
     }
+    seed('taxinodes',['id'=>3,'type'=>0,'typeId'=>0,'name_loc0'=>'Fixture scripted flight']);
     $rows=snapshot();
     // Every unsafe-data condition stops before any ALTER or journal start, retaining maintenance.
-    foreach(['numeric','enum','null','length'] as $failure) {
+    foreach(['numeric','enum','taxi','null','length'] as $failure) {
         $db->query("UPDATE ::config SET value='0' WHERE `key`='maintenance'");
         if($failure==='numeric')seed('races',['id'=>1001,'classMask'=>65536]);
         if($failure==='enum')$db->query('UPDATE ::account_excludes SET mode=0 WHERE typeId=1');
+        if($failure==='taxi')$db->query('UPDATE ::taxinodes SET type=3 WHERE id=3');
         if($failure==='null') {
             $db->query('ALTER TABLE ::account_weightscales MODIFY icon varchar(48) DEFAULT NULL');
             seed('account_weightscales',['id'=>1001,'userId'=>1001,'name'=>'fixture','icon'=>null]);
@@ -121,6 +124,7 @@ try {
         check((int)$db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle()===1,'Failed reconciliation retains maintenance');
         if($failure==='numeric')$db->query('DELETE FROM ::races WHERE id=1001');
         if($failure==='enum')$db->query('UPDATE ::account_excludes SET mode=1 WHERE typeId=1');
+        if($failure==='taxi')$db->query('UPDATE ::taxinodes SET type=0 WHERE id=3');
         if($failure==='null') { $db->query('DELETE FROM ::account_weightscales WHERE id=1001');$db->query("ALTER TABLE ::account_weightscales MODIFY icon varchar(48) NOT NULL DEFAULT ''"); }
         if($failure==='length') { $db->query('DELETE FROM ::account_weightscales WHERE id=1001');$db->query("ALTER TABLE ::account_weightscales MODIFY icon varchar(48) NOT NULL DEFAULT ''"); }
     }
@@ -150,8 +154,21 @@ try {
         $db->query('SELECT word FROM ::declinedwordcases WHERE wordId=2002')->fetchSingle()==='примера','Valid empty and Unicode DBC strings survive real generator INSERTs in strict mode');
     $db->query('DROP TEMPORARY TABLE dbc_declinedword');$db->query('DROP TEMPORARY TABLE dbc_declinedwordcases');
     $db->query('SET SESSION sql_mode=%s','');
-    foreach([['account_excludes','mode',['EXCLUDE','INCLUDE']],['sounds_files','type',['OGG','MP3']],['taxinodes','type',['NPC','GOBJECT']],['user_ratings','type',['COMMENT','GUIDE']]] as [$table,$column,$labels])
+    foreach([['account_excludes','mode',['EXCLUDE','INCLUDE']],['sounds_files','type',['OGG','MP3']],['user_ratings','type',['COMMENT','GUIDE']]] as [$table,$column,$labels])
         check(array_map(fn($row)=>$row[$column],$db->query('SELECT %n FROM %n ORDER BY %n',$column,'aowow_'.$table,$table==='account_excludes'?'typeId':($table==='user_ratings'?'entry':'id'))->fetchAll())===$labels,'Both legacy enum codes preserve their intended labels in '.$table);
+    check(array_map(fn($row)=>(int)$row->type,$db->query('SELECT type FROM ::taxinodes ORDER BY id')->fetchAll())===[1,2,0],'Scripted, NPC and object taxi ordinals survive unchanged');
+    // A schema created from the older initial ENUM must preserve its numeric meaning too.
+    $db->query("ALTER TABLE ::taxinodes MODIFY type enum('NPC','GOBJECT') NOT NULL");
+    $db->query('TRUNCATE ::sql_update_journal');$db->query('UPDATE ::dbversion SET date=1791244800');
+    [$code,$out]=invoke($temp);
+    check($code===0 && snapshot()==$rows,'Older initial taxi ENUM retains ordinals 0, 1 and 2 through strict reconciliation: '.$out);
+    $process=proc_open([PHP_BINARY,$root.'/tests/fixtures/taxi-generator.php'],[['pipe','r'],['pipe','w'],['pipe','w']],$pipes,$root);
+    fclose($pipes[0]);$out=stream_get_contents($pipes[1]);$err=stream_get_contents($pipes[2]);fclose($pipes[1]);fclose($pipes[2]);
+    $code=proc_close($process);
+    check($code===0,'Real taxi generator completes without database errors under strict mode: '.$err);
+    $generated=json_decode($out,true,flags:JSON_THROW_ON_ERROR);
+    check($generated['nodes']===[['id'=>301,'type'=>0,'typeId'=>0,'name_loc8'=>'Задание'],['id'=>302,'type'=>1,'typeId'=>9001,'name_loc8'=>'Полёт']] &&
+        $generated['visible']===[302] && $generated['paths']===1,'Real generator preserves scripted/NPC identities, localized names, map filtering and paths');
     check((int)$db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle()===0,'Successful reconciliation restores prior maintenance');
     $entry=$db->query('SELECT * FROM ::sql_update_journal')->fetch();
     check($entry->status==='applied' && $entry->checksum===hash_file('sha256',$migration) && (int)$entry->statements===count(SqlUpdate::statements(file_get_contents($migration))),'All ALTER statements retain durable checksum/progress accounting');

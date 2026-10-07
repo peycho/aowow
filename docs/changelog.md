@@ -16,6 +16,9 @@ spell-name index and agrees with the reconciled structural fixture and complete
 legacy migration corpus. Unsafe conversions stop before this migration's first
 ALTER. Strict execution and post-DDL verification retain the existing journal,
 update locks and maintenance guarantees.
+Taxi types now retain numeric codes 0 (scripted), 1 (NPC) and 2 (game object),
+matching the generator and map pages. Valid scripted flights pass reconciliation
+without deleting or changing their rows; unrecognized codes still stop safely.
 
 ## 2026-10-06
 

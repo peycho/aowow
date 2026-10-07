@@ -592,7 +592,7 @@ ALTER TABLE `aowow_spell_sounds`
     MODIFY COLUMN `impactarea` smallint(5) unsigned NOT NULL DEFAULT 0 COMMENT 'not predicted by js';
 
 ALTER TABLE `aowow_taxinodes`
-    MODIFY COLUMN `type` enum('NPC','GOBJECT') NOT NULL,
+    MODIFY COLUMN `type` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT '0: scripted; 1: NPC; 2: GOBJECT',
     MODIFY COLUMN `name_loc0` varchar(59) DEFAULT NULL,
     MODIFY COLUMN `name_loc2` varchar(84) DEFAULT NULL,
     MODIFY COLUMN `name_loc3` varchar(61) DEFAULT NULL,
