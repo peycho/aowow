@@ -53,6 +53,9 @@ class Sitemap
 
     public static function generate(string $page, int $offset) : ?string
     {
+        if ($page === 'sound' && !Cfg::get('SOUNDS_ENABLE'))
+            return null;
+
         self::$page   = $page;
         self::$offset = $offset;
 
@@ -76,6 +79,9 @@ class Sitemap
 
         foreach (self::$validPages as $page => [, $table, ])
         {
+            if ($page === 'sound' && !Cfg::get('SOUNDS_ENABLE'))
+                continue;
+
             $n = DB::Aowow()->selectCell('SELECT CEIL(COUNT(*) / %i) FROM %n', self::MAX_ENTRIES, $table);
             for ($i = 1; $i <= $n; $i++)
                 $root->addChild('sitemap')->addChild('loc', Cfg::get('HOST_URL').'/?sitemap='.$page.'&amp;page='.$i);

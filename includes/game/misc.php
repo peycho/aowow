@@ -233,7 +233,7 @@ class Game
             $group = [];
             foreach ($text as $t)
             {
-                if ($t['soundId'])
+                if (Cfg::get('SOUNDS_ENABLE') && $t['soundId'])
                     $soundIds[] = $t['soundId'];
 
                 $msg = Util::localizedString($t, 'text');

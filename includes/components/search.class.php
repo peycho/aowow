@@ -1592,6 +1592,9 @@ class Search
 
     private function _searchSound() : ?array                // 27 Sounds $moduleMask & 0x8000000
     {
+        if (!Cfg::get('SOUNDS_ENABLE'))
+            return null;
+
         $cnd    = array_merge($this->cndBase, [$this->createLikeLookup(['name'])]);
         $sounds = new SoundList($cnd, ['calcTotal' => true]);
 

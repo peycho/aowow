@@ -55,3 +55,12 @@ function g_applyMissingScreenshotsMenu(tools, enabled) {
                 utilities.splice(j, 1);
     }
 }
+
+/* Sounds are optional site functionality, including their playlist submenu. */
+function g_applySoundsMenu(database, enabled) {
+    if (enabled === true)
+        return;
+    for (var i = database.length - 1; i >= 0; --i)
+        if (database[i][0] === 19)
+            database.splice(i, 1);
+}

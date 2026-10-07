@@ -7,6 +7,26 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-07
 
+### Optional site sounds
+
+Added the persistent boolean `SOUNDS_ENABLE` (Site category), default Enabled.
+Migration `1791331200_06.sql` installs it without overwriting an existing choice
+and queues `globaljs` once to install playback and markup guards. Run the usual
+`php8.5 aowow --update` to install the setting and complete that build.
+
+When Disabled, the Sounds/Playlist menu and direct sound/list/playlist URLs are
+unavailable. Sound searches, sitemap entries, metadata tabs and sound-specific
+lookups on item, spell, NPC, zone, race and emote pages are skipped. NPC dialogue
+text and underlying game/community data remain intact. Inline sound markup,
+audio controls and playlists also respect the switch. Existing static audio
+files are retained; direct static file URLs are not an access-control boundary.
+
+Signed page/search caches use distinct keys for enabled and disabled sounds,
+so toggling the setting does not reuse pages containing the opposite feature
+state. The setting uses configuration already loaded for the request; it does
+not scan files or run an availability query. Toggling it does not queue builds,
+change maintenance state or affect extraction and setup generators.
+
 ### Cloudflare Turnstile
 
 Six independent, persistent boolean settings protect registration, login,

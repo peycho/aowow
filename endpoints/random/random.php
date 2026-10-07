@@ -31,7 +31,11 @@ class RandomBaseResponse extends TextResponse
      // $this->h1 = 'Random Page';
      // array_unshift($this->title, $this->h1);
 
-        $type    = array_rand(Type::getClassesFor(Type::FLAG_RANDOM_SEARCHABLE));
+        $classes = Type::getClassesFor(Type::FLAG_RANDOM_SEARCHABLE);
+        if (!Cfg::get('SOUNDS_ENABLE'))
+            unset($classes[Type::SOUND]);
+
+        $type    = array_rand($classes);
         $typeId  = (Type::newList($type))?->getRandomId();
 
         $this->redirectTo = '?'.Type::getFileString($type).'='.$typeId;

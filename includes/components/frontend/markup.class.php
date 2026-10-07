@@ -224,6 +224,9 @@ class Markup implements \JsonSerializable
 
             foreach ($matches as [, $tag, $id, $attrString])
             {
+                if (strcasecmp($tag, 'sound') === 0 && !Cfg::get('SOUNDS_ENABLE'))
+                    continue;
+
                 $fn    = self::TAGS[$tag][self::IDX_CONTENT_POLICY];
                 $attr  = self::parseTagAttributes($attrString);
                 $attr += ['unnamed' => $id];

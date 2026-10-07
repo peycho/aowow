@@ -252,6 +252,13 @@ and static origin, including subdirectory installations. See the
 
 ## Configuration
 
+`SOUNDS_ENABLE` under Site Configuration → Site controls sound menus and URLs,
+sound search results, related tabs and playback. It defaults to Enabled. Install
+it with `php8.5 aowow --update`; disable it for installations without extracted
+audio. Changes take effect on subsequent requests without rebuilding assets.
+NPC dialogue text remains available, and the setting does not change extraction
+or setup generators. See the [sound configuration details](docs/changelog.md#optional-site-sounds).
+
 Optional Cloudflare Turnstile protects registration, login, password/username
 recovery, activation email resend and general feedback. All six switches default
 to Disabled. Install them with `php8.5 aowow --update`, then configure the widget

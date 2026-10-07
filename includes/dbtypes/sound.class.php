@@ -22,6 +22,9 @@ class SoundList extends DBTypeList
 
     public function __construct(array $conditions = [], array $miscData = [])
     {
+        if (!CLI && !Cfg::get('SOUNDS_ENABLE'))
+            return;
+
         parent::__construct($conditions, $miscData);
 
         // post processing
@@ -61,6 +64,9 @@ class SoundList extends DBTypeList
 
     public static function getName(int $id) : ?LocString
     {
+        if (!CLI && !Cfg::get('SOUNDS_ENABLE'))
+            return null;
+
         if ($n = DB::Aowow()->SelectRow('SELECT `name` AS "name_loc0" FROM %n WHERE `id` = %i', self::$dataTable, $id))
             return new LocString($n);
         return null;

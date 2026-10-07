@@ -5,7 +5,7 @@ namespace Aowow {
         public static bool $profiler = false;
         public static bool $searchplugins = true, $searchbox = true;
         public static bool $missingScreenshots = false;
-        public static bool $feedback = true;
+        public static bool $feedback = true, $sounds = true;
         public static array $turnstile = [];
         public static function get(string $key) : mixed {
             return match ($key) {
@@ -14,6 +14,7 @@ namespace Aowow {
                 'SEARCHBOX_ENABLE' => self::$searchbox,
                 'MISSING_SCREENSHOTS_ENABLE' => self::$missingScreenshots,
                 'FEEDBACK_ENABLE' => self::$feedback,
+                'SOUNDS_ENABLE' => self::$sounds,
                 'HOST_URL' => 'https://example.com', 'STATIC_URL' => '/static', default => self::$turnstile[$key] ?? 0
             };
         }
@@ -113,8 +114,15 @@ namespace {
         preg_match('/var g_externalLinks = (.+);/', $head, $match);
         check(json_decode($match[1], true, 512, JSON_THROW_ON_ERROR) === ExternalLinks::urls(), 'Head emits current configured URLs');
         check(str_contains($head, 'g_applyExternalLinks(mn_community, g_externalLinks)'), 'Head applies configuration before body navigation');
-        check(str_contains($head, '/js/external-links.js?v='.AOWOW_REVISION.'.3'), 'Updated navigation script bypasses the previous browser cache');
+        check(str_contains($head, '/js/external-links.js?v='.AOWOW_REVISION.'.4'), 'Updated navigation script bypasses the previous browser cache');
         check(str_contains($head, 'var g_profilerEnabled = false;') && str_contains($head, 'g_applyProfilerMenus(mn_tools, mn_more, g_profilerEnabled)'), 'Cached page hides profiler navigation using the current server configuration');
+        foreach ([false, true] as $sounds) {
+            Aowow\Cfg::$sounds = $sounds;
+            $soundHead = $render->call(unserialize($cached), $root.'/template/bricks/head.tpl.php');
+            check(str_contains($soundHead, 'var g_soundsEnabled = '.($sounds ? 'true' : 'false').';'), 'Cached template reads current sound setting');
+            check(strpos($soundHead, 'var g_soundsEnabled') < strpos($soundHead, '/js/external-links.js'), 'Sound flag precedes generated scripts');
+            check(str_contains($soundHead, 'g_applySoundsMenu(mn_database, g_soundsEnabled)'), 'Sound menu follows site setting');
+        }
         Aowow\Cfg::$profiler = true;
         $page = unserialize($cached);
         $enabledHead = $render->call($page, $root.'/template/bricks/head.tpl.php');

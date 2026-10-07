@@ -150,7 +150,7 @@ class EmoteBaseResponse extends TemplateResponse implements ICache
         }
 
         // event sound
-        if ($_ = $this->subject->getField('soundId'))
+        if (Cfg::get('SOUNDS_ENABLE') && ($_ = $this->subject->getField('soundId')))
         {
             $this->extendGlobalIds(Type::SOUND, $_);
             $text .= '[h3]'.Lang::emote('eventSound').'[/h3][sound='.$_.']';
@@ -182,6 +182,16 @@ class EmoteBaseResponse extends TemplateResponse implements ICache
             $this->lvTabs->addListviewTab(new Listview(['data' => $acv->getListviewData()], AchievementList::$brickFile));
         }
 
+        $this->tabSounds();
+
+        parent::generate();
+    }
+
+    private function tabSounds() : void
+    {
+        if (!Cfg::get('SOUNDS_ENABLE'))
+            return;
+
         // tab: sound
         $ems = DB::Aowow()->selectAssoc(
            'SELECT   `soundId` AS ARRAY_KEY, BIT_OR(1 << (`raceId` - 1)) AS "raceMask", BIT_OR(1 << (`gender` - 1)) AS "gender"
@@ -211,8 +221,6 @@ class EmoteBaseResponse extends TemplateResponse implements ICache
                 ), SoundList::$brickFile));
             }
         }
-
-        parent::generate();
     }
 
     private function prepare(string $emote) : string

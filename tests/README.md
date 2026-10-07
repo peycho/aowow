@@ -965,3 +965,16 @@ denials, POST/CSRF, no-store and proxy cache behavior. Never authorize a shared
 proxy IP. Native diagnostic output remains sensitive for allowed operators.
 See [install step 11](../README.md#11-restrict-diagnosticsconfiguration-and-deploy-the-legacy-deny-policy)
 and [A16](../docs/aowow-security-review.md#a16--redirects-and-legacydiagnostic-exposure).
+
+## Optional site sounds
+
+`php tests/site-sounds.php` exercises disabled sound/list/playlist routes, generic
+sound loading, item/spell/NPC/zone/race/emote sound helpers, sound searches,
+sitemaps, inline metadata and preservation of NPC dialogue text. Synthetic query
+spies verify that disabled helpers avoid lookups and enabled helpers reach them.
+`node tests/site-sounds.mjs` executes all six localized menus and the real audio,
+playlist and markup code, checking that disabled sound features attach no media
+sources. The existing cache suite checks enabled/disabled cache separation; the
+journaled SQL suite checks installation, existing choices and a single queued
+build on disposable databases. These checks are included in the usual PHP,
+JavaScript and SQL CI gates.

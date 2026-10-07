@@ -239,23 +239,7 @@ class RaceBaseResponse extends TemplateResponse implements ICache
             }
         }
 
-        // tab: sounds
-        if ($vo = DB::Aowow()->selectCol('SELECT `soundId` AS ARRAY_KEY, `gender` FROM ::races_sounds WHERE `raceId` = %i', $this->typeId))
-        {
-            $sounds = new SoundList(array(['id', array_keys($vo)]));
-            if (!$sounds->error)
-            {
-                $this->extendGlobalData($sounds->getJSGlobals(GLOBALINFO_SELF));
-                $data = $sounds->getListviewData();
-                foreach ($data as $id => &$d)
-                    $d['gender'] = $vo[$id];
-
-                $this->lvTabs->addListviewTab(new Listview(array(
-                    'data' => $data,
-                    'extraCols' => [new JsExpression('Listview.templates.title.columns[1]')]
-                ), SoundList::$brickFile));
-            }
-        }
+        $this->tabSounds();
 
         // tab: criteria-of
         $conditions = array(
@@ -289,6 +273,30 @@ class RaceBaseResponse extends TemplateResponse implements ICache
         }
 
         parent::generate();
+    }
+
+    private function tabSounds() : void
+    {
+        if (!Cfg::get('SOUNDS_ENABLE'))
+            return;
+
+        // tab: sounds
+        if ($vo = DB::Aowow()->selectCol('SELECT `soundId` AS ARRAY_KEY, `gender` FROM ::races_sounds WHERE `raceId` = %i', $this->typeId))
+        {
+            $sounds = new SoundList(array(['id', array_keys($vo)]));
+            if (!$sounds->error)
+            {
+                $this->extendGlobalData($sounds->getJSGlobals(GLOBALINFO_SELF));
+                $data = $sounds->getListviewData();
+                foreach ($data as $id => &$d)
+                    $d['gender'] = $vo[$id];
+
+                $this->lvTabs->addListviewTab(new Listview(array(
+                    'data' => $data,
+                    'extraCols' => [new JsExpression('Listview.templates.title.columns[1]')]
+                ), SoundList::$brickFile));
+            }
+        }
     }
 
     protected function generateMetadata(bool $useArticle = true) : void

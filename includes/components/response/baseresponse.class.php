@@ -218,6 +218,9 @@ trait TrCache
         if ($miscInfo)
             $fileKey .= '-'.$miscInfo;
 
+        // Sound tabs, markup and search results must never cross the current site setting.
+        $fileKey .= '-sounds'.(int)(bool)Cfg::get('SOUNDS_ENABLE');
+
         // topDir, 2ndDir, file
         return array(
             str_pad(dechex($dbType & 0xFF), 2, 0, STR_PAD_LEFT),

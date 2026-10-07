@@ -271,7 +271,7 @@ class TemplateResponse extends BaseResponse
     // add typeIds <int|array[int]> that should be displayed as jsGlobal on the page
     public function extendGlobalIds(int $type, int ...$ids) : void
     {
-        if (!$type || !$ids)
+        if (!$type || !$ids || ($type === Type::SOUND && !Cfg::get('SOUNDS_ENABLE')))
             return;
 
         if (!isset($this->jsgBuffer[$type]))
@@ -286,7 +286,7 @@ class TemplateResponse extends BaseResponse
     {
         foreach ($data as $type => $globals)
         {
-            if (!is_array($globals) || !$globals)
+            if (!is_array($globals) || !$globals || ($type === Type::SOUND && !Cfg::get('SOUNDS_ENABLE')))
                 continue;
 
             $this->initJSGlobal($type);

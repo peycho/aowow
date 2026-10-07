@@ -1238,6 +1238,9 @@ class SpellBaseResponse extends TemplateResponse implements ICache
 
     private function tabSounds() : ?Listview
     {
+        if (!Cfg::get('SOUNDS_ENABLE'))
+            return null;
+
         $data     = [];
         $seSounds = [];
         for ($i = 1; $i < 4; $i++)                          // sounds from screen effect
@@ -2313,7 +2316,7 @@ class SpellBaseResponse extends TemplateResponse implements ICache
                     break;
                 case SPELL_EFFECT_PLAY_SOUND:
                 case SPELL_EFFECT_PLAY_MUSIC:
-                    if (DB::Aowow()->selectCell('SELECT 1 FROM ::sounds WHERE `id` = %i', $effMV))
+                    if (Cfg::get('SOUNDS_ENABLE') && DB::Aowow()->selectCell('SELECT 1 FROM ::sounds WHERE `id` = %i', $effMV))
                     {
                         $_markup = '[sound='.$effMV.']';
                         $effMV = 0;                         // prevent default display
@@ -2613,7 +2616,7 @@ class SpellBaseResponse extends TemplateResponse implements ICache
                                 trigger_error('unused case #'.$effMV.' found for aura #'.$effAura);
                             break;
                         case SPELL_AURA_SCREEN_EFFECT:
-                            if ($ses = DB::Aowow()->selectRow('SELECT `name`, `ambienceDay` AS "0", IF(`ambienceNight` <> `ambienceDay`, `ambienceNight`, 0) AS "1", `musicDay` AS "2", IF(`musicNight` <> `musicDay`, `musicNight`, 0) AS "3" FROM ::screeneffect_sounds WHERE `id` = %i', $effMV))
+                            if (Cfg::get('SOUNDS_ENABLE') && ($ses = DB::Aowow()->selectRow('SELECT `name`, `ambienceDay` AS "0", IF(`ambienceNight` <> `ambienceDay`, `ambienceNight`, 0) AS "1", `musicDay` AS "2", IF(`musicNight` <> `musicDay`, `musicNight`, 0) AS "3" FROM ::screeneffect_sounds WHERE `id` = %i', $effMV)))
                             {
                                 $_nameMV = $this->fmtStaffTip($ses['name'], 'MiscValue: '.$effMV);
                                 for ($j = 0; $j < 4; $j++)

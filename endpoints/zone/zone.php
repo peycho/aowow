@@ -833,6 +833,23 @@ class ZoneBaseResponse extends TemplateResponse implements ICache
             $this->extendGlobalData($subZones->getJSGlobals(GLOBALINFO_SELF));
         }
 
+        $this->addSounds($subZones);
+
+        // tab: condition-for
+        $cnd = new Conditions();
+        $cnd->getByCondition(Type::ZONE, $this->typeId)->prepare();
+        if ($tab = $cnd->toListviewTab('condition-for', new JsExpression('LANG.tab_condition_for')))
+        {
+            $this->extendGlobalData($cnd->getJSGlobals());
+            $this->lvTabs->addDataTab(...$tab);
+        }
+    }
+
+    private function addSounds(ZoneList $subZones) : void
+    {
+        if (!Cfg::get('SOUNDS_ENABLE'))
+            return;
+
         // tab: sound (including subzones; excluding parents)
         $areaIds = [];
         if (!$subZones->error)
@@ -902,15 +919,6 @@ class ZoneBaseResponse extends TemplateResponse implements ICache
                 if ($_ = $typeFilter($zoneMusic, 1))
                     $this->zoneMusic[] = [Lang::sound('ambience'), $_, 'soundambience', (object)['loop' => true]];
             }
-        }
-
-        // tab: condition-for
-        $cnd = new Conditions();
-        $cnd->getByCondition(Type::ZONE, $this->typeId)->prepare();
-        if ($tab = $cnd->toListviewTab('condition-for', new JsExpression('LANG.tab_condition_for')))
-        {
-            $this->extendGlobalData($cnd->getJSGlobals());
-            $this->lvTabs->addDataTab(...$tab);
         }
     }
 

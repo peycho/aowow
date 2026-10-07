@@ -129,7 +129,7 @@ abstract class Type
 
     public static function newList(int $type, array $conditions = []) : ?DBTypeList
     {
-        if (!self::exists($type))
+        if (!self::exists($type) || (!CLI && $type === self::SOUND && !Cfg::get('SOUNDS_ENABLE')))
             return null;
 
         return new (self::$data[$type][self::IDX_LIST_OBJ])($conditions);

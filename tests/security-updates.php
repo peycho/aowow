@@ -417,6 +417,22 @@ CODE;
         check(marker()['date'] >= 1791142907, 'fresh schema version includes the criteria migration');
         check(str_contains((string)$db->query('SELECT build FROM ::dbversion')->fetchSingle(), 'globaljs'), 'fresh setup retains the pending globaljs build');
 
+        // The sound setting migration preserves choices and schedules client guards exactly once.
+        $soundMigration = files(['1791331200_06.sql' => file_get_contents($root.'/setup/sql/updates/1791331200_06.sql')]);
+        foreach ([null, '0', '1'] as $choice) {
+            resetDb();
+            $db->query('ALTER TABLE ::config ADD `default` text, ADD cat int, ADD flags int, ADD comment text');
+            if ($choice !== null) $db->query("INSERT INTO ::config (`key`,value) VALUES ('sounds_enable',%s)", $choice);
+            $db->query("UPDATE ::dbversion SET build='existing'");
+            SqlUpdate::apply($db,$soundMigration);
+            check($db->query("SELECT value FROM ::config WHERE `key`='sounds_enable'")->fetchSingle() === ($choice ?? '1'), 'Sound migration defaults to enabled and preserves choices');
+            check($db->query('SELECT build FROM ::dbversion')->fetchSingle() === 'existing globaljs', 'Sound migration preserves pending builds');
+            check($db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle() === '0', 'Sound migration leaves maintenance unchanged');
+            if ($choice === null) check((int)$db->query("SELECT flags FROM ::config WHERE `key`='sounds_enable'")->fetchSingle() === 132, 'Sound setting is persistent boolean');
+            SqlUpdate::apply($db,$soundMigration);
+            check($db->query('SELECT build FROM ::dbversion')->fetchSingle() === 'existing globaljs', 'Journal prevents duplicate sound builds');
+        }
+
         echo "\n$checks update checks passed.\n";
     }
     finally { cleanup($temp); }

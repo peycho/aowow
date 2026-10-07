@@ -35,6 +35,8 @@ PY
       php "tests/security-$suite.php"
     done
     php tests/security-csrf.php --http
+    php tests/site-sounds.php
+    php tests/site-sounds.php --cli
     php tests/setup-sounds.php
     php tests/setup-debug.php
     php tests/schema-validator.php
@@ -46,6 +48,7 @@ PY
     ;;
   javascript)
     node tests/security-turnstile.mjs
+    node tests/site-sounds.mjs
     node tests/external-links.mjs
     php tests/retirement.php --fixtures | node tests/retirement.mjs
     php tests/security-json.php --fixtures | node tests/security-json.mjs
