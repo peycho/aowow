@@ -7,6 +7,29 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-07
 
+### Feedback switch
+
+`feedback_enable` is an enabled-by-default persistent boolean under Site
+Configuration → Site. It hides the Feedback header link and disables general
+contact dialogs, including `#contact` and feedback markup. The `?contactus`
+handler returns HTTP 404 for disabled general requests before creating a report;
+the report service also refuses general submissions. Comment, screenshot, video,
+character and guide reporting retain their existing checks and behavior. Direct
+email links and existing reports are preserved.
+
+Both cached page headers and dialog guards read the current request setting.
+Toggling does not rebuild assets, enable maintenance or query a database for each
+check. Migration `1791331200_04.sql` adds the setting without overwriting existing
+choices and queues one `globaljs` build through `php aowow --update` to install
+the client guards. Fresh installations include the same enabled default.
+
+Validation: full PHP 8.5, JavaScript and lint gates passed, along with the full
+MySQL 8.4 SQL gate on disposable fixtures. Focused checks cover current settings
+on cached pages, general request rejection, content-report dialogs/submissions,
+configuration saves without builds, defaults and preservation of existing choices,
+durable migration accounting and client generator completion. No deployed site or
+application database was modified.
+
 ### Prune filesystem diagnostics
 
 `--prune` now reports which logical filesystem scan failed (`cache`, `staging`

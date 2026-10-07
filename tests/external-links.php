@@ -5,12 +5,14 @@ namespace Aowow {
         public static bool $profiler = false;
         public static bool $searchplugins = true, $searchbox = true;
         public static bool $missingScreenshots = false;
+        public static bool $feedback = true;
         public static function get(string $key) : mixed {
             return match ($key) {
                 'PROFILER_ENABLE' => self::$profiler,
                 'SEARCHPLUGINS_ENABLE' => self::$searchplugins,
                 'SEARCHBOX_ENABLE' => self::$searchbox,
                 'MISSING_SCREENSHOTS_ENABLE' => self::$missingScreenshots,
+                'FEEDBACK_ENABLE' => self::$feedback,
                 'HOST_URL' => 'https://example.com', 'STATIC_URL' => '/static', default => 0
             };
         }
@@ -20,6 +22,7 @@ namespace Aowow {
         public static function main(string $key) : string { return $key; }
     }
     class User {
+        public static function isLoggedIn() : bool { return false; }
         public static function isPremium() : bool { return false; }
         public static function getUserGlobal() : array { return []; }
         public static function getFavorites() : array { return []; }
@@ -131,6 +134,12 @@ namespace {
                   str_contains($head, 'g_applyGoodiesMenus(mn_more, g_searchpluginsEnabled, g_searchboxEnabled)'), 'Cached head reflects both independent goodies switches without rebuilding');
         }
         foreach ([false, true, false] as $enabled) {
+            Aowow\Cfg::$feedback = $enabled;
+            $page = unserialize($cached);
+            $head = $render->call($page, $root.'/template/bricks/head.tpl.php');
+            $header = $render->call($page, $root.'/template/bricks/headerMenu.tpl.php');
+            check(str_contains($head, 'var g_feedbackEnabled = '.($enabled ? 'true' : 'false').';'), 'Cached page uses current Feedback configuration without rebuilding');
+            check(str_contains($header, 'id="toplinks-feedback"') === $enabled && str_contains($header, 'id="toplinks-language"'), 'Feedback link toggles independently of account and language navigation');
             Aowow\Cfg::$missingScreenshots = $enabled;
             $page = unserialize($cached);
             $head = $render->call($page, $root.'/template/bricks/head.tpl.php');

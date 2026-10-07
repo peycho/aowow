@@ -869,6 +869,9 @@ var Markup = {
             },
             toHtml: function(attr)
             {
+                if (!attr.mailto && typeof g_feedbackEnabled != 'undefined' && !g_feedbackEnabled)
+                    return Markup._safeHtml('CFG_CONTACT_EMAIL');
+
                 return '<b><span class="icontiny" style="background-image: url(' + g_staticUrl + '/images/icons/email.gif)"><a href="' + (attr.mailto ? 'mailto:CFG_CONTACT_EMAIL' : 'javascript:;" onclick="ContactTool.show();') + '">CFG_CONTACT_EMAIL</a></span></b>';
             }
         },

@@ -20,7 +20,9 @@ namespace Aowow {
     }
     class User {
         public static int $id = 42;
+        public static string $ip = '127.0.0.1';
         public static bool $banned = false;
+        public static function isLoggedIn() : bool { return true; }
         public static function isBanned() : bool { return self::$banned; }
         public static function getUserGlobal() : array { return []; }
         public static function getFavorites() : array { return []; }
@@ -86,7 +88,7 @@ namespace {
                'contact_email'=>'fixture@example.test', 'gtag_measurement_id'=>'', 'ua_measurement_key'=>'',
                'rep_req_border_uncommon'=>0, 'rep_req_border_rare'=>0,
                'rep_req_border_epic'=>0, 'rep_req_border_legendary'=>0, 'profiler_enable'=>0,
-               'searchplugins_enable'=>1, 'searchbox_enable'=>1, 'missing_screenshots_enable'=>0];
+               'searchplugins_enable'=>1, 'searchbox_enable'=>1, 'missing_screenshots_enable'=>0, 'feedback_enable'=>1];
     $store = [];
     foreach ($config as $key => $value)
         $store[$key] = [$value, is_int($value) ? Cfg::FLAG_TYPE_INT : Cfg::FLAG_TYPE_STRING, 0, null, 'fixture'];
@@ -234,14 +236,34 @@ namespace {
         check($error === ($enabled ? 'Missing screenshot listing reached' : 'Invalid help route'), 'Missing screenshots preserves construction without a URL parameter');
     }
     check(!DB::$writes, 'Missing-screenshots guard reads loaded configuration without database calls');
+    require $root.'/includes/components/report.class.php';
+    require $root.'/endpoints/contactus/contactus.php';
+    class FeedbackProbe extends Aowow\ContactusBaseResponse {
+        public function run(?int $mode) : void { $this->_post = ['mode'=>$mode]; $this->generate(); }
+        public function generate404(?string $out = null) : never { throw new RuntimeException('Feedback HTTP 404'); }
+        protected function assertPOST(string ...$keys) : bool { throw new RuntimeException('Report pipeline reached'); }
+    }
+    $probe = (new ReflectionClass(FeedbackProbe::class))->newInstanceWithoutConstructor();
+    foreach ([0, 1, 0] as $enabled) {
+        $store['feedback_enable'][0] = $enabled;
+        (new ReflectionProperty(Cfg::class, 'store'))->setValue(null, $store);
+        foreach ([null, 0, 1, 2, 3, 4, 5, 6] as $mode) {
+            $error = ''; try { $probe->run($mode); } catch (RuntimeException $e) { $error = $e->getMessage(); }
+            check($error === (!$enabled && !$mode ? 'Feedback HTTP 404' : 'Report pipeline reached'), 'Feedback rejects GET/general requests before report work while retaining content reports');
+        }
+        $report = new Aowow\Report(0, 1);
+        check(!$report->create('') && $report->getError() === ($enabled ? 3 : 0), 'Report service independently rejects disabled general feedback before validation or database work');
+    }
+    check(!DB::$writes, 'Feedback guards use loaded configuration without database calls');
     // Real settings writes persist the independent switches without queuing a dataset build.
     foreach (['searchplugins_enable', 'searchbox_enable'] as $key)
         $store[$key] = [1, Cfg::FLAG_TYPE_BOOL | Cfg::FLAG_PERSISTENT, 1, '1', 'fixture'];
     $store['missing_screenshots_enable'] = [0, Cfg::FLAG_TYPE_BOOL | Cfg::FLAG_PERSISTENT, 1, '0', 'fixture'];
+    $store['feedback_enable'] = [1, Cfg::FLAG_TYPE_BOOL | Cfg::FLAG_PERSISTENT, 1, '1', 'fixture'];
     (new ReflectionProperty(Cfg::class, 'store'))->setValue(null, $store);
     (new ReflectionProperty(Cfg::class, 'isLoaded'))->setValue(null, true);
     DB::$result = 1;
-    foreach (['searchplugins_enable', 'searchbox_enable', 'missing_screenshots_enable'] as $key) foreach ([0, 1] as $enabled) {
+    foreach (['searchplugins_enable', 'searchbox_enable', 'missing_screenshots_enable', 'feedback_enable'] as $key) foreach ([0, 1] as $enabled) {
         $builds = []; DB::$writes = [];
         check(Cfg::set($key, $enabled, $builds) === '' && !$builds && Cfg::get($key) === $enabled &&
               DB::$writes === [['UPDATE ::config SET `value` = %s WHERE `key` = %s', [$enabled, $key]]], 'Saving a feature switch persists without dataset generation: '.$key);

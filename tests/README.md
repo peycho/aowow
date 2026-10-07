@@ -163,6 +163,13 @@ configuration, including independent toggles and invalid goodies parameters.
 The real missing-screenshots constructor is also checked against a listing
 generation sentinel, including disabling it again after enabling it. Settings
 saves must persist these switches without scheduling a dataset build.
+Feedback checks cover cached header visibility, the current client flag, disabled
+general endpoint requests, the independent report-service guard and configuration
+saves without rebuilds. Content-report modes remain available. Node executes the
+real contact form's show, hash and submit guards and verifies feedback markup and
+authored email links. SQL suites cover fresh/legacy defaults, preservation of an
+existing disabled choice, checksummed migration accounting, one-time client asset
+generation and already-current updates.
 
 Node checks the generated asset syntax and real markup parser: local defaults,
 explicit external sources, original post links, configurable forum rules, escaped

@@ -185,6 +185,9 @@ class Report
 
     public function create(string $desc, ?string $userAgent = null, ?string $appName = null, ?string $pageUrl = null, ?string $relUrl = null, ?string $email = null) : bool
     {
+        if ($this->mode === self::MODE_GENERAL && !Cfg::get('FEEDBACK_ENABLE'))
+            return false;
+
         if ($this->errorCode)
             return false;
 

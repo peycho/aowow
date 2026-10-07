@@ -59,6 +59,7 @@ endif;
         var g_missingScreenshotsEnabled = <?=\Aowow\Cfg::get('MISSING_SCREENSHOTS_ENABLE') ? 'true' : 'false';?>;
         g_applyMissingScreenshotsMenu(mn_tools, g_missingScreenshotsEnabled);
         var g_user = <?=$this->gUser; ?>;
+        var g_feedbackEnabled = <?=\Aowow\Cfg::get('FEEDBACK_ENABLE') ? 'true' : 'false';?>;
 <?php
 if ($this->gFavorites):
     echo '        g_favorites = '.$this->gFavorites.';'.PHP_EOL;

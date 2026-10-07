@@ -16,4 +16,7 @@ else:
 endif;
 ?>
 
-|<a href="#" id="toplinks-feedback" class="icon-email"><?=Lang::main('feedback'); ?></a>|<a href="javascript:;" id="toplinks-language"><?=Lang::main('language'); ?></a>
+<?php if (\Aowow\Cfg::get('FEEDBACK_ENABLE')): ?>
+|<a href="#" id="toplinks-feedback" class="icon-email"><?=Lang::main('feedback'); ?></a>
+<?php endif; ?>
+|<a href="javascript:;" id="toplinks-language"><?=Lang::main('language'); ?></a>

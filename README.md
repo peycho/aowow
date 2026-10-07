@@ -252,6 +252,14 @@ and static origin, including subdirectory installations. See the
 
 ## Configuration
 
+`feedback_enable` under Site Configuration → Site controls the Feedback link,
+general contact form and general submissions to `?contactus`. It defaults to
+Enabled. When disabled, general requests return HTTP 404; reports about comments,
+screenshots, videos and other content remain available. Install the setting and
+client guards with `php aowow --update`; subsequent toggles need no rebuild or
+additional database queries. Authored email links remain available. See the
+[feedback switch details](docs/changelog.md#feedback-switch).
+
 `missing_screenshots_enable` under Site Configuration → Site defaults to Disabled.
 It hides Tools → Utilities → Missing Screenshots and rejects `?missing-screenshots`
 before generating the listing. Install the setting with `php aowow --update`;

@@ -30,6 +30,9 @@ class ContactusBaseResponse extends TextResponse
     */
     protected function generate() : void
     {
+        if (!Cfg::get('FEEDBACK_ENABLE') && (int)($this->_post['mode'] ?? 0) === Report::MODE_GENERAL)
+            $this->generate404();
+
         if (!$this->assertPOST('mode', 'reason'))
         {
             $this->result = 4;
