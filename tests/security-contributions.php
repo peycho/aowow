@@ -34,6 +34,7 @@ namespace {
     if(getenv('AOWOW_RESOURCE_CHILD')) {
         require $root.'/includes/locale.class.php';
         require $root.'/includes/components/cacheenvelope.class.php';
+        require $root.'/includes/components/errorlog.class.php';
         return;
     } // Continue into the real CLI entrypoint with synthetic configuration only.
     if(($argv[1]??'')==='--worker') { User::$id=(int)$argv[2]; echo ContributionBudget::reserve($argv[3],1)?'yes':'no'; exit; }
@@ -181,6 +182,20 @@ namespace {
         [$code,$out]=runCli(['--prune=apply'],$cli);
         check($code===0 && !is_file($file) && (int)$db->query('SELECT COUNT(*) FROM ::errors')->fetchSingle()===1,'real CLI applies database and file retention');
         check((fileperms($cli.'/cache/maintenance')&0777)===0700 && (fileperms($cli.'/cache/maintenance/cursor.json')&0777)===0600,'real CLI control state stays private');
+        $blocked=$cli.'/cache/template/PRIVATE_SCAN_SENTINEL';mkdir($blocked,0700);chmod($blocked,0000);
+        $savedCursor=file_get_contents($cli.'/cache/maintenance/cursor.json');
+        try {
+            if (!is_readable($blocked)) {
+                foreach ([['--prune'],['--prune=apply'],['--prune','--debug']] as $arguments) {
+                    [$code,$out]=runCli($arguments,$cli);
+                    check($code===1 && str_contains($out,'[prune] cannot scan cache files'),'CLI reports the logical cache scan failure in preview, apply and debug modes');
+                    check(!str_contains($out,'PRIVATE_SCAN_SENTINEL') && !str_contains($out,'Setup command failed'),'CLI filesystem diagnostics omit private paths and replace the generic setup failure');
+                    check(file_get_contents($cli.'/cache/maintenance/cursor.json')===$savedCursor,'Failed scan never persists an advanced cleanup cursor');
+                }
+            } else echo "SKIP: CLI permission-denial checks require a user without filesystem override privileges\n";
+        } finally {chmod($blocked,0700);rmdir($blocked);}
+        [$code,$out]=runCli(['--prune'],$cli);
+        check($code===0,'Filesystem failure releases both cleanup locks so a repaired preview can complete');
         [$code,$out]=runCli(['--prune=wrong'],$cli);check($code===1,'unknown cleanup mode is nonzero');
         $lease=Aowow\SqlUpdate::acquire($db);
         try {[$code,$out]=runCli(['--prune=apply'],$cli);check($code===1,'cleanup cannot race an active migration lease');}

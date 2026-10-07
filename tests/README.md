@@ -1,5 +1,17 @@
 # Security regressions
 
+`tests/schema-reconciliation.php` belongs to the SQL CI group and is guarded by
+`AOWOW_TEST_DATABASE=aowow_security_test_reconciliation` on an isolated localhost
+database. Its sanitized historical structure fixture contains no rows, comments,
+auto-increment counters or environment headers. Synthetic records exercise the
+real update entrypoint, 108-table fresh/legacy schema agreement, enum ordinal
+mapping, long captions/text and community/upload preservation. Data preflight
+rejection, strict-mode restoration, concurrency, maintenance handling and refusal
+to replay partial SQL are covered. Its guarded `fixtures/taxi-generator.php`
+helper runs the real generator with synthetic DBC/world inputs under strict SQL
+mode, verifying scripted nodes, flightmasters and map filtering.
+See [schema reconciliation](../docs/schema-reconciliation.md).
+
 `php tests/schema-validator.php` exercises the complete initial-schema parser,
 normalization, column/index/FK/generated-column differences, safe diagnostics and
 the real read-only CLI initialization/dispatcher. It also checks token-based
@@ -59,7 +71,12 @@ node tests/external-links.mjs
 
 They cover URL validation, enabled status, current settings on cached templates,
 script/HTML escaping, and menu filtering with translated labels and icons in all
-six supported JavaScript locales. Both suites run in CI.
+six supported JavaScript locales. They also cover the profiler switch and all four
+Search Plugins/Search Box switch combinations, including cached headers,
+OpenSearch discovery, independent localized menu filtering and preservation of
+other tools. Missing-screenshots menu coverage tests both flag values alongside
+the profiler switch in all six locales and checks current flags on cached
+headers. Both suites run in CI.
 
 ## Item loot-tab labels
 
@@ -141,6 +158,19 @@ bash tests/ci/run.sh browser
 The PHP suite executes the real `globaljs`/`tooltips` generators with synthetic
 configuration, tests account saves with absent/legacy viewer fields, and renders
 the retained help URL/banner without altering the article in all six locales.
+It exercises direct profiler and goodies page guards against loaded
+configuration, including independent toggles and invalid goodies parameters.
+The real missing-screenshots constructor is also checked against a listing
+generation sentinel, including disabling it again after enabling it. Settings
+saves must persist these switches without scheduling a dataset build.
+Feedback checks cover cached header visibility, the current client flag, disabled
+general endpoint requests, the independent report-service guard and configuration
+saves without rebuilds. Content-report modes remain available. Node executes the
+real contact form's show, hash and submit guards and verifies feedback markup and
+authored email links. SQL suites cover fresh/legacy defaults, preservation of an
+existing disabled choice, checksummed migration accounting, one-time client asset
+generation and already-current updates.
+
 Node checks the generated asset syntax and real markup parser: local defaults,
 explicit external sources, original post links, configurable forum rules, escaped
 model fallbacks, and menus.
@@ -179,6 +209,13 @@ use their separately guarded database names. A one-sample synthetic password
 benchmark is a timing diagnostic, with no performance threshold. A separate
 Apache 2.4 job tests routing, upload/script/hidden-path denials, public assets,
 response headers and deny-policy delivery.
+
+The SQL runner creates and normalizes only its seven guarded fixture databases
+with `utf8mb4_unicode_ci`, matching the historical structure fixture. This also
+covers databases left from an earlier local run. MySQL's server defaults are not
+changed. Initial SQL tables without explicit charset/collation inherit the
+fixture database default, and the schema validator compares them accordingly.
+The reconciliation suite checks this prerequisite before rebuilding its fixture.
 
 The cache fixture supplies a global `Memcached` stand-in. The workflow explicitly
 disables the native extension with `:memcached`, using
@@ -795,6 +832,12 @@ for recovery and deployment boundaries.
 
 
 ## Outbound calls, contribution limits and retention (A15)
+
+Retention tests create an inaccessible cache descendant when filesystem
+permissions are enforced. The file suite covers preview/apply failures; the real
+CLI/SQL suite checks safe diagnostics, unchanged persistent cursors and released
+locks in preview, apply and debug modes. Run as an unprivileged user or without
+filesystem override capabilities to exercise these permission checks.
 
 Run from the checkout root using PHP ≥ 8.4 with cURL, mbstring, OpenSSL and process
 functions, and Node.js ≥ 18. The video test also needs the `openssl` executable

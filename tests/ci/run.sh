@@ -89,8 +89,11 @@ PY
     # shellcheck disable=SC2016 # PHP variables must be passed literally.
     php -r '
       $db = new mysqli(getenv("AOWOW_TEST_DB_HOST"), "root", "", "", (int)getenv("AOWOW_TEST_DB_PORT"));
-      foreach (["passwords", "screenshots", "updates", "resources", "legacy", "schema"] as $suffix) {
-          $db->query("CREATE DATABASE IF NOT EXISTS aowow_security_test_".$suffix." CHARACTER SET utf8mb4");
+      foreach (["passwords", "screenshots", "updates", "resources", "legacy", "schema", "reconciliation"] as $suffix) {
+          $name = "aowow_security_test_".$suffix;
+          $db->query("CREATE DATABASE IF NOT EXISTS ".$name." CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+          // The historical fixture has this collation; normalize reused fixture databases too.
+          $db->query("ALTER DATABASE ".$name." CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
       }
     '
     # Recovery, activation and policy suites share tables and must remain sequential.
@@ -101,6 +104,7 @@ PY
     AOWOW_TEST_DATABASE=aowow_security_test_updates php tests/security-updates.php
     AOWOW_TEST_DATABASE=aowow_security_test_legacy php tests/legacy-updates.php
     AOWOW_TEST_DATABASE=aowow_security_test_schema php tests/schema-validator-sql.php
+    AOWOW_TEST_DATABASE=aowow_security_test_reconciliation php tests/schema-reconciliation.php
     AOWOW_TEST_DATABASE=aowow_security_test_resources php tests/security-contributions.php
     ;;
   apache)

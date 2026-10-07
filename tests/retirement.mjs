@@ -45,3 +45,40 @@ for (const file of readdirSync('static/js').filter(file => /^locale_.*\.js$/.tes
     vm.runInContext('checkRetirementMarkup(check)', context);
 }
 console.log(`PASS: ${checks} retirement markup checks across six locales; generated assets parse`);
+
+// Execute the real form entrypoints with a dialog/AJAX spy; no network or DOM needed.
+const feedback = vm.createContext({LANG: {}, location: {hash:'#contact', href:'https://example.test/#contact'},
+    document: {}, $: () => ({ready() {}}),
+    $WH: {cO: Object.assign, urlencode: encodeURIComponent}, navigator: {userAgent:'fixture', appName:'fixture'},
+    Dialog: function () { this.show = () => {feedback.shown++;}; },
+    shown: 0, submitted: 0, g_feedbackEnabled: false, Ajax: function () { feedback.submitted++; }});
+feedback.Dialog.templates = {};
+vm.runInContext(readFileSync('setup/tools/filegen/templates/global.js/contacttool.js', 'utf8'), feedback);
+for (const enabled of [false, true, false]) {
+    feedback.g_feedbackEnabled = enabled;
+    for (const mode of [undefined, 0, '0', 1, 2, 3, 4, 5, 6]) {
+        const before = feedback.shown;
+        feedback.ContactTool.show(mode === undefined ? undefined : {mode});
+        assert.equal(feedback.shown - before, enabled || (mode !== undefined && +mode !== 0) ? 1 : 0);
+    }
+    const before = feedback.shown;
+    feedback.ContactTool.checkPound();
+    assert.equal(feedback.shown - before, enabled ? 1 : 0);
+}
+feedback.g_feedbackEnabled = false;
+assert.equal(feedback.ContactTool.onSubmit({mode:0}, null, null), false);
+assert.equal(feedback.submitted, 0);
+for (const enabled of [false, true]) {
+    feedback.g_feedbackEnabled = enabled;
+    for (const mode of [0, '0', 1, 2, 3, 4, 5, 6]) {
+        const before = feedback.submitted;
+        const data = {mode, reason:1, description:'Fixture', currenturl:'https://example.test/',
+            comment:{id:1}, post:{id:1}, screenshot:{id:1}, profile:{source:1}, video:{id:1}, guide:{id:1}};
+        const form = {elements:[{disabled:false}]};
+        assert.equal(feedback.ContactTool.onSubmit(data, null, form), false);
+        const allowed = enabled || +mode !== 0;
+        assert.equal(feedback.submitted - before, allowed ? 1 : 0);
+        assert.equal(form.elements[0].disabled, allowed);
+    }
+}
+console.log('PASS: Feedback form/hash/submission guards preserve content-report dialogs');

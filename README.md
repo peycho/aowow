@@ -224,8 +224,12 @@ php aowow --prune
 php aowow --prune=apply
 ```
 
-Cleanup processes bounded batches and preserves published content. No scheduler
-is installed automatically. See the [limits and retention details](docs/changelog.md#contribution-limits-and-disposable-data-cleanup-revision-67).
+Cleanup processes bounded batches and preserves published content.
+Run cleanup as the website OS user, which owns the private cache directories.
+The `cache/maintenance` directory and its lock/cursor files must be accessible
+to that same user. Keep directory/file modes private; do not grant public cache
+access to make a different CLI user work.
+No scheduler is installed automatically. See the [limits and retention details](docs/changelog.md#contribution-limits-and-disposable-data-cleanup-revision-67).
 
 ### 11. Restrict diagnostics/configuration and deploy the legacy deny policy
 
@@ -247,6 +251,33 @@ and static origin, including subdirectory installations. See the
 [operator policy and deployment details](docs/changelog.md#redirects-and-operator-administration-revision-68).
 
 ## Configuration
+
+`feedback_enable` under Site Configuration → Site controls the Feedback link,
+general contact form and general submissions to `?contactus`. It defaults to
+Enabled. When disabled, general requests return HTTP 404; reports about comments,
+screenshots, videos and other content remain available. Install the setting and
+client guards with `php aowow --update`; subsequent toggles need no rebuild or
+additional database queries. Authored email links remain available. See the
+[feedback switch details](docs/changelog.md#feedback-switch).
+
+`missing_screenshots_enable` under Site Configuration → Site defaults to Disabled.
+It hides Tools → Utilities → Missing Screenshots and rejects `?missing-screenshots`
+before generating the listing. Install the setting with `php aowow --update`;
+toggling it needs no rebuild. See the
+[missing screenshots switch](docs/changelog.md#missing-screenshots-switch).
+
+The independent `searchplugins_enable` and `searchbox_enable` settings under
+Site Configuration → Site control the corresponding Goodies menu entries and
+page URLs. Both default to Enabled. Apply new settings to an existing installation
+with `php aowow --update`; toggling them needs no asset rebuild. See the
+[goodies switch details](docs/changelog.md#goodies-switches).
+
+The database setting `profiler_enable` controls profiler URLs and navigation.
+Set it to Disabled in Site Configuration → Profiler to hide Characters, Guilds,
+Arena Teams, profile creation and profiler help, and reject their direct URLs.
+The checks use configuration already loaded for the request; they add no database
+queries or character-database availability checks. See the
+[profiler switch details](docs/changelog.md#profiler-switch-and-navigation).
 
 Configure Community-menu links and the homepage GitHub link through
 `$AoWoWconf['externalLinks']` in `config/config.php`. Entries support an `enabled`

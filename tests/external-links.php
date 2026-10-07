@@ -2,8 +2,17 @@
 
 namespace Aowow {
     class Cfg {
+        public static bool $profiler = false;
+        public static bool $searchplugins = true, $searchbox = true;
+        public static bool $missingScreenshots = false;
+        public static bool $feedback = true;
         public static function get(string $key) : mixed {
             return match ($key) {
+                'PROFILER_ENABLE' => self::$profiler,
+                'SEARCHPLUGINS_ENABLE' => self::$searchplugins,
+                'SEARCHBOX_ENABLE' => self::$searchbox,
+                'MISSING_SCREENSHOTS_ENABLE' => self::$missingScreenshots,
+                'FEEDBACK_ENABLE' => self::$feedback,
                 'HOST_URL' => 'https://example.com', 'STATIC_URL' => '/static', default => 0
             };
         }
@@ -13,6 +22,7 @@ namespace Aowow {
         public static function main(string $key) : string { return $key; }
     }
     class User {
+        public static function isLoggedIn() : bool { return false; }
         public static function isPremium() : bool { return false; }
         public static function getUserGlobal() : array { return []; }
         public static function getFavorites() : array { return []; }
@@ -96,6 +106,13 @@ namespace {
         preg_match('/var g_externalLinks = (.+);/', $head, $match);
         check(json_decode($match[1], true, 512, JSON_THROW_ON_ERROR) === ExternalLinks::urls(), 'Head emits current configured URLs');
         check(str_contains($head, 'g_applyExternalLinks(mn_community, g_externalLinks)'), 'Head applies configuration before body navigation');
+        check(str_contains($head, '/js/external-links.js?v='.AOWOW_REVISION.'.3'), 'Updated navigation script bypasses the previous browser cache');
+        check(str_contains($head, 'var g_profilerEnabled = false;') && str_contains($head, 'g_applyProfilerMenus(mn_tools, mn_more, g_profilerEnabled)'), 'Cached page hides profiler navigation using the current server configuration');
+        Aowow\Cfg::$profiler = true;
+        $page = unserialize($cached);
+        $enabledHead = $render->call($page, $root.'/template/bricks/head.tpl.php');
+        check(str_contains($enabledHead, 'var g_profilerEnabled = true;'), 'Same cached page reflects profiler enablement without a rebuild or database discovery');
+        Aowow\Cfg::$profiler = false;
         $home = $render->call($page, $root.'/template/pages/home.tpl.php');
         check(str_contains($home, 'href="'.htmlspecialchars($url, ENT_QUOTES | ENT_HTML5).'"'), 'Homepage GitHub URL is HTML escaped');
 
@@ -106,6 +123,29 @@ namespace {
         $head = $render->call($page, $root.'/template/bricks/head.tpl.php');
         preg_match('/var g_externalLinks = (.+);/', $head, $match);
         check(json_decode($match[1], true)['facebook'] === null, 'Cached head reads current enabled status');
+        foreach ([false, true] as $searchplugins) foreach ([false, true] as $searchbox) {
+            Aowow\Cfg::$searchplugins = $searchplugins;
+            Aowow\Cfg::$searchbox = $searchbox;
+            $page = unserialize($cached);
+            $head = $render->call($page, $root.'/template/bricks/head.tpl.php');
+            check(str_contains($head, 'rel="search"') === $searchplugins, 'Cached head advertises OpenSearch only when Search Plugins is enabled');
+            check(str_contains($head, 'var g_searchpluginsEnabled = '.($searchplugins ? 'true' : 'false').';') &&
+                  str_contains($head, 'var g_searchboxEnabled = '.($searchbox ? 'true' : 'false').';') &&
+                  str_contains($head, 'g_applyGoodiesMenus(mn_more, g_searchpluginsEnabled, g_searchboxEnabled)'), 'Cached head reflects both independent goodies switches without rebuilding');
+        }
+        foreach ([false, true, false] as $enabled) {
+            Aowow\Cfg::$feedback = $enabled;
+            $page = unserialize($cached);
+            $head = $render->call($page, $root.'/template/bricks/head.tpl.php');
+            $header = $render->call($page, $root.'/template/bricks/headerMenu.tpl.php');
+            check(str_contains($head, 'var g_feedbackEnabled = '.($enabled ? 'true' : 'false').';'), 'Cached page uses current Feedback configuration without rebuilding');
+            check(str_contains($header, 'id="toplinks-feedback"') === $enabled && str_contains($header, 'id="toplinks-language"'), 'Feedback link toggles independently of account and language navigation');
+            Aowow\Cfg::$missingScreenshots = $enabled;
+            $page = unserialize($cached);
+            $head = $render->call($page, $root.'/template/bricks/head.tpl.php');
+            check(str_contains($head, 'var g_missingScreenshotsEnabled = '.($enabled ? 'true' : 'false').';') &&
+                  str_contains($head, 'g_applyMissingScreenshotsMenu(mn_tools, g_missingScreenshotsEnabled)'), 'Same cached page reflects the current missing-screenshots switch without rebuilding');
+        }
     }
     finally {
         chdir($cwd);

@@ -23,7 +23,9 @@ foreach ($this->locale::cases() as $l):
 endforeach;
 ?>
     <link rel="SHORTCUT ICON" href="<?=$this->gStaticUrl; ?>/images/logos/favicon.ico" />
+<?php if (\Aowow\Cfg::get('SEARCHPLUGINS_ENABLE')): ?>
     <link rel="search" type="application/opensearchdescription+xml" href="<?=$this->gStaticUrl; ?>/download/searchplugins/aowow.xml" title="<?=Lang::main('search');?>" />
+<?php endif; ?>
 <?php
 if ($this->ldIntangible):
     echo '    <script type="application/ld+json">'.$this->json($this->ldIntangible).'</script>'.PHP_EOL;
@@ -45,11 +47,19 @@ endif;
     </script>
 
 <?=$this->renderArray('js', 4); ?>
-    <script src="<?=$this->gStaticUrl;?>/js/external-links.js?v=<?=AOWOW_REVISION;?>"></script>
+    <script src="<?=$this->gStaticUrl;?>/js/external-links.js?v=<?=AOWOW_REVISION;?>.3"></script>
     <script type="text/javascript">
         var g_externalLinks = <?=\Aowow\Util::toJSON(\Aowow\ExternalLinks::urls());?>;
         g_applyExternalLinks(mn_community, g_externalLinks);
+        var g_profilerEnabled = <?=\Aowow\Cfg::get('PROFILER_ENABLE') ? 'true' : 'false';?>;
+        g_applyProfilerMenus(mn_tools, mn_more, g_profilerEnabled);
+        var g_searchpluginsEnabled = <?=\Aowow\Cfg::get('SEARCHPLUGINS_ENABLE') ? 'true' : 'false';?>;
+        var g_searchboxEnabled = <?=\Aowow\Cfg::get('SEARCHBOX_ENABLE') ? 'true' : 'false';?>;
+        g_applyGoodiesMenus(mn_more, g_searchpluginsEnabled, g_searchboxEnabled);
+        var g_missingScreenshotsEnabled = <?=\Aowow\Cfg::get('MISSING_SCREENSHOTS_ENABLE') ? 'true' : 'false';?>;
+        g_applyMissingScreenshotsMenu(mn_tools, g_missingScreenshotsEnabled);
         var g_user = <?=$this->gUser; ?>;
+        var g_feedbackEnabled = <?=\Aowow\Cfg::get('FEEDBACK_ENABLE') ? 'true' : 'false';?>;
 <?php
 if ($this->gFavorites):
     echo '        g_favorites = '.$this->gFavorites.';'.PHP_EOL;

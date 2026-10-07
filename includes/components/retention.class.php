@@ -5,6 +5,15 @@ namespace Aowow;
 if (!defined('AOWOW_REVISION'))
     die('illegal access');
 
+/** Keep the logical scan root separate from filesystem exception messages/paths. */
+final class RetentionScanException extends \RuntimeException
+{
+    public function __construct(public readonly string $kind, \Throwable $previous)
+    {
+        parent::__construct('Retention file scan failed.', 0, $previous);
+    }
+}
+
 /** CLI-only expiry cleanup. Published uploads, articles, moderation records and permanent budgets are never aged out. */
 final class Retention
 {
@@ -50,10 +59,7 @@ final class Retention
             $offset = max(0, (int)($cursor[$kind] ?? 0));
             $seen = 0;
             $removed = 0;
-            $files = $kind === 'cache'
-                ? new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST)
-                : new \DirectoryIterator($root);
-            foreach ($files as $file)
+            foreach (self::entries($kind, $root) as $file)
             {
                 if (in_array($file->getFilename(), ['.', '..'], true)) continue;
                 if ($seen++ < $offset) continue;
@@ -83,6 +89,22 @@ final class Retention
             $cursor[$kind] = $result[$kind]['more'] ? max(0, $offset + $result[$kind]['scanned'] - $removed) : 0;
         }
         return $result;
+    }
+
+    private static function entries(string $kind, string $root) : \Generator
+    {
+        try
+        {
+            $files = $kind === 'cache'
+                ? new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST)
+                : new \DirectoryIterator($root);
+            foreach ($files as $file)
+                yield $file;
+        }
+        catch (\UnexpectedValueException $e)
+        {
+            throw new RetentionScanException($kind, $e);
+        }
     }
 
     private static function safeCacheRoot(string $root) : bool

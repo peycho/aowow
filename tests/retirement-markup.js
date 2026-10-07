@@ -16,6 +16,12 @@ function checkRetirementMarkup(check) {
     check(html('[forumrules]').includes('href="https://forum.example.test/rules?a=1&amp;b=2"'), 'Forum rules use configured escaped URL');
     g_externalLinks.forum = null;
     check(html('[forumrules]') === LANG.forum_rules, 'Disabled forum rules render plain localized text');
+    for (const enabled of [false, true, false]) {
+        g_feedbackEnabled = enabled;
+        check(html('[feedback]').includes('ContactTool.show') === enabled, 'Feedback markup follows the runtime switch');
+        check(html('[feedback mailto=true]').includes('mailto:'), 'Authored direct email links remain available');
+    }
+    g_feedbackEnabled = true;
     const quote = html('[quote=Blizzard blizzard=true url=https://eu.battle.net/wow/en/forum/topic/123]Original text[/quote]');
     check(quote.includes('https://eu.battle.net/wow/en/forum/topic/123'), 'Original Blizzard post link survives');
     check(!quote.includes('wowhead.com') && !quote.includes('Blue Tracker'), 'No automatic Blue Tracker link');

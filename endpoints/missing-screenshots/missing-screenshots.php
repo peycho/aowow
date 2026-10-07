@@ -13,6 +13,14 @@ class MissingscreenshotsBaseResponse extends TemplateResponse
     protected ?int    $activeTab  = parent::TAB_TOOLS;
     protected  array  $breadcrumb = [1, 8, 13];             // Tools > Util > Missing Screenshots
 
+    public function __construct(string $rawParam = '')
+    {
+        parent::__construct($rawParam);
+
+        if (!Cfg::get('MISSING_SCREENSHOTS_ENABLE'))
+            $this->generateError();
+    }
+
     protected function generate() : void
     {
         $this->h1 = Lang::main('utilities', 13);

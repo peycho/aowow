@@ -94,6 +94,9 @@ var ContactTool = new function()
 
     this.onSubmit = function(data, button, form)
     {
+        if (data.mode == 0 && typeof g_feedbackEnabled != 'undefined' && !g_feedbackEnabled)
+            return false;
+
         if (data.submitting)
             return false;
 
@@ -174,6 +177,9 @@ var ContactTool = new function()
 
         var data = { mode: 0 };
         $WH.cO(data, opt);
+        if (data.mode == 0 && typeof g_feedbackEnabled != 'undefined' && !g_feedbackEnabled)
+            return;
+
         data.reasons = contexts[data.mode];
         if (location.href.indexOf('#contact') != -1)
             data.currenturl = location.href.substr(0, location.href.indexOf('#contact'));

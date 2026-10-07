@@ -5,6 +5,171 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-07
+
+### Feedback switch
+
+`feedback_enable` is an enabled-by-default persistent boolean under Site
+Configuration → Site. It hides the Feedback header link and disables general
+contact dialogs, including `#contact` and feedback markup. The `?contactus`
+handler returns HTTP 404 for disabled general requests before creating a report;
+the report service also refuses general submissions. Comment, screenshot, video,
+character and guide reporting retain their existing checks and behavior. Direct
+email links and existing reports are preserved.
+
+Both cached page headers and dialog guards read the current request setting.
+Toggling does not rebuild assets, enable maintenance or query a database for each
+check. Migration `1791331200_04.sql` adds the setting without overwriting existing
+choices and queues one `globaljs` build through `php aowow --update` to install
+the client guards. Fresh installations include the same enabled default.
+
+Validation: full PHP 8.5, JavaScript and lint gates passed, along with the full
+MySQL 8.4 SQL gate on disposable fixtures. Focused checks cover current settings
+on cached pages, general request rejection, content-report dialogs/submissions,
+configuration saves without builds, defaults and preservation of existing choices,
+durable migration accounting and client generator completion. No deployed site or
+application database was modified.
+
+### Prune filesystem diagnostics
+
+`--prune` now reports which logical filesystem scan failed (`cache`, `staging`
+or `screenshots`) when directory traversal throws an exception. Preview and
+apply retain a nonzero exit status. Debug preserves the sanitized exception
+chain, while ordinary diagnostics omit private paths and raw exception messages.
+The command releases its database/filesystem locks and does not save a new cursor
+after this failure.
+
+Run cleanup as the website OS user that owns private cache directories, and keep
+`cache/maintenance`, its lock and any cursor accessible to that same user. Cache
+privacy and symlink protections are unchanged. Preview does not delete data;
+an apply failure can follow earlier bounded deletions, so correct access and
+preview again before retrying apply.
+
+Validation: the full PHP 8.5 regression and lint gates and the MySQL 8.4 SQL
+regression gate passed. Permission-denial fixtures exercised preview, apply and
+debug diagnostics, cursor preservation and lock release. This validates the
+local change; server permissions and deployment were not modified.
+
+### SQL CI fixture collation
+
+The SQL test runner now explicitly creates its seven disposable fixture databases
+with `utf8mb4_unicode_ci` and normalizes their database defaults on reused runs.
+Stock MySQL 8.4 selects `utf8mb4_0900_ai_ci` when the bootstrap specifies only
+`CHARACTER SET utf8mb4`. The historical reconciliation fixture declares
+`utf8mb4_unicode_ci`, while the initial definitions of `contribution_budget` and
+`sql_update_journal` inherit the database default. This caused exact schema
+comparison to report two table-collation differences in GitHub Actions.
+
+Earlier local validation explicitly initialized the fixture database collation
+and therefore missed this CI bootstrap difference. The fix changes test setup
+only. Production schema, migration checksums and strict comparison remain intact;
+no application database update is required for this change.
+
+The original fatal error was reproduced with stock MySQL 8.4 database defaults.
+After the fix, the full SQL group passed on disposable MySQL 8.4.10 and MariaDB
+10.6.28 with PHP 8.5, including 950 legacy and 67 reconciliation/settings checks
+per engine. The MySQL run covered the reused wrong-default database and fresh
+fixture databases through the unmodified CI command. Repository lint also passed;
+a hosted GitHub Actions rerun remains unverified.
+
+### Missing screenshots switch
+
+`missing_screenshots_enable` is a persistent boolean in Site Configuration → Site,
+defaulting to Disabled on fresh installs and upgrades. Run `php aowow --update`
+to apply `1791331200_03.sql`; existing explicit choices are retained.
+
+Disabled mode removes Tools → Utilities → Missing Screenshots in all six languages
+and returns HTTP 404 for direct `?missing-screenshots` requests before listing
+generation. Other screenshot pages, uploads and utility menus remain available.
+The switch uses loaded configuration, without additional database queries or
+dataset builds; cached templates reflect its current value when rendered.
+Deploy the endpoint, head template and navigation script together.
+
+Enabling it retains the existing public, uncached listing and its 200-result limit
+per entity type. That limit bounds returned rows, not rows examined by MySQL.
+This change provides an explicit off switch; it does not optimize the enabled
+listing or add request throttling. Regression coverage checks the guard before
+listing generation, menu filtering alongside the profiler switch, cached headers,
+settings saves without builds, fresh/legacy defaults and preservation of choices.
+
+Validation passed the full PHP 8.5, JavaScript and lint groups, plus the full SQL
+group on disposable MySQL 8.0.46, MySQL 8.4.10 and MariaDB 10.6.28 databases.
+Each database passed 950 legacy-upgrade checks across 53 archived and 93 current
+migrations, and 66 reconciliation/settings checks. These are fixture results;
+production data and deployment have not been exercised.
+
+### Goodies switches
+
+`searchplugins_enable` and `searchbox_enable` are independent persistent boolean
+settings in Site Configuration → Site. Both default to Enabled for fresh installs
+and existing databases. Run `php aowow --update` to apply
+`1791331200_02.sql`, which adds missing settings while retaining existing choices.
+
+Disabling a setting hides its More → Goodies menu entry in all six languages and
+returns HTTP 404 for its direct page URL (`?searchplugins` or `?searchbox`).
+Search Plugins also controls the OpenSearch discovery link in page headers.
+Normal database search and Tooltips remain available. Previously generated static
+files, installed browser plugins and embedded search boxes remain usable; these
+switches control page access and discovery, not revocation of static assets.
+
+These checks use configuration already loaded at startup, without extra database
+queries. Cached page templates read the current flags when rendered, so toggling
+them needs no JavaScript rebuild. Deploy the head template, navigation script and
+endpoints together. Regression coverage exercises both switches independently,
+cached templates, localized menus, direct routes, fresh and legacy settings, and
+preservation of existing choices through the ordinary journaled updater.
+
+Validation passed the full PHP 8.5, JavaScript and lint groups, plus the full SQL
+group on disposable MySQL 8.0.46, MySQL 8.4.10 and MariaDB 10.6.28 databases.
+Each database passed 943 legacy-upgrade checks over 53 archived and 92 current
+migrations, and 60 reconciliation/settings checks. These are fixture results;
+the changes have not been deployed or tested against production data.
+
+### Profiler switch and navigation
+
+The existing `aowow_config.profiler_enable` setting is the single switch for
+profiler navigation and routes. Set it to Disabled in Site Configuration →
+Profiler, or use this query against the configured application database
+(substitute the actual table prefix if necessary):
+
+```sql
+UPDATE aowow_config SET value = '0' WHERE `key` = 'profiler_enable';
+```
+
+Disabled navigation removes Tools → Profiler and its Characters, Guilds,
+Arena Teams and New entries, along with Help → Profiler, in all six languages.
+Profile/list/detail and action endpoints retain their server-side rejection;
+profiler help now rejects direct access as well. Character browsing checks the
+switch before interpreting realm URLs, avoiding realm discovery when disabled.
+Talent calculators, item comparison and stat weighting remain available.
+Stored profiles and community data are unchanged.
+
+Normal startup already loads the application's configuration. Subsequent
+`Cfg::get('PROFILER_ENABLE')` calls read the loaded PHP array: no extra SQL,
+auth/character database probes or per-request realm discovery are added by this
+switch. It is explicit and does not automatically change based on connection
+availability. Menu visibility reads the current value while rendering, including
+cached page templates, so toggling it needs no JavaScript rebuild for visibility.
+The existing admin setting still rebuilds realm datasets when changed.
+
+Deploy the updated navigation script, head template and endpoints together.
+Regression coverage exercises cached-template toggling, all six languages,
+direct route rejection before realm discovery, enabled routes and repeated
+configuration reads without database calls.
+
+### Historical schema reconciliation
+
+Historical structure differences now have an explicit, guarded update path in
+`1791331200_01.sql`; see [schema reconciliation](schema-reconciliation.md).
+The initial SQL retains historical text capacity, includes the ordinary Chinese
+spell-name index and agrees with the reconciled structural fixture and complete
+legacy migration corpus. Unsafe conversions stop before this migration's first
+ALTER. Strict execution and post-DDL verification retain the existing journal,
+update locks and maintenance guarantees.
+Taxi types now retain numeric codes 0 (scripted), 1 (NPC) and 2 (game object),
+matching the generator and map pages. Valid scripted flights pass reconciliation
+without deleting or changing their rows; unrecognized codes still stop safely.
+
 ## 2026-10-06
 
 ### Database schema validation
@@ -33,8 +198,8 @@ The normal report groups differing attributes by table; `--debug` adds each
 column/index/foreign-key finding. Counts represent differing attributes, so one
 column can account for several findings. Initial-schema drift does not by itself
 mean a migration failed or the database cannot run. The legacy SQL regression
-now audits the completely migrated legacy fixture, rather than testing only
-fresh-install equality, and confirms that those are distinct outcomes.
+audits the migrated fixture as well as fresh-install equality. The reconciliation
+regression verifies agreement after migration `1791331200_01.sql`.
 Some differences still affect application behavior: legacy account fields that
 are `NOT NULL` without defaults can reject the current signup INSERT under
 strict SQL mode. The SQL regression reproduces this using the real INSERT.
