@@ -202,6 +202,13 @@ benchmark is a timing diagnostic, with no performance threshold. A separate
 Apache 2.4 job tests routing, upload/script/hidden-path denials, public assets,
 response headers and deny-policy delivery.
 
+The SQL runner creates and normalizes only its seven guarded fixture databases
+with `utf8mb4_unicode_ci`, matching the historical structure fixture. This also
+covers databases left from an earlier local run. MySQL's server defaults are not
+changed. Initial SQL tables without explicit charset/collation inherit the
+fixture database default, and the schema validator compares them accordingly.
+The reconciliation suite checks this prerequisite before rebuilding its fixture.
+
 The cache fixture supplies a global `Memcached` stand-in. The workflow explicitly
 disables the native extension with `:memcached`, using
 [setup-php's extension controls](https://github.com/shivammathur/setup-php#extensions-optional).

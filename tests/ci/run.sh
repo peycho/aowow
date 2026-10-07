@@ -90,7 +90,10 @@ PY
     php -r '
       $db = new mysqli(getenv("AOWOW_TEST_DB_HOST"), "root", "", "", (int)getenv("AOWOW_TEST_DB_PORT"));
       foreach (["passwords", "screenshots", "updates", "resources", "legacy", "schema", "reconciliation"] as $suffix) {
-          $db->query("CREATE DATABASE IF NOT EXISTS aowow_security_test_".$suffix." CHARACTER SET utf8mb4");
+          $name = "aowow_security_test_".$suffix;
+          $db->query("CREATE DATABASE IF NOT EXISTS ".$name." CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+          // The historical fixture has this collation; normalize reused fixture databases too.
+          $db->query("ALTER DATABASE ".$name." CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
       }
     '
     # Recovery, activation and policy suites share tables and must remain sequential.

@@ -21,6 +21,8 @@ $options = ['driver'=>'mysqli','host'=>'127.0.0.1','port'=>$port,'username'=>'ro
     'database'=>'aowow_security_test_reconciliation','charset'=>'utf8mb4','substitutes'=>[''=>'aowow_']];
 $db = new DibiConnection($options); $checks=0;
 function check(bool $ok, string $message) : void { global $checks; ++$checks; if (!$ok) throw new RuntimeException($message); }
+check($db->query('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME=DATABASE()')->fetchSingle()==='utf8mb4_unicode_ci',
+    'Historical reconciliation fixture requires utf8mb4_unicode_ci; initialize disposable databases with bash tests/ci/run.sh sql');
 function seed(string $table, array $values) : void {
     global $db;
     foreach ($db->query('SHOW COLUMNS FROM %n','aowow_'.$table)->fetchAll() as $column) {

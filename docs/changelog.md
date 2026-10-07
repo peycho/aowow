@@ -7,6 +7,28 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-07
 
+### SQL CI fixture collation
+
+The SQL test runner now explicitly creates its seven disposable fixture databases
+with `utf8mb4_unicode_ci` and normalizes their database defaults on reused runs.
+Stock MySQL 8.4 selects `utf8mb4_0900_ai_ci` when the bootstrap specifies only
+`CHARACTER SET utf8mb4`. The historical reconciliation fixture declares
+`utf8mb4_unicode_ci`, while the initial definitions of `contribution_budget` and
+`sql_update_journal` inherit the database default. This caused exact schema
+comparison to report two table-collation differences in GitHub Actions.
+
+Earlier local validation explicitly initialized the fixture database collation
+and therefore missed this CI bootstrap difference. The fix changes test setup
+only. Production schema, migration checksums and strict comparison remain intact;
+no application database update is required for this change.
+
+The original fatal error was reproduced with stock MySQL 8.4 database defaults.
+After the fix, the full SQL group passed on disposable MySQL 8.4.10 and MariaDB
+10.6.28 with PHP 8.5, including 950 legacy and 67 reconciliation/settings checks
+per engine. The MySQL run covered the reused wrong-default database and fresh
+fixture databases through the unmodified CI command. Repository lint also passed;
+a hosted GitHub Actions rerun remains unverified.
+
 ### Missing screenshots switch
 
 `missing_screenshots_enable` is a persistent boolean in Site Configuration → Site,
