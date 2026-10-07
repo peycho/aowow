@@ -224,8 +224,12 @@ php aowow --prune
 php aowow --prune=apply
 ```
 
-Cleanup processes bounded batches and preserves published content. No scheduler
-is installed automatically. See the [limits and retention details](docs/changelog.md#contribution-limits-and-disposable-data-cleanup-revision-67).
+Cleanup processes bounded batches and preserves published content.
+Run cleanup as the website OS user, which owns the private cache directories.
+The `cache/maintenance` directory and its lock/cursor files must be accessible
+to that same user. Keep directory/file modes private; do not grant public cache
+access to make a different CLI user work.
+No scheduler is installed automatically. See the [limits and retention details](docs/changelog.md#contribution-limits-and-disposable-data-cleanup-revision-67).
 
 ### 11. Restrict diagnostics/configuration and deploy the legacy deny policy
 

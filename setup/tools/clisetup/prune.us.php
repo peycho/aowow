@@ -45,6 +45,13 @@ CLISetup::registerUtility(new class extends UtilityScript
             if ($apply && !Util::writeFile('cache/maintenance/cursor.json', json_encode($cursor, JSON_THROW_ON_ERROR), 0600)) return false;
             return true;
         }
+        catch (RetentionScanException $e)
+        {
+            $kind = in_array($e->kind, ['staging', 'screenshots', 'cache'], true) ? $e->kind : 'filesystem';
+            CLI::debug('[prune] '.$kind.' scan failed', $e);
+            CLI::write('[prune] cannot scan '.$kind.' files; check CLI directory access and whether directories changed during the scan. No cleanup cursor was saved.', CLI::LOG_ERROR);
+            return false;
+        }
         finally
         {
             if (is_resource($lock)) { flock($lock, LOCK_UN); fclose($lock); }

@@ -163,6 +163,7 @@ configuration, including independent toggles and invalid goodies parameters.
 The real missing-screenshots constructor is also checked against a listing
 generation sentinel, including disabling it again after enabling it. Settings
 saves must persist these switches without scheduling a dataset build.
+
 Node checks the generated asset syntax and real markup parser: local defaults,
 explicit external sources, original post links, configurable forum rules, escaped
 model fallbacks, and menus.
@@ -824,6 +825,12 @@ for recovery and deployment boundaries.
 
 
 ## Outbound calls, contribution limits and retention (A15)
+
+Retention tests create an inaccessible cache descendant when filesystem
+permissions are enforced. The file suite covers preview/apply failures; the real
+CLI/SQL suite checks safe diagnostics, unchanged persistent cursors and released
+locks in preview, apply and debug modes. Run as an unprivileged user or without
+filesystem override capabilities to exercise these permission checks.
 
 Run from the checkout root using PHP ≥ 8.4 with cURL, mbstring, OpenSSL and process
 functions, and Node.js ≥ 18. The video test also needs the `openssl` executable

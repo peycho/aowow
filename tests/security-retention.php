@@ -72,6 +72,18 @@ namespace {
         }
         symlink($root.'/cache/template','cache/link');
         try{Retention::files(true,'cache/link');check(false,'linked cache root');}catch(RuntimeException){check(true,'linked cache root rejected');}
+        $blocked='cache/template/PRIVATE_SCAN_SENTINEL';
+        mkdir($blocked,0700);chmod($blocked,0000);
+        try {
+            if (!is_readable($blocked)) {
+                foreach ([false,true] as $apply) {
+                    $failure=null;
+                    try { Retention::files($apply,'cache/template'); } catch (Aowow\RetentionScanException $e) { $failure=$e; }
+                    check($failure?->kind==='cache' && $failure->getPrevious() instanceof UnexpectedValueException,'Unreadable cache descendants produce a typed scan failure in preview and apply');
+                    check(!str_contains($failure->getMessage(),'PRIVATE_SCAN_SENTINEL'),'Scan failure message contains no private filesystem path');
+                }
+            } else echo "SKIP: permission-denial checks require a user without filesystem override privileges\n";
+        } finally {chmod($blocked,0700);rmdir($blocked);}
         // An ineligible prefix does not starve expired files beyond the first batch.
         for($i=0;$i<1200;$i++)put('static/uploads/temp/unknown-'.$i);
         for($i=0;$i<1100;$i++)put('static/uploads/temp/owner-1-1-'.str_pad((string)$i,16,'0',STR_PAD_LEFT),3);

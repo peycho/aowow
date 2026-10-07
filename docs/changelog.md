@@ -7,6 +7,26 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-07
 
+### Prune filesystem diagnostics
+
+`--prune` now reports which logical filesystem scan failed (`cache`, `staging`
+or `screenshots`) when directory traversal throws an exception. Preview and
+apply retain a nonzero exit status. Debug preserves the sanitized exception
+chain, while ordinary diagnostics omit private paths and raw exception messages.
+The command releases its database/filesystem locks and does not save a new cursor
+after this failure.
+
+Run cleanup as the website OS user that owns private cache directories, and keep
+`cache/maintenance`, its lock and any cursor accessible to that same user. Cache
+privacy and symlink protections are unchanged. Preview does not delete data;
+an apply failure can follow earlier bounded deletions, so correct access and
+preview again before retrying apply.
+
+Validation: the full PHP 8.5 regression and lint gates and the MySQL 8.4 SQL
+regression gate passed. Permission-denial fixtures exercised preview, apply and
+debug diagnostics, cursor preservation and lock release. This validates the
+local change; server permissions and deployment were not modified.
+
 ### SQL CI fixture collation
 
 The SQL test runner now explicitly creates its seven disposable fixture databases
