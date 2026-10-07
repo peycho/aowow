@@ -15,6 +15,7 @@ case "${1:-}" in
       node --check "$script"
     done < <(find static tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0)
     bash -n tests/ci/run.sh
+    python3 tests/binary-assets.py
     python3 - <<'PY'
 import ast
 from pathlib import Path

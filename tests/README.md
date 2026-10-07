@@ -5,6 +5,9 @@ metadata and the rendered page across all six locales. HTTP 503/Retry-After,
 separate logo/artwork elements, current copy and the optimized asset are checked.
 The browser gate uses `--browser` to verify images load, the logo/text/artwork do
 not overlap and the layout does not overflow horizontally.
+`python3 tests/binary-assets.py` checks Git's actual clean filter leaves WebP
+payloads byte-for-byte intact. This runs in the lint gate and prevents binary
+damage from forced text normalization.
 
 `tests/schema-reconciliation.php` belongs to the SQL CI group and is guarded by
 `AOWOW_TEST_DATABASE=aowow_security_test_reconciliation` on an isolated localhost

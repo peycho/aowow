@@ -9,6 +9,13 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ### Maintenance page
 
+WebP assets are explicitly marked binary in `.gitattributes`. The previous
+text normalization removed a CR byte from the committed maintenance image,
+corrupting its compressed content. The asset bytes are restored and regression
+coverage now checks Git's actual clean filter preserves WebP bytes. Deploy
+the updated asset alongside the attributes fix; no SQL or generator work is
+needed.
+
 Replaced the maintenance page's gnome background with a new Wrath-themed archive
 repair illustration, optimized as WebP. The existing logo, heading, message and
 artwork now occupy separate rows, preventing overlap. The page adapts to narrow
