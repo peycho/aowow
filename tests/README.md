@@ -1,5 +1,14 @@
 # Security regressions
 
+`php tests/maintenance-response.php` exercises maintenance response construction,
+metadata and the rendered page across all six locales. HTTP 503/Retry-After,
+separate logo/artwork elements, current copy and the optimized asset are checked.
+The browser gate uses `--browser` to verify images load, the logo/text/artwork do
+not overlap and the layout does not overflow horizontally.
+`python3 tests/binary-assets.py` checks Git's actual clean filter leaves WebP
+payloads byte-for-byte intact. This runs in the lint gate and prevents binary
+damage from forced text normalization.
+
 `tests/schema-reconciliation.php` belongs to the SQL CI group and is guarded by
 `AOWOW_TEST_DATABASE=aowow_security_test_reconciliation` on an isolated localhost
 database. Its sanitized historical structure fixture contains no rows, comments,
@@ -965,3 +974,27 @@ denials, POST/CSRF, no-store and proxy cache behavior. Never authorize a shared
 proxy IP. Native diagnostic output remains sensitive for allowed operators.
 See [install step 11](../README.md#11-restrict-diagnosticsconfiguration-and-deploy-the-legacy-deny-policy)
 and [A16](../docs/aowow-security-review.md#a16--redirects-and-legacydiagnostic-exposure).
+
+## Optional site sounds
+
+`php tests/site-sounds.php` exercises disabled sound/list/playlist routes, generic
+sound loading, item/spell/NPC/zone/race/emote sound helpers, sound searches,
+sitemaps, inline metadata and preservation of NPC dialogue text. Synthetic query
+spies verify that disabled helpers avoid lookups and enabled helpers reach them.
+`node tests/site-sounds.mjs` executes all six localized menus and the real audio,
+playlist and markup code, checking that disabled sound features attach no media
+sources. The existing cache suite checks enabled/disabled cache separation; the
+journaled SQL suite checks installation, existing choices and a single queued
+build on disposable databases. These checks are included in the usual PHP,
+JavaScript and SQL CI gates.
+
+## Linked header image
+
+`php tests/header-image.php` renders the real standard header and homepage with
+synthetic settings, including cached templates, URL edits/toggles, safe new-tab
+attributes, 468×60 dimensions, invalid URL suppression and administrator input
+escaping. The SQL update and schema reconciliation suites exercise fresh seeds,
+preserved operator choices, checksummed migration accounting and the normal
+`--update` command on disposable databases.
+The browser gate renders `php tests/header-image.php --browser` with the real CSS,
+checking the 468×60 geometry, top-right alignment and separation from the logo.

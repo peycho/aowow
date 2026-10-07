@@ -860,6 +860,28 @@ class NpcBaseResponse extends TemplateResponse implements ICache
             * Dialogue VO => creature_text
             * onClick VO => CreatureDisplayInfo.dbc => NPCSounds.dbc
         */
+        $this->tabSounds();
+
+        // tab: conditions
+        $cnd = new Conditions();
+        $cnd->getBySource(Conditions::SRC_CREATURE_TEMPLATE_VEHICLE, entry: $this->typeId)
+            ->getBySource(Conditions::SRC_SPELL_CLICK_EVENT, group: $this->typeId)
+            ->getByCondition(Type::NPC, $this->typeId)
+            ->prepare();
+        if ($tab = $cnd->toListviewTab())
+        {
+            $this->extendGlobalData($cnd->getJSGlobals());
+            $this->lvTabs->addDataTab(...$tab);
+        }
+
+        parent::generate();
+    }
+
+    private function tabSounds() : void
+    {
+        if (!Cfg::get('SOUNDS_ENABLE'))
+            return;
+
         $this->soundIds = array_merge($this->soundIds, SmartAI::getSoundsPlayedForOwner($this->typeId, SmartAI::SRC_TYPE_CREATURE));
 
         // up to 4 possible displayIds .. for the love of things betwixt, just use the first!
@@ -884,20 +906,6 @@ class NpcBaseResponse extends TemplateResponse implements ICache
                     ), SoundList::$brickFile));
             }
         }
-
-        // tab: conditions
-        $cnd = new Conditions();
-        $cnd->getBySource(Conditions::SRC_CREATURE_TEMPLATE_VEHICLE, entry: $this->typeId)
-            ->getBySource(Conditions::SRC_SPELL_CLICK_EVENT, group: $this->typeId)
-            ->getByCondition(Type::NPC, $this->typeId)
-            ->prepare();
-        if ($tab = $cnd->toListviewTab())
-        {
-            $this->extendGlobalData($cnd->getJSGlobals());
-            $this->lvTabs->addDataTab(...$tab);
-        }
-
-        parent::generate();
     }
 
     private function getRepForId(array $entries, array &$spillover) : array

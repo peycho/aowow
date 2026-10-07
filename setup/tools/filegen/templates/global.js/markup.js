@@ -2458,6 +2458,9 @@ var Markup = {
             },
             toHtml: function (attr)
             {
+                if (typeof g_soundsEnabled !== 'undefined' && g_soundsEnabled === false)
+                    return '';
+
                 var
                     type,
                     src,

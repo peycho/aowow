@@ -209,6 +209,9 @@ try {
     check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key`='missing_screenshots_enable' AND value='0' AND `default`='0' AND cat=1 AND flags=132")->fetchSingle()===1,'Fresh install seeds missing screenshots as a persistent, disabled site boolean');
     check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key`='feedback_enable' AND value='1' AND `default`='1' AND cat=1 AND flags=132")->fetchSingle()===1,'Fresh install seeds Feedback as a persistent, enabled site boolean');
     check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key` LIKE 'turnstile\\_%\\_enable' AND value='0' AND `default`='0' AND cat IN (1,3) AND flags=132")->fetchSingle()===6,'Fresh install seeds six disabled persistent Turnstile form switches');
+    check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key`='sounds_enable' AND value='1' AND `default`='1' AND cat=1 AND flags=132")->fetchSingle()===1,'Fresh install enables sounds with persistent boolean metadata');
+    check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key`='header_image_enable' AND value='0' AND `default`='0' AND cat=1 AND flags=132")->fetchSingle()===1 &&
+        (int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key` IN ('header_image_url','header_image_link') AND value='' AND `default`='' AND cat=1 AND flags=136")->fetchSingle()===2, 'Fresh install seeds disabled header image and empty persistent URL settings');
     SqlUpdate::apply($db);
     check(!(int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle(),'Fresh version metadata already includes reconciliation');
     $db->query('UPDATE ::dbversion SET date=1791244800');SqlUpdate::apply($db);
@@ -224,8 +227,9 @@ try {
     $entry=$db->query('SELECT * FROM ::sql_update_journal WHERE date=1791331200 AND part=2')->fetch();
     check((int)$entry->date===1791331200 && (int)$entry->part===2 && $entry->status==='applied' &&
         $entry->checksum===hash_file('sha256',$root.'/setup/sql/updates/1791331200_02.sql'),'Settings migration uses ordinary durable update accounting');
+    $journalCount=(int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle();
     [$code,$out]=invoke($temp);
-    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===4 &&
+    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===$journalCount &&
         $db->query("SELECT value FROM ::config WHERE `key`='searchplugins_enable'")->fetchSingle()==='0','Already-current update retains goodies choices without replay');
     $db->query("DELETE FROM ::config WHERE `key`='missing_screenshots_enable'");
     $db->query('UPDATE ::dbversion SET date=1791331200, part=2');
@@ -241,8 +245,9 @@ try {
     $db->query('TRUNCATE ::sql_update_journal');
     [$code,$out]=invoke($temp);
     check($code===0 && $db->query("SELECT value FROM ::config WHERE `key`='missing_screenshots_enable'")->fetchSingle()==='1','Migration preserves an existing explicitly enabled choice');
+    $journalCount=(int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle();
     [$code,$out]=invoke($temp);
-    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===3 &&
+    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===$journalCount &&
         $db->query("SELECT value FROM ::config WHERE `key`='missing_screenshots_enable'")->fetchSingle()==='1','Already-current update preserves the switch without replay');
     $db->query("DELETE FROM ::config WHERE `key`='feedback_enable'");
     $db->query('UPDATE ::dbversion SET date=1791331200, part=3');
@@ -259,8 +264,9 @@ try {
     $db->query('TRUNCATE ::sql_update_journal');
     [$code,$out]=invoke($temp);
     check($code===0 && $db->query("SELECT value FROM ::config WHERE `key`='feedback_enable'")->fetchSingle()==='0','Feedback migration preserves an existing disabled choice');
+    $journalCount=(int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle();
     [$code,$out]=invoke($temp);
-    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===2 &&
+    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===$journalCount &&
         $db->query("SELECT value FROM ::config WHERE `key`='feedback_enable'")->fetchSingle()==='0','Already-current update preserves Feedback without replay');
     $db->query("UPDATE ::config SET value='1' WHERE `key`='turnstile_login_enable'");
     $db->query("DELETE FROM ::config WHERE `key`='turnstile_resend_enable'");
@@ -269,13 +275,45 @@ try {
     [$code,$out]=invoke($temp);
     check($code===0 && $db->query("SELECT value FROM ::config WHERE `key`='turnstile_login_enable'")->fetchSingle()==='1' &&
         $db->query("SELECT value FROM ::config WHERE `key`='turnstile_resend_enable'")->fetchSingle()==='0','Real --update installs missing Turnstile choices without overwriting enabled ones: '.$out);
-    $entry=$db->query('SELECT * FROM ::sql_update_journal')->fetch();
+    $entry=$db->query('SELECT * FROM ::sql_update_journal WHERE date=1791331200 AND part=5')->fetch();
     check((int)$entry->part===5 && $entry->status==='applied' && (int)$entry->statements===7 &&
         $entry->checksum===hash_file('sha256',$root.'/setup/sql/updates/1791331200_05.sql'),'Turnstile migration retains checksummed accounting');
     check(str_contains(file_get_contents($temp.'/static/js/global.js'), 'AowowTurnstile.token') &&
         !$db->query('SELECT build FROM ::dbversion')->fetchSingle(),'Turnstile update installs feedback client guards and verifies build completion');
+    $journalCount=(int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle();
     [$code,$out]=invoke($temp);
-    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===1 &&
+    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===$journalCount &&
         $db->query("SELECT value FROM ::config WHERE `key`='turnstile_login_enable'")->fetchSingle()==='1','Already-current update retains Turnstile choices without replay');
+    // Exercise the normal update command through configuration load and generated client completion.
+    $db->query("DELETE FROM ::config WHERE `key`='sounds_enable'");
+    $db->query('UPDATE ::dbversion SET date=1791331200, part=5');
+    $db->query('TRUNCATE ::sql_update_journal');
+    [$code,$out]=invoke($temp);
+    check($code===0 && $db->query("SELECT value FROM ::config WHERE `key`='sounds_enable'")->fetchSingle()==='1','Real --update installs enabled sounds: '.$out);
+    $entry=$db->query('SELECT * FROM ::sql_update_journal WHERE date=1791331200 AND part=6')->fetch();
+    check($entry->status==='applied' && (int)$entry->statements===2 && $entry->checksum===hash_file('sha256',$root.'/setup/sql/updates/1791331200_06.sql'),'Sound setting uses durable checksummed accounting');
+    check(str_contains(file_get_contents($temp.'/static/js/global.js'),'typeof g_soundsEnabled') && !$db->query('SELECT build FROM ::dbversion')->fetchSingle(),'Sound update builds playback guards and verifies completion');
+    $db->query("UPDATE ::config SET value='0' WHERE `key`='sounds_enable'");
+    $db->query('UPDATE ::dbversion SET date=1791331200, part=5');
+    $db->query('TRUNCATE ::sql_update_journal');
+    [$code,$out]=invoke($temp);
+    check($code===0 && $db->query("SELECT value FROM ::config WHERE `key`='sounds_enable'")->fetchSingle()==='0','Sound migration preserves existing disabled choice');
+    $journalCount=(int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle();
+    [$code,$out]=invoke($temp);
+    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===$journalCount && $db->query("SELECT value FROM ::config WHERE `key`='sounds_enable'")->fetchSingle()==='0','Already-current update preserves sound choice without replay');
+
+    $db->query("DELETE FROM ::config WHERE `key` IN ('header_image_enable','header_image_url','header_image_link')");
+    $db->query("INSERT INTO ::config (`key`,value,`default`,cat,flags,comment) VALUES ('header_image_url','https://images.example.test/custom.gif','',1,136,'Image URL')");
+    $db->query('UPDATE ::dbversion SET date=1791331200, part=6');
+    $db->query('TRUNCATE ::sql_update_journal');
+    [$code,$out]=invoke($temp);
+    check($code===0 && $db->query("SELECT value FROM ::config WHERE `key`='header_image_enable'")->fetchSingle()==='0' &&
+        $db->query("SELECT value FROM ::config WHERE `key`='header_image_link'")->fetchSingle()==='', 'Real --update installs disabled header image and empty destination: '.$out);
+    check($db->query("SELECT value FROM ::config WHERE `key`='header_image_url'")->fetchSingle()==='https://images.example.test/custom.gif', 'Header image update preserves existing URL');
+    $entry=$db->query('SELECT * FROM ::sql_update_journal WHERE date=1791331200 AND part=7')->fetch();
+    check($entry->status==='applied' && (int)$entry->statements===3 && $entry->checksum===hash_file('sha256',$root.'/setup/sql/updates/1791331200_07.sql'), 'Header image update uses durable checksummed accounting');
+    check(!$db->query('SELECT build FROM ::dbversion')->fetchSingle() && !$db->query('SELECT `sql` FROM ::dbversion')->fetchSingle(), 'Header image settings need no generation tasks');
+    [$code,$out]=invoke($temp);
+    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===1, 'Already-current header image update does not replay');
     echo 'PASS: '.$checks.' guarded reconciliation/parity/community/enum/concurrency checks ('.$db->query('SELECT VERSION()')->fetchSingle().")\n";
 } finally { clean($temp); }

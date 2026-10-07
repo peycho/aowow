@@ -13,6 +13,14 @@ class SoundPlaylistResponse extends TemplateResponse
     protected ?int    $activeTab  = parent::TAB_DATABASE;
     protected  array  $breadcrumb = [0, 19, 1000];
 
+    public function __construct(string $rawParam = '')
+    {
+        parent::__construct($rawParam);
+
+        if (!Cfg::get('SOUNDS_ENABLE'))
+            $this->generateError();
+    }
+
     protected function generate() : void
     {
         $this->h1 = Lang::sound('cat', 1000);

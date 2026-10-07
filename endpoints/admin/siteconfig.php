@@ -91,7 +91,7 @@ class AdminSiteconfigResponse extends TemplateResponse
             $buff .= '</div></td>';
         }
         else
-            $buff .= '<td><input id="'.$key.'" type="'.($flags & Cfg::FLAG_TYPE_STRING ? 'text" placeholder="<empty>' : 'number'.($flags & Cfg::FLAG_TYPE_FLOAT ? '" step="any' : '')).'" name="'.$key.'" value="'.$value.'" /></td>';
+            $buff .= '<td><input id="'.$key.'" type="'.($flags & Cfg::FLAG_TYPE_STRING ? 'text" placeholder="<empty>' : 'number'.($flags & Cfg::FLAG_TYPE_FLOAT ? '" step="any' : '')).'" name="'.$key.'" value="'.Util::htmlEscape($value).'" /></td>';
 
         // actions
         $buff .= '<td style="position:relative;">';

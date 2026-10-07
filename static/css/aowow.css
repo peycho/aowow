@@ -2513,6 +2513,23 @@ span.menu-buttons span.hassubmenu {
     background: url(../images/logos/header.png) no-repeat;
 }
 
+.header a.header-image {
+    position: absolute;
+    right: 0;
+    top: 22px;
+    display: block;
+    width: 468px;
+    height: 60px;
+}
+
+.header-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border: 0;
+}
+
 /***********/
 /* WRAPPER */
 /***********/

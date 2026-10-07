@@ -4,10 +4,11 @@
 namespace Aowow {
     class Cfg {
         public static int $mode = 1;
+        public static bool $sounds = true;
         public static string $directory = '';
         public static function get(string $key) : mixed {
             return match ($key) { 'CACHE_MODE' => self::$mode, 'CACHE_DECAY' => 3600,
-                'CACHE_DIR' => self::$directory, 'LOCALES' => 0x15D, default => '' };
+                'SOUNDS_ENABLE' => self::$sounds, 'CACHE_DIR' => self::$directory, 'LOCALES' => 0x15D, default => '' };
         }
     }
     class Lang { public static function getLocale() : Locale { return Locale::EN; } }
@@ -117,6 +118,20 @@ namespace {
     $ready = $directory.'/ready'; $server = null;
     try {
         check(CacheEnvelope::enabled(), 'valid deployment key enables response cache');
+        $soundCache = new CacheFixture;
+        $soundCache->saveCache('enabled sound tabs');
+        Aowow\Cfg::$sounds = false;
+        $cachedSound = null;
+        check(!$soundCache->loadCache($cachedSound), 'Disabling sounds cannot restore the enabled page');
+        $soundCache->saveCache('disabled sound tabs');
+        check($soundCache->loadCache($cachedSound) && $cachedSound === 'disabled sound tabs', 'Disabled sound pages round trip');
+        Aowow\Cfg::$sounds = true;
+        check($soundCache->loadCache($cachedSound) && $cachedSound === 'enabled sound tabs', 'Reenabling sounds restores the matching feature state');
+        $soundCache->deleteCache(CACHE_MODE_FILECACHE);
+        Aowow\Cfg::$sounds = false;
+        $soundCache->deleteCache(CACHE_MODE_FILECACHE);
+        Aowow\Cfg::$sounds = true;
+
         $envelope = CacheEnvelope::seal('key', "0\nstring", [CacheFixture::class.'::hook', "\nparams"], 3600);
         $opened = CacheEnvelope::open('key', $envelope);
         check($opened[0] === "0\nstring" && $opened[1][1] === "\nparams", 'string and multiline callback params round trip');

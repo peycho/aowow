@@ -145,6 +145,9 @@ AudioControls = function ()
 
     this.init = function (files, parent, opt)
     {
+        if (typeof g_soundsEnabled !== 'undefined' && g_soundsEnabled === false)
+            return;
+
         if (!$WH.is_array(files))
             return;
 
@@ -301,6 +304,9 @@ AudioPlaylist = function ()
 
     this.init = function ()
     {
+        if (typeof g_soundsEnabled !== 'undefined' && g_soundsEnabled === false)
+            return;
+
         if (!$WH.localStorage.isSupported())
             return;
 

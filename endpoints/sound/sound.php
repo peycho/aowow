@@ -26,6 +26,9 @@ class SoundBaseResponse extends TemplateResponse implements ICache
     {
         parent::__construct($id);
 
+        if (!Cfg::get('SOUNDS_ENABLE'))
+            $this->generateError();
+
         $this->typeId     = intVal($id);
         $this->contribute = Type::getClassAttrib($this->type, 'contribute') ?? CONTRIBUTE_NONE;
     }

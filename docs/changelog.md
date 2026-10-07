@@ -7,6 +7,78 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-07
 
+### Maintenance page
+
+WebP assets are explicitly marked binary in `.gitattributes`. The previous
+text normalization removed a CR byte from the committed maintenance image,
+corrupting its compressed content. The asset bytes are restored and regression
+coverage now checks Git's actual clean filter preserves WebP bytes. Deploy
+the updated asset alongside the attributes fix; no SQL or generator work is
+needed.
+
+Replaced the maintenance page's gnome background with a new Wrath-themed archive
+repair illustration, optimized as WebP. The existing logo, heading, message and
+artwork now occupy separate rows, preventing overlap. The page adapts to narrow
+viewports and displays “Maintenance in progress” with a request to check back
+later, without promising a completion time. HTTP 503 and Retry-After handling
+remain unchanged. No SQL update or generator rebuild is required.
+
+The [artwork notes](artwork/maintenance.md) record the generation prompt and asset.
+Validation: PHP 8.5 lint and the full PHP regression gate passed, including 181
+maintenance response/template checks. Local Chrome checks at 1280 and 375 pixels
+confirmed image loading and separate logo, text and artwork with no horizontal
+overflow. No deployment was performed.
+
+### Optional header image
+
+Added `HEADER_IMAGE_ENABLE` (default Disabled), `HEADER_IMAGE_URL` and
+`HEADER_IMAGE_LINK` (default empty) under Site Configuration → Site. The shared
+page header displays one linked image at its top right with a 468×60 area. The
+homepage uses its own layout and does not display it. Images retain their aspect
+ratio inside that area; a 468×60 source is recommended.
+
+Run the existing `php8.5 aowow --update` to install `1791331200_07.sql`. It preserves
+existing choices and queued SQL/build work. Fresh installs seed the same settings.
+Enable the switch after setting both absolute HTTP/HTTPS URLs. Empty or invalid
+URLs suppress the entire placement. Links open in a new tab with
+`noopener noreferrer`, and image/link attributes and settings input values are
+escaped. Credentials, control bytes and non-web schemes are rejected at render
+time. The server does not fetch or upload the image; the visitor's browser loads
+the configured URL. HTTPS image URLs are recommended for an HTTPS site.
+
+Settings are read from already-loaded configuration when rendering, including
+cached templates. Changing them requires no build, cache flush or additional
+database query and does not change maintenance mode. The markup uses ordinary
+`header-image` names, CSS sizing without advertising-size HTML attributes, and no
+advertising scripts or containers. Browser extensions
+can still apply URL, size or user-defined filters, so universal visibility cannot
+be guaranteed.
+
+Validation: PHP 8.5 lint, PHP and JavaScript regression gates and the full SQL
+gate passed on disposable MySQL 8.4 databases. The complete first-install SQL
+scripts imported successfully. Local Chrome fixtures verified the size and
+position at 980- and 1366-pixel widths; no deployment was performed.
+
+### Optional site sounds
+
+Added the persistent boolean `SOUNDS_ENABLE` (Site category), default Enabled.
+Migration `1791331200_06.sql` installs it without overwriting an existing choice
+and queues `globaljs` once to install playback and markup guards. Run the usual
+`php8.5 aowow --update` to install the setting and complete that build.
+
+When Disabled, the Sounds/Playlist menu and direct sound/list/playlist URLs are
+unavailable. Sound searches, sitemap entries, metadata tabs and sound-specific
+lookups on item, spell, NPC, zone, race and emote pages are skipped. NPC dialogue
+text and underlying game/community data remain intact. Inline sound markup,
+audio controls and playlists also respect the switch. Existing static audio
+files are retained; direct static file URLs are not an access-control boundary.
+
+Signed page/search caches use distinct keys for enabled and disabled sounds,
+so toggling the setting does not reuse pages containing the opposite feature
+state. The setting uses configuration already loaded for the request; it does
+not scan files or run an availability query. Toggling it does not queue builds,
+change maintenance state or affect extraction and setup generators.
+
 ### Cloudflare Turnstile
 
 Six independent, persistent boolean settings protect registration, login,

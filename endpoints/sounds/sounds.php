@@ -26,6 +26,12 @@ class SoundsBaseResponse extends TemplateResponse implements ICache
 
     public function __construct(string $rawParam)
     {
+        if (!Cfg::get('SOUNDS_ENABLE'))
+        {
+            parent::__construct($rawParam);
+            $this->generateError();
+        }
+
         $this->getCategoryFromUrl($rawParam);
         if ($this->category)
             $this->forward('?sounds&filter=ty='.$this->category[0]);

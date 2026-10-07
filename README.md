@@ -252,6 +252,19 @@ and static origin, including subdirectory installations. See the
 
 ## Configuration
 
+The optional 468×60 linked header image appears on pages other than the homepage.
+Run `php8.5 aowow --update`, then set `HEADER_IMAGE_URL` and `HEADER_IMAGE_LINK`
+under Site Configuration → Site and enable `HEADER_IMAGE_ENABLE` (default Disabled).
+Both URLs must be absolute HTTP/HTTPS URLs; the destination opens in a new tab.
+Changes need no asset rebuild. See the [header image details](docs/changelog.md#optional-header-image).
+
+`SOUNDS_ENABLE` under Site Configuration → Site controls sound menus and URLs,
+sound search results, related tabs and playback. It defaults to Enabled. Install
+it with `php8.5 aowow --update`; disable it for installations without extracted
+audio. Changes take effect on subsequent requests without rebuilding assets.
+NPC dialogue text remains available, and the setting does not change extraction
+or setup generators. See the [sound configuration details](docs/changelog.md#optional-site-sounds).
+
 Optional Cloudflare Turnstile protects registration, login, password/username
 recovery, activation email resend and general feedback. All six switches default
 to Disabled. Install them with `php8.5 aowow --update`, then configure the widget

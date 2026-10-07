@@ -8,7 +8,7 @@ namespace Aowow {
         public static function get(string $key) : mixed {
             return match ($key) {
                 'NAME'=>'Fixture database', 'HOST_URL'=>'https://fixture.example',
-                'STATIC_URL'=>'https://static.fixture.example', 'LOCALES'=>0x15D,
+                'STATIC_URL'=>$GLOBALS['staticUrl'] ?? 'https://static.fixture.example', 'LOCALES'=>0x15D,
                 'MAINTENANCE'=>1, default=>0
             };
         }
@@ -44,21 +44,50 @@ namespace {
 namespace Aowow {
     class FixtureMaintenanceResponse extends TemplateResponse {
         protected function display(bool $withError = false) : void {
+            ob_start();
+            try { $this->result->render(); $html=ob_get_contents(); }
+            finally { ob_end_clean(); }
+            if ($GLOBALS['renderOnly'] ?? false) {
+                echo str_replace('</body>', <<<'HTML'
+<pre id="result" style="display:none">PENDING</pre>
+<script>
+window.addEventListener('load', function () {
+    var logo = document.querySelector('.maintenance-logo');
+    var art = document.querySelector('.maintenance-art');
+    var title = document.querySelector('h1').getBoundingClientRect();
+    var lines = document.querySelectorAll('.maintenance p');
+    var lastLine = lines[lines.length - 1].getBoundingClientRect();
+    var valid = logo.complete && logo.naturalWidth > 0 && art.complete && art.naturalWidth > 0 &&
+                logo.getBoundingClientRect().bottom < title.top && lastLine.bottom < art.getBoundingClientRect().top &&
+                document.documentElement.scrollWidth <= window.innerWidth && art.getBoundingClientRect().width <= 640;
+    document.querySelector('#result').textContent = valid ? 'PASS: 6 maintenance image and layout checks' : 'FAIL: maintenance layout';
+});
+</script>
+</body>
+HTML, $html);
+                return;
+            }
             echo json_encode([
                 'headers'=>(new \ReflectionProperty(TemplateResponse::class,'header'))->getValue($this),
                 'template'=>(new \ReflectionProperty(Template\PageTemplate::class,'template'))->getValue($this->result),
-                'meta'=>$this->metaTags, 'withError'=>$withError,
+                'meta'=>$this->metaTags, 'withError'=>$withError, 'html'=>$html,
             ], JSON_THROW_ON_ERROR);
         }
     }
 }
 namespace {
     use Aowow\{FixtureMaintenanceResponse,Lang,Locale};
+    set_error_handler(static function (int $code, string $message) : bool {
+        if ($code & (E_DEPRECATED | E_USER_DEPRECATED)) return true; // Match the production handler.
+        throw new ErrorException($message,0,$code);
+    });
+    if (($argv[1] ?? '')==='--browser') {
+        Lang::load(Locale::EN);
+        $GLOBALS['renderOnly']=true;
+        $GLOBALS['staticUrl']='file://'.$root.'/static';
+        new FixtureMaintenanceResponse();
+    }
     if (($argv[1] ?? '')==='--worker') {
-        set_error_handler(static function (int $code, string $message) : bool {
-            if ($code & (E_DEPRECATED | E_USER_DEPRECATED)) return true; // Match the production handler.
-            throw new ErrorException($message,0,$code);
-        });
         Lang::load(Locale::from((int)$argv[2]));
         $GLOBALS['manualDescription']=$argv[3]==='manual';
         if ($argv[3]==='direct') {
@@ -79,6 +108,13 @@ namespace {
             $response=json_decode($out,true,flags:JSON_THROW_ON_ERROR);
             check($response['template']==='maintenance' && $response['withError'], 'maintenance response uses the intended error template');
             check($response['headers']===[['HTTP/1.0 503 Service Temporarily Unavailable',true,503],['Retry-After: '.(3*HOUR)]], 'maintenance retains HTTP 503 and retry delay');
+            $dom=new DOMDocument(); $dom->loadHTML($response['html'],LIBXML_NOERROR | LIBXML_NOWARNING);
+            $xpath=new DOMXPath($dom);
+            check($xpath->query('//main/h1')->item(0)?->textContent==='Maintenance in progress', 'Maintenance has a readable heading');
+            check($xpath->query('//img[@class="maintenance-art"]')->item(0)?->getAttribute('src')==='https://static.fixture.example/images/maintenance/archive-repair.webp', 'Maintenance renders the replacement illustration from the configured static origin');
+            check($xpath->query('//img[@class="maintenance-logo"]')->length===1 && !str_contains($response['html'],'brbgnomes.jpg'), 'Logo and new artwork are independent content images');
+            check(str_contains($response['html'],'Please check back later. Thank you for your patience.') && !str_contains($response['html'],'few minutes'), 'Maintenance copy makes no duration promise');
+            check($xpath->query('//meta[@name="viewport"]')->item(0)?->getAttribute('content')==='width=device-width, initial-scale=1', 'Maintenance supports narrow viewports');
             $description=$mode==='manual'?'Fixture manual description':Lang::meta('description','home');
             foreach (['name'=>'description','property'=>'og:description'] as $attribute=>$value) {
                 $tags=array_values(array_filter($response['meta'],fn($tag)=>($tag[$attribute] ?? '')===$value));
@@ -86,5 +122,7 @@ namespace {
             }
         }
     }
-    echo "PASS: $checks maintenance response/locale/metadata checks\n";
+    $dimensions=getimagesize($root.'/static/images/maintenance/archive-repair.webp');
+    check($dimensions[0]===1536 && $dimensions[1]===1024 && $dimensions['mime']==='image/webp', 'Replacement asset has the declared dimensions and format');
+    echo "PASS: $checks maintenance response/locale/metadata/template checks\n";
 }

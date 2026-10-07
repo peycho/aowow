@@ -28,6 +28,7 @@
             <a class="header-logo" href="."></a>
             <h1><?=$this->concat('title', ' - '); ?></h1>
         </div>
+<?php $this->brick('headerImage'); ?>
     </div>
     <div id="wrapper" class="wrapper">
         <div class="toplinks linklist"><?php $this->brick('headerMenu'); ?></div>

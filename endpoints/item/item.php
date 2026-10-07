@@ -1349,6 +1349,9 @@ class ItemBaseResponse extends TemplateResponse implements ICache
 
     private function tabSounds() : ?Listview
     {
+        if (!Cfg::get('SOUNDS_ENABLE'))
+            return null;
+
         $soundIds = [];
         if ($this->subject->getField('class') == ITEM_CLASS_WEAPON)
         {

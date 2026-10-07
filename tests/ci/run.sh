@@ -15,6 +15,7 @@ case "${1:-}" in
       node --check "$script"
     done < <(find static tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0)
     bash -n tests/ci/run.sh
+    python3 tests/binary-assets.py
     python3 - <<'PY'
 import ast
 from pathlib import Path
@@ -35,6 +36,8 @@ PY
       php "tests/security-$suite.php"
     done
     php tests/security-csrf.php --http
+    php tests/site-sounds.php
+    php tests/site-sounds.php --cli
     php tests/setup-sounds.php
     php tests/setup-debug.php
     php tests/schema-validator.php
@@ -42,10 +45,12 @@ PY
     php tests/setup-maps.php
     php tests/maps-picker.php
     php tests/external-links.php
+    php tests/header-image.php
     php tests/retirement.php
     ;;
   javascript)
     node tests/security-turnstile.mjs
+    node tests/site-sounds.mjs
     node tests/external-links.mjs
     php tests/retirement.php --fixtures | node tests/retirement.mjs
     php tests/security-json.php --fixtures | node tests/security-json.mjs
@@ -70,7 +75,9 @@ PY
     php tests/security-guide-editor.php --browser > "$fixture_root/guide-editor.html"
     php tests/security-csrf.php --browser > "$fixture_root/csrf.html"
     node tests/security-turnstile.mjs --browser > "$fixture_root/turnstile.html"
-    for fixture in json guide-editor csrf turnstile; do
+    php tests/header-image.php --browser > "$fixture_root/header-image.html"
+    php tests/maintenance-response.php --browser > "$fixture_root/maintenance.html"
+    for fixture in json guide-editor csrf turnstile header-image maintenance; do
       timeout 45s "$browser" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage \
         --disable-background-networking \
         --dump-dom "file://$fixture_root/$fixture.html" > "$fixture_root/$fixture.dom"

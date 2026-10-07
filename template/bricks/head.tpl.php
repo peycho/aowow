@@ -38,6 +38,7 @@ echo $this->renderArray('css', 4);
     <script type="text/javascript">
         var g_serverTime = <?=$this->gServerTime; ?>;
         var g_staticUrl = "<?=$this->gStaticUrl; ?>";
+        var g_soundsEnabled = <?=\Aowow\Cfg::get('SOUNDS_ENABLE') ? 'true' : 'false';?>;
         var g_host = "<?=$this->gHost; ?>";
 <?php
 if ($this->gDataKey):
@@ -47,7 +48,7 @@ endif;
     </script>
 
 <?=$this->renderArray('js', 4); ?>
-    <script src="<?=$this->gStaticUrl;?>/js/external-links.js?v=<?=AOWOW_REVISION;?>.3"></script>
+    <script src="<?=$this->gStaticUrl;?>/js/external-links.js?v=<?=AOWOW_REVISION;?>.4"></script>
     <script type="text/javascript">
         var g_externalLinks = <?=\Aowow\Util::toJSON(\Aowow\ExternalLinks::urls());?>;
         g_applyExternalLinks(mn_community, g_externalLinks);
@@ -58,6 +59,7 @@ endif;
         g_applyGoodiesMenus(mn_more, g_searchpluginsEnabled, g_searchboxEnabled);
         var g_missingScreenshotsEnabled = <?=\Aowow\Cfg::get('MISSING_SCREENSHOTS_ENABLE') ? 'true' : 'false';?>;
         g_applyMissingScreenshotsMenu(mn_tools, g_missingScreenshotsEnabled);
+        g_applySoundsMenu(mn_database, g_soundsEnabled);
         var g_user = <?=$this->gUser; ?>;
         var g_feedbackEnabled = <?=\Aowow\Cfg::get('FEEDBACK_ENABLE') ? 'true' : 'false';?>;
 <?php
