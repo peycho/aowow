@@ -98,6 +98,8 @@ var ContactTool = new function()
 
     this.onSubmit = function(data, button, form)
     {
+        if (data.mode != 0 && !(g_user.id > 0))
+            return false;
         if (data.mode == 0 && typeof g_feedbackEnabled != 'undefined' && !g_feedbackEnabled)
             return false;
 
@@ -190,6 +192,11 @@ var ContactTool = new function()
 
         var data = { mode: 0 };
         $WH.cO(data, opt);
+        if (data.mode != 0 && !(g_user.id > 0))
+        {
+            location.href = '?account=signin&next=' + $WH.urlencode(location.pathname + location.search + location.hash);
+            return;
+        }
         if (data.mode == 0 && typeof g_feedbackEnabled != 'undefined' && !g_feedbackEnabled)
             return;
 

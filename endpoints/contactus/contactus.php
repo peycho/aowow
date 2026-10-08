@@ -33,9 +33,15 @@ class ContactusBaseResponse extends TextResponse
         if (!Cfg::get('FEEDBACK_ENABLE') && (int)($this->_post['mode'] ?? 0) === Report::MODE_GENERAL)
             $this->generate404();
 
-        if (!$this->assertPOST('mode', 'reason'))
+        if (!$this->assertPOST('mode', 'reason') || !is_int($this->_post['mode']) || !is_int($this->_post['reason']))
         {
             $this->result = 4;
+            return;
+        }
+
+        if ($this->_post['mode'] !== Report::MODE_GENERAL && !Report::canCreateContent())
+        {
+            $this->result = Lang::main('intError');
             return;
         }
 
@@ -45,11 +51,30 @@ class ContactusBaseResponse extends TextResponse
             return;
         }
 
-        $report = new Report($this->_post['mode'], $this->_post['reason'], $this->_post['id']);
-        if ($report->create($this->_post['desc'], $this->_post['ua'], $this->_post['appname'], $this->_post['page'], $this->_post['relatedurl'], $this->_post['email']))
+        if (!is_string($this->_post['desc'] ?? null))
+        {
+            $this->result = 3;
+            return;
+        }
+        foreach (['ua', 'appname', 'page', 'relatedurl', 'email'] as $key)
+            if (isset($this->_post[$key]) && !is_string($this->_post[$key]))
+            {
+                $this->result = 4;
+                return;
+            }
+        $subject = $this->_post['id'] ?? null;
+        if (($subject !== null && !is_int($subject)) || ($this->_post['mode'] !== Report::MODE_GENERAL && $subject === null))
+        {
+            $this->result = 4;
+            return;
+        }
+
+        $report = new Report($this->_post['mode'], $this->_post['reason'], $subject);
+        if ($report->create($this->_post['desc'], $this->_post['ua'] ?? null, $this->_post['appname'] ?? null,
+            $this->_post['page'] ?? null, $this->_post['relatedurl'] ?? null, $this->_post['email'] ?? null))
             $this->result = 0;
         else if (($e = $report->getError()) > 0)
-            $this->result = $e;
+            $this->result = $e === Report::ERR_LIMIT ? Lang::main('contributionLimit') : $e;
         else
             $this->result = Lang::main('intError');
     }
