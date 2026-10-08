@@ -4,6 +4,7 @@ namespace Aowow {
     class User {
         public static int $id=7;
         public static int $groups=0;
+        public static string $ip='127.0.0.1';
         public static function isInGroup(int $mask) : bool { return (self::$groups & $mask)!==0; }
     }
     class Lang { public static function main(string $key) : string { return $key; } }

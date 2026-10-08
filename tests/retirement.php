@@ -20,6 +20,7 @@ namespace Aowow {
     }
     class User {
         public static int $id = 42;
+        public static int $groups = 0;
         public static string $ip = '127.0.0.1';
         public static bool $banned = false;
         public static function isLoggedIn() : bool { return true; }

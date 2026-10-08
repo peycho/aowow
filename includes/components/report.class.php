@@ -108,6 +108,7 @@ class Report
     private const int ERR_DESC_TOO_LONG    = 2;
     private const int ERR_NO_DESC          = 3;
     private const int ERR_ALREADY_REPORTED = 7;
+    public const int ERR_LIMIT             = 8;
     private const int ERR_MISCELLANEOUS    = -1;
 
     public const int STATUS_OPEN           = 0;
@@ -117,26 +118,28 @@ class Report
 
     private int $errorCode = self::ERR_NONE;
 
+    public static function canCreateContent() : bool
+    {
+        return User::isLoggedIn() && !User::isBanned() && !(User::$groups & U_GROUP_PENDING);
+    }
+
 
     public function __construct(private int $mode, private int $reason, private ?int $subject = 0)
     {
         if ($mode < 0 || $reason <= 0)
         {
-            trigger_error('Report - malformed contact request received', E_USER_WARNING);
             $this->errorCode = self::ERR_MISCELLANEOUS;
             return;
         }
 
         if (!isset($this->context[$mode][$reason]))
         {
-            trigger_error('Report - report has invalid context (mode:'.$mode.' / reason:'.$reason.')', E_USER_WARNING);
             $this->errorCode = self::ERR_MISCELLANEOUS;
             return;
         }
 
-        if (!User::isLoggedIn() && !User::$ip)
+        if (($mode !== self::MODE_GENERAL && !self::canCreateContent()) || (!User::isLoggedIn() && !User::$ip))
         {
-            trigger_error('Report - could not determine IP for anonymous user', E_USER_WARNING);
             $this->errorCode = self::ERR_MISCELLANEOUS;
             return;
         }
@@ -155,36 +158,28 @@ class Report
             $where[] = ['`userId` = %i', User::$id];
         else
             $where[] = ['`ip` = %s', User::$ip];
-        if ($url)
+        // Content identity does not depend on the supplied page URL or reason.
+        if ($this->mode !== self::MODE_GENERAL)
+            unset($where[1]);
+        else if ($url)
             $where[] = ['`url` = %s', $url];
 
-        if (DB::Aowow()->selectCell('SELECT 1 FROM ::reports WHERE %and', $where))
+        if (DB::Aowow()->query('SELECT 1 FROM ::reports WHERE %and', $where)->fetchSingle())
             return self::ERR_ALREADY_REPORTED;
 
-        // check targeted post/postOwner staff status
-        $ctxCheck = $this->context[$this->mode][$this->reason];
-        if (is_int($ctxCheck))
-        {
-            $roles = User::$groups;
-            if ($this->mode == self::MODE_COMMENT)
-                $roles = DB::Aowow()->selectCell('SELECT `roles` FROM ::comments WHERE `id` = %i', $this->subject);
-        //  else if if ($this->mode == self::MODE_FORUM_POST)
-        //      $roles = DB::Aowow()->selectCell('SELECT `roles` FROM ::forum_posts WHERE `id` = %i', $this->subject);
-
-            return $roles & $ctxCheck ? self::ERR_NONE : self::ERR_MISCELLANEOUS;
-        }
-        else
-            return $ctxCheck ? self::ERR_NONE : self::ERR_MISCELLANEOUS;
-
-        // Forum not in use, else:
-        //  check post owner
-        //      User::$id == post.op && !post.sticky;
-        //  check user custom avatar
-        //      g_users[post.user].avatar == 2 && (post.roles & U_GROUP_MODERATOR) == 0
+        return self::ERR_NONE;                             // content target/author policy is checked under the transaction
     }
 
     public function create(string $desc, ?string $userAgent = null, ?string $appName = null, ?string $pageUrl = null, ?string $relUrl = null, ?string $email = null) : bool
     {
+        $content = $this->mode !== self::MODE_GENERAL;
+        if ($content && (!self::canCreateContent() || $this->mode === self::MODE_FORUM_POST ||
+            !$this->subject || $this->subject < 0 || $this->subject > 8388607 ||
+            ($this->mode === self::MODE_CHARACTER && !Cfg::get('PROFILER_ENABLE'))))
+        {
+            $this->errorCode = self::ERR_MISCELLANEOUS;
+            return false;
+        }
         if ($this->mode === self::MODE_GENERAL && !Cfg::get('FEEDBACK_ENABLE'))
             return false;
 
@@ -197,11 +192,21 @@ class Report
             return false;
         }
 
-        if (mb_strlen($desc) > 500)
+        if (strlen($desc) > 2000 || !mb_check_encoding($desc, 'UTF-8') || mb_strlen($desc) > 500)
         {
             $this->errorCode = self::ERR_DESC_TOO_LONG;
             return false;
         }
+
+        $userAgent ??= mb_substr(User::$agent, 0, 255);
+        $appName ??= '';                                   // optional metadata must not invoke server browscap lookup
+        foreach ([[$userAgent, 255], [$appName, 32], [$pageUrl, 255], [$relUrl, 255], [$email, 255]] as [$value, $limit])
+            if ($value !== null && (strlen($value) > $limit * 4 || !mb_check_encoding($value, 'UTF-8') ||
+                mb_strlen($value) > $limit || preg_match('/[\x00-\x1f\x7f]/', $value)))
+            {
+                $this->errorCode = self::ERR_MISCELLANEOUS;
+                return false;
+            }
 
         // clean up src url: dont use anchors, clean up query
         if ($pageUrl)
@@ -224,34 +229,110 @@ class Report
                 $pageUrl .= '?'.$urlParts['query'];
         }
 
-        if ($err = $this->checkTargetContext($pageUrl))
+        if ($pageUrl !== null && mb_strlen($pageUrl) > 255)
         {
-            $this->errorCode = $err;
+            $this->errorCode = self::ERR_MISCELLANEOUS;
             return false;
         }
 
-        $update = array(
-            'userId'      => User::$id,
-            'createDate'  => time(),
-            'mode'        => $this->mode,
-            'reason'      => $this->reason,
-            'subject'     => $this->subject,
-            'ip'          => User::$ip,
-            'description' => $desc,
-            'userAgent'   => $userAgent ?: User::$agent,
-            'appName'     => $appName ?: (get_browser(null, true)['browser'] ?: '')
-        );
+        if ($content && !ContributionBudget::reserve('report', strlen($desc.$userAgent.$appName.$pageUrl.$relUrl.$email)))
+        {
+            $this->errorCode = ContributionBudget::status() === ContributionBudget::BLOCKED ? self::ERR_LIMIT : self::ERR_MISCELLANEOUS;
+            return false;
+        }
 
-        if ($pageUrl)
-            $update['url'] = $pageUrl;
+        $db = DB::Aowow();
+        $started = false;
+        $committed = false;
+        try
+        {
+            if ($content)
+            {
+                $started = true;
+                $db->query('START TRANSACTION');
+                // Serialize this account's report checks/inserts across workers without altering historical rows.
+                $account = $db->query('SELECT `userGroups`, `status` FROM ::account WHERE `id` = %i FOR UPDATE', User::$id)->fetch();
+                if (!$account || ($account->userGroups & U_GROUP_PENDING) ||
+                    in_array((int)$account->status, [ACC_STATUS_NEW, ACC_STATUS_DELETED], true) || !$this->validTarget($db, (int)$account->userGroups))
+                {
+                    $this->errorCode = self::ERR_MISCELLANEOUS;
+                    return false;
+                }
+            }
 
-        if ($relUrl)
-            $update['relatedurl'] = $relUrl;
+            if ($err = $this->checkTargetContext($pageUrl))
+            {
+                $this->errorCode = $err;
+                return false;
+            }
 
-        if ($email)
-            $update['email'] = $email;
+            $update = array(
+                'userId'      => User::$id,
+                'createDate'  => time(),
+                'mode'        => $this->mode,
+                'reason'      => $this->reason,
+                'subject'     => $this->subject,
+                'ip'          => User::$ip,
+                'description' => $desc,
+                'userAgent'   => $userAgent,
+                'appName'     => $appName,
+                'url'         => $pageUrl ?: ''
+            );
 
-        return DB::Aowow()->qry('INSERT INTO ::reports %v', $update);
+            if ($relUrl)
+                $update['relatedurl'] = $relUrl;
+
+            if ($email)
+                $update['email'] = $email;
+
+            if (!$content)
+                return (bool)$db->qry('INSERT INTO ::reports %v', $update);
+            $db->query('INSERT INTO ::reports %v', $update);
+            if ($db->getAffectedRows() !== 1) throw new \RuntimeException('Report insert failed.');
+            $db->query('COMMIT');
+            $committed = true;
+            return true;
+        }
+        catch (\Throwable)
+        {
+            $this->errorCode = self::ERR_MISCELLANEOUS;
+            return false;
+        }
+        finally
+        {
+            if ($started && !$committed)
+                try { $db->query('ROLLBACK'); } catch (\Throwable) { }
+        }
+    }
+
+    private function validTarget(DibiConnection $db, int $groups) : bool
+    {
+        $target = match ($this->mode) {
+            self::MODE_COMMENT => $db->query('SELECT `roles`, `userId` AS `owner`, `flags` FROM ::comments WHERE `id` = %i FOR UPDATE', $this->subject)->fetch(),
+            self::MODE_SCREENSHOT, self::MODE_VIDEO => $db->query('SELECT `userIdOwner` AS `owner`, `status` AS `flags` FROM %n WHERE `id` = %i FOR UPDATE',
+                $this->mode === self::MODE_SCREENSHOT ? '::screenshots' : '::videos', $this->subject)->fetch(),
+            self::MODE_GUIDE => $db->query('SELECT `userId` AS `owner`, `status`, `roles` FROM ::guides WHERE `id` = %i FOR UPDATE', $this->subject)->fetch(),
+            self::MODE_CHARACTER => $db->query('SELECT `id` FROM ::profiler_profiles WHERE `id` = %i AND `realm` > 0 AND `custom` = 0 AND `deleted` = 0 FOR UPDATE', $this->subject)->fetch(),
+            default => null
+        };
+        if (!$target) return false;
+        if ($this->mode === self::MODE_CHARACTER) return true;
+        $privileged = (int)$target->owner === User::$id || ($groups & U_GROUP_MODERATOR);
+        if (!$privileged)
+        {
+            if ($this->mode === self::MODE_GUIDE && !in_array((int)$target->status, [GuideMgr::STATUS_APPROVED, GuideMgr::STATUS_ARCHIVED], true)) return false;
+            if ($this->mode !== self::MODE_GUIDE && ($target->flags & CC_FLAG_DELETED)) return false;
+            if (in_array($this->mode, [self::MODE_SCREENSHOT, self::MODE_VIDEO], true) && !($target->flags & CC_FLAG_APPROVED)) return false;
+        }
+        $mask = $this->context[$this->mode][$this->reason];
+        if (is_int($mask))
+        {
+            $roles = $this->mode === self::MODE_COMMENT ? $target->roles :
+                $db->query('SELECT `userGroups` FROM ::account WHERE `id` = %i', (int)$target->owner)->fetchSingle();
+            // Match the dialog: these reasons cannot target moderator-authored content.
+            if ((int)$roles & $mask) return false;
+        }
+        return true;
     }
 
     public function getSimilar(int ...$status) : array

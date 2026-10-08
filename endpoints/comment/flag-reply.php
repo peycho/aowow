@@ -17,18 +17,12 @@ class CommentFlagreplyResponse extends TextResponse
 
     protected function generate() : void
     {
-        if (!$this->assertPOST('id'))
-        {
-            trigger_error('CommentFlagreplyResponse - malformed request received', E_USER_WARNING);
-            $this->generate404(User::isInGroup(U_GROUP_STAFF) ? 'request malformed' : '');
-        }
-
-        $replyOwner = DB::Aowow()->selectCell('SELECT `userId` FROM ::commments WHERE `id` = %i', $this->_post['id']);
-        if (!$replyOwner)
-        {
-            trigger_error('CommentFlagreplyResponse - reply not found', E_USER_WARNING);
+        if (!$this->assertPOST('id') || !Report::canCreateContent())
             $this->generate404(Lang::main('intError'));
-        }
+
+        $replyOwner = DB::Aowow()->selectCell('SELECT `userId` FROM ::comments WHERE `id` = %i', $this->_post['id']);
+        if (!$replyOwner)
+            $this->generate404(Lang::main('intError'));
 
         // ui element should not be present
         if ($replyOwner == User::$id)
@@ -36,7 +30,7 @@ class CommentFlagreplyResponse extends TextResponse
 
         $report = new Report(Report::MODE_COMMENT, Report::CO_INAPPROPRIATE, $this->_post['id']);
         if (!$report->create('Report Reply Button Click'))
-            $this->generate404('LANG.ct_resp_error'.$report->getError());
+            $this->generate404($report->getError() === Report::ERR_LIMIT ? Lang::main('contributionLimit') : Lang::main('intError'));
         else if (count($report->getSimilar()) >= CommunityContent::REPORT_THRESHOLD_AUTO_DELETE)
             DB::Aowow()->qry('UPDATE ::comments SET `flags` = `flags` | %i WHERE `id` = %i', CC_FLAG_DELETED, $this->_post['id']);
     }

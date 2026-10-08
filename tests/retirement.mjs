@@ -47,11 +47,11 @@ for (const file of readdirSync('static/js').filter(file => /^locale_.*\.js$/.tes
 console.log(`PASS: ${checks} retirement markup checks across six locales; generated assets parse`);
 
 // Execute the real form entrypoints with a dialog/AJAX spy; no network or DOM needed.
-const feedback = vm.createContext({LANG: {}, location: {hash:'#contact', href:'https://example.test/#contact'},
+const feedback = vm.createContext({LANG: {}, location: {pathname:'/subdir/', search:'?item=1', hash:'#contact', href:'https://example.test/subdir/?item=1#contact'},
     document: {}, $: () => ({ready() {}}),
     $WH: {cO: Object.assign, urlencode: encodeURIComponent}, navigator: {userAgent:'fixture', appName:'fixture'},
     Dialog: function () { this.show = () => {feedback.shown++;}; },
-    shown: 0, submitted: 0, g_feedbackEnabled: false, Ajax: function () { feedback.submitted++; }});
+    shown: 0, submitted: 0, g_user:{id:7}, g_feedbackEnabled: false, Ajax: function () { feedback.submitted++; }});
 feedback.Dialog.templates = {};
 vm.runInContext(readFileSync('setup/tools/filegen/templates/global.js/contacttool.js', 'utf8'), feedback);
 for (const enabled of [false, true, false]) {
@@ -81,4 +81,19 @@ for (const enabled of [false, true]) {
         assert.equal(form.elements[0].disabled, allowed);
     }
 }
-console.log('PASS: Feedback form/hash/submission guards preserve content-report dialogs');
+feedback.g_user.id = 0;
+feedback.g_feedbackEnabled = true;
+for (const mode of [1, 2, 3, 4, 5, 6]) {
+    const shown = feedback.shown, submitted = feedback.submitted;
+    feedback.ContactTool.show({mode});
+    assert.equal(feedback.shown, shown);
+    assert.equal(feedback.location.href, '?account=signin&next=' + encodeURIComponent('/subdir/?item=1#contact'));
+    assert.equal(feedback.ContactTool.onSubmit({mode}, null, null), false);
+    assert.equal(feedback.submitted, submitted);
+}
+const shown = feedback.shown, submitted = feedback.submitted;
+feedback.ContactTool.show({mode:0});
+assert.equal(feedback.shown, shown + 1);
+feedback.ContactTool.onSubmit({mode:0, reason:1, description:'Anonymous feedback', currenturl:'https://example.test/'}, null, {elements:[]});
+assert.equal(feedback.submitted, submitted + 1);
+console.log('PASS: Feedback guards preserve anonymous feedback and require sign-in for content-report dialogs');

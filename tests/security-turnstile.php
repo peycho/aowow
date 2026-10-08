@@ -26,6 +26,7 @@ namespace Aowow {
     }
     class Report {
         public const int MODE_GENERAL = 0;
+        public static function canCreateContent() : bool { return true; }
         public function __construct(mixed ...$args) { throw new \RuntimeException('REPORT_REACHED'); }
     }
     class Fixture {

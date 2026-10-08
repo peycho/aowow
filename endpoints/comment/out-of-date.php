@@ -21,9 +21,8 @@ class CommentOutofdateResponse extends TextResponse
     {
         if (!$this->assertPOST('id'))
         {
-            trigger_error('CommentOutofdateResponse - malformed request received', E_USER_WARNING);
-            if (User::isInGroup(U_GROUP_STAFF))
-                $this->result = 'malformed request received';
+            $this->result = Lang::main('intError');
+            return;
         }
 
         $ok = false;
@@ -37,8 +36,13 @@ class CommentOutofdateResponse extends TextResponse
         else                                                // try to report as outdated
         {
             $report = new Report(Report::MODE_COMMENT, Report::CO_OUT_OF_DATE, $this->_post['id']);
-            if (!$report->create($this->_post['reason']))
-                $this->result = Lang::main('intError');
+            if (!$report->create($this->_post['reason'] ?? ''))
+            {
+                $this->result = Lang::main($report->getError() === Report::ERR_LIMIT ? 'contributionLimit' : 'intError');
+                return;
+            }
+
+            $ok = true;                                   // successful report need not reach the automatic flag threshold
 
             if (count($report->getSimilar()) >= CommunityContent::REPORT_THRESHOLD_AUTO_OUT_OF_DATE)
                 $ok = DB::Aowow()->qry('UPDATE ::comments SET `flags` = `flags` | %i WHERE `id` = %i', CC_FLAG_OUTDATED, $this->_post['id']);

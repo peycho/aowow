@@ -21,7 +21,7 @@ namespace {
         ['feedback', Aowow\ContactusBaseResponse::class, 'generate', 'REPORT_REACHED']
     ];
     $payload = ['username'=>'Fixtureuser','password'=>'fixture-password-long','c_password'=>'fixture-password-long',
-        'email'=>'fixture@example.test','mode'=>0,'reason'=>1,'id'=>0];
+        'email'=>'fixture@example.test','mode'=>0,'reason'=>1,'id'=>0,'desc'=>'Synthetic feedback'];
     foreach ($cases as [$action,$class,$method,$sentinel]) {
         $_POST = [];
         $empty = (new ReflectionClass($class))->newInstanceWithoutConstructor();

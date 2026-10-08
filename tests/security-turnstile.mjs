@@ -10,7 +10,7 @@ if (process.argv.includes('--browser')) {
     const actions = ['registration','login','password_recovery','username_recovery','resend','feedback'];
     const forms = actions.map(action => `<form id="${action}"><div data-turnstile-action="${action}"></div></form>`).join('');
     const setup = `var g_turnstile={actions:${JSON.stringify(actions)},siteKey:'SITE_FIXTURE',error:'Verification failed; retry.'};
-        var g_feedbackEnabled=true,LANG={},requests=[],loadedScripts=[],dialogs=0;
+        var g_feedbackEnabled=true,g_user={id:7},LANG={},requests=[],loadedScripts=[],dialogs=0;
         var $=function(){return {ready:function(){}}};
         var $WH={cO:Object.assign,urlencode:encodeURIComponent};
         var Dialog=function(){this.show=function(){dialogs++}};Dialog.templates={};
@@ -27,7 +27,7 @@ if (process.argv.includes('--browser')) {
 // Execute actual feedback submission code with a verifier/widget spy, never a remote request.
 let requests = [], resets = [], mounts = [], removed = [];
 let required = true, token = '';
-const context = vm.createContext({LANG:{},location:{hash:'',href:'https://example.test/',replace(){}},document:{},
+const context = vm.createContext({g_user:{id:7},LANG:{},location:{hash:'',href:'https://example.test/',replace(){}},document:{},
     navigator:{userAgent:'fixture',appName:'fixture'},$:()=>({ready(){}}),$WH:{cO:Object.assign,urlencode:encodeURIComponent},
     AowowTurnstile:{enabled:()=>required,token:()=>token,reset:form=>resets.push(form),mount:(form,action)=>mounts.push(action),remove:form=>removed.push(form)},
     Ajax:function(url,opt){requests.push({url,opt});},g_feedbackEnabled:true});

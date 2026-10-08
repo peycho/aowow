@@ -7,6 +7,54 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-08
 
+### Content report limits (revision 70)
+
+Comment, screenshot, video, guide and character reports now require an activated,
+unbanned account. Anonymous visitors are directed to sign in, with a return URL
+to their current page. The service also enforces the restriction for direct POSTs.
+General feedback remains separate: its enable switch and optional Turnstile
+challenge retain their existing behavior, including anonymous feedback.
+
+Content reports use the existing `aowow_contribution_budget` table, with 25
+attempts per account, 50 per trusted peer IP and 10,000 globally per 24-hour
+window. These are fixed windows beginning at the first reservation, not calendar
+days. IPv6 spelling variations share one hashed peer bucket. Report reservations
+also share the existing cumulative text allowance: 256 MiB per account and 4 GiB
+globally, charged at 4 KiB plus submitted metadata bytes. Duplicate, nonexistent
+target and failed insertion attempts consume their reservation; failed or
+uncertain work is never automatically refunded. Expiring peer/account work
+buckets are covered by the existing `--prune` workflow. Trustworthy client-IP
+configuration remains necessary when serving behind a proxy.
+
+Targets must exist and be visible to the reporting account. Disabled profiler
+targets and unsupported forum reports are rejected. Reason checks use the actual
+content author's roles. Metadata fits the declared column sizes, and descriptions
+remain limited to 500 UTF-8 characters. Concurrent submissions from one account
+serialize their duplicate check and insertion: changing the reason or page URL
+cannot create another report for the same content. Failed checks fail closed;
+ordinary invalid requests do not raise application warnings or activate
+maintenance. Historical reports, accounts and community content are preserved.
+The reply-report and outdated-comment callers also handle quota denial as an
+ordinary failure. The reply lookup now uses the correctly spelled comments table,
+and a successful outdated report no longer raises an error merely because it
+has not reached the automatic moderation threshold.
+
+No new SQL migration is needed on an updated installation with the existing
+contribution-budget table. Deploy the PHP changes together and regenerate the
+browser assets as the website's OS user:
+
+```sh
+php aowow --build=globaljs
+```
+
+The SQL fixture in `tests/security-reports.php` covers identity, target visibility,
+metadata bounds, quotas, independent concurrent workers, unavailable budgets,
+insertion/lookup failures, uncertain commit acknowledgments and existing data
+preservation. The JavaScript fixtures cover guest sign-in redirects and anonymous
+general-feedback compatibility. Local regression validation is not a production
+rollout or a traffic benchmark. The separate CAPTCHA verification-work budget
+finding remains open; this change does not address it.
+
 ### SMTP mail
 
 All existing account mail templates now share a configurable transport. Missing

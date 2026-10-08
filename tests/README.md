@@ -920,6 +920,34 @@ concurrent migration/cleanup exclusion. These MySQL 8.4 / PHP 8.5.10 / Dibi 5.1.
 checks do not establish MariaDB, live YouTube, production, scheduler, historical
 storage, volume/database capacity, mail queue, FPM or complete UI acceptance.
 
+Content-report SQL coverage uses a separate, explicitly named disposable
+`aowow_security_test_reports` database. The suite drops every table in that
+database, loads the reference account/content/report/budget structures, and
+supplies synthetic identities and content. It does not load runtime configuration.
+Use an isolated empty-password root MySQL fixture, never a shared application
+server or production credentials:
+
+```sh
+AOWOW_TEST_DATABASE=aowow_security_test_reports \
+AOWOW_TEST_DB_HOST=127.0.0.1 AOWOW_TEST_DB_PORT=33063 \
+php tests/security-reports.php
+```
+
+This suite runs real report and contact-response methods for anonymous,
+unactivated, banned and active accounts; target visibility and author-role rules;
+UTF-8 metadata widths; account, canonical peer-IP, global and retained-byte
+allowances; expired windows; changed-URL/reason duplicates; failed budget,
+duplicate lookup and insert operations; and lost commit acknowledgments.
+Independent workers exercise simultaneous duplicate submissions and the final
+account quota slot. Snapshots verify existing community rows and historical
+reports are preserved. Character target tests use a minimal profile-table subset;
+the full profiler schema is covered by the schema gates. General feedback remains
+anonymous and retains its optional CAPTCHA checks. Actual generated ContactTool
+JavaScript verifies guest sign-in redirects and denies stale anonymous report
+submissions. The suite is included in `bash tests/ci/run.sh sql`; JavaScript
+checks run in the usual JavaScript gate. No new SQL migration is needed for the
+report policy itself.
+
 Apply [1791000000_01.sql](../setup/sql/updates/1791000000_01.sql) and rebuild the
 requested `globaljs` assets before accepting the PHP/template rollout. Runtime
 needs budget DML without DDL; cleanup needs DELETE on `errors`,
