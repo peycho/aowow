@@ -31,8 +31,9 @@ namespace {
         check(Aowow\Fixture::$calls === $calls && ($action === 'feedback' ?
             (new ReflectionProperty($empty, 'result'))->getValue($empty) === 4 : $result === ($action === 'login' ? false : '')),
             'Initial '.$action.' form view preserves behavior without Siteverify');
-        foreach (['missing','expired','valid','disabled'] as $case) {
+        foreach (['missing','expired','valid','disabled','limited'] as $case) {
             Aowow\Cfg::$flags['TURNSTILE_'.strtoupper($action).'_ENABLE'] = $case === 'disabled' ? 0 : 1;
+            Aowow\TurnstileBudget::$allowed = $case !== 'limited';
             $_POST = $case === 'missing' ? [] : ['cf-turnstile-response'=>$case === 'valid' ? 'v-'.$action : 'expired'];
             $response = (new ReflectionClass($class))->newInstanceWithoutConstructor();
             (new ReflectionProperty($response, '_post'))->setValue($response, $payload);
@@ -44,8 +45,9 @@ namespace {
                 if ($action === 'feedback') $result = (new ReflectionProperty($response, 'result'))->getValue($response);
                 check(!$caught && ($action === 'login' ? $result === false && $error === 'captchaError' : $result === 'captchaError'), 'Missing/expired token blocks '.$action.' before authentication/database/mail/report work');
             }
-            if (in_array($case, ['disabled','missing'], true)) check(Aowow\Fixture::$calls === $calls, 'Disabled/missing-token '.$action.' makes no network call');
+            if (in_array($case, ['disabled','missing','limited'], true)) check(Aowow\Fixture::$calls === $calls, 'Disabled/missing-token/limited '.$action.' makes no network call');
         }
+        Aowow\TurnstileBudget::$allowed = true;
         Aowow\Cfg::$flags['TURNSTILE_'.strtoupper($action).'_ENABLE'] = 1;
     }
     foreach ([1,2,3,4,5,6] as $mode) {

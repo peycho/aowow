@@ -957,6 +957,39 @@ batches, preserve permanent counters, and review existing storage separately.
 See [A15](../docs/aowow-security-review.md#a15--outbound-calls-quotas-and-retention).
 
 
+## CAPTCHA verification admission (R01)
+
+The existing `php tests/security-turnstile.php` suite uses a disposable loopback
+TLS provider and a reservation spy. It checks token/action/hostname authority,
+TLS and response deadlines, and budget-denied calls through all six actual form
+handlers. No provider request or account/mail/report action is allowed after
+admission fails. Disabled forms and locally malformed input make no budget call.
+
+The separate SQL suite loads the actual Turnstile and budget components against
+an isolated MySQL fixture. It drops every table in the exact disposable
+`aowow_security_test_turnstile` database on `127.0.0.1`, without reading runtime
+configuration. Use only an isolated empty-password root fixture, never production
+or a shared application database:
+
+```sh
+AOWOW_TEST_DATABASE=aowow_security_test_turnstile \
+AOWOW_TEST_DB_HOST=127.0.0.1 AOWOW_TEST_DB_PORT=33063 \
+php tests/security-turnstile-budget.php
+```
+
+PHP 8.5, mysqli, Composer/Dibi, mbstring, cURL and process functions are required.
+Provider execution is intercepted; no real keys, Cloudflare requests or accounts
+are used. A second SQL connection during provider initialization proves database
+locks were released before verification. The fixture covers repeated invalid
+tokens and shared action quotas; canonical IPv6/mapped IPv4 keys; global/peer
+expiry and legitimate retries; provider failures; missing SQL schema, SQL failure
+and uncertain commits; hard process interruption before/after commit; independent
+workers competing for the final peer/global/key slot; the hard key cap and bounded
+online reclamation; existing `--prune` compatibility; and preservation of unrelated
+contribution/permanent storage reservations. The usual PHP and SQL CI gates
+include both suites. Fixtures do not establish live Cloudflare/PHP-FPM/proxy,
+MariaDB, production throughput or mail delivery acceptance.
+
 ## Redirects and operator administration (A16)
 
 Run from the checkout root using PHP ≥ 8.4 with mbstring, SimpleXML and process

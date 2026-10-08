@@ -29,6 +29,12 @@ namespace Aowow {
         public static function canCreateContent() : bool { return true; }
         public function __construct(mixed ...$args) { throw new \RuntimeException('REPORT_REACHED'); }
     }
+    // Transport/handler tests spy on admission; real transactions have a separate SQL fixture.
+    class TurnstileBudget {
+        public static int $calls = 0;
+        public static bool $allowed = true;
+        public static function reserve() : bool { ++self::$calls; return self::$allowed; }
+    }
     class Fixture {
         public static int $calls = 0;
         public static array $options = [];
@@ -51,8 +57,8 @@ namespace Aowow {
 }
 
 namespace {
-    use Aowow\{Cfg, Fixture, Turnstile};
-    define('AOWOW_REVISION', 69); define('CLI', true);
+    use Aowow\{Cfg, Fixture, Turnstile, TurnstileBudget};
+    define('AOWOW_REVISION', 71); define('CLI', true);
     require __DIR__.'/../includes/defines.php';
     require __DIR__.'/../includes/utilities.php';
     require __DIR__.'/../includes/components/turnstile.class.php';
@@ -61,7 +67,7 @@ namespace {
     define('AOWOW_TURNSTILE_SITE_KEY', $variant === '--missing-site' ? '' : 'SITE_FIXTURE');
     define('AOWOW_TURNSTILE_SECRET_KEY', $variant === '--missing-secret' ? '' : ($variant === '--invalid-secret' ? ['invalid'] : 'SECRET_FIXTURE'));
     if (in_array($variant, ['--missing-site', '--missing-secret', '--invalid-secret'], true)) {
-        exit(!Turnstile::verify('login', 'valid-token') && !Fixture::$calls ? 0 : 1);
+        exit(!Turnstile::verify('login', 'valid-token') && !Fixture::$calls && !TurnstileBudget::$calls ? 0 : 1);
     }
     if ($variant === '--server') {
         $ctx = stream_context_create(['ssl'=>['local_cert'=>$argv[2], 'local_pk'=>$argv[3]]]);
@@ -147,6 +153,15 @@ namespace {
         Cfg::$host = ''; check(!Turnstile::verify('login', 'v-login'), 'Missing configured hostname denied'); Cfg::$host = 'https://EXAMPLE.TEST:8080';
         check(Turnstile::verify('login', 'v-login'), 'Hostname match ignores case and origin port');
         check(!str_contains(json_encode(Turnstile::clientConfig()), 'SECRET_FIXTURE'), 'Client config cannot contain secret');
+        $network = Fixture::$calls; $budget = TurnstileBudget::$calls;
+        foreach ([null, [], false, '', "bad\n", str_repeat('x', 2049)] as $token)
+            check(!Turnstile::verify('login', $token), 'Malformed token denied before reservation');
+        check(TurnstileBudget::$calls === $budget && Fixture::$calls === $network, 'Malformed tokens use no database budget or network');
+        TurnstileBudget::$allowed = false;
+        foreach (Turnstile::ACTIONS as $action)
+            check(!Turnstile::verify($action, 'v-'.$action) && Fixture::$calls === $network, 'Budget denial makes no network call: '.$action);
+        TurnstileBudget::$allowed = true;
+        check(Turnstile::verify('login', 'v-login'), 'Normal verification still works after admission recovers');
 
         require __DIR__.'/../includes/components/response/baseresponse.class.php';
         require __DIR__.'/../includes/components/response/textresponse.class.php';

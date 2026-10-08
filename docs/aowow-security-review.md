@@ -1,8 +1,10 @@
 # AoWoW security review
 
 This is the consolidated audit and remediation record, updated **October 8,
-2026** against commit **6b669d025178e83f852c15b6216497169d89311e**, application
-revision **70**. It combines the October 2–3 audit and October 8 follow-up,
+2026**. The latest remediation is application revision **71**, implemented
+locally in the working tree based on commit **40dfc01bea2d65c9c27bb25823e0121572a7e612**.
+Reviewed snapshots and completed commits are recorded in the dated history.
+It combines the October 2–3 audit and October 8 follow-up,
 retaining original evidence, finding IDs, implementation history and validation
 boundaries. Historical line citations refer to the stated reviewed revisions;
 current source paths remain linked, but line numbers can move.
@@ -11,13 +13,14 @@ current source paths remain linked, but line numbers can move.
 
 | Finding | Current source status | Remaining action |
 | --- | --- | --- |
-| [R01 — CAPTCHA verification work](#r01--captcha-verification-has-no-attempt-budget-before-outbound-work) | **Open — P2 / Medium** | Reserve peer/global verification budgets before Siteverify, charge failures, and test concurrency/outages. Applies to enabled registration, login, recovery, resend and general-feedback CAPTCHA. |
-| [R03 — General-feedback quotas](#r03--general-feedback-has-no-submission-or-storage-budget) | **Open — P2 / Medium** | Independently bound anonymous feedback requests and retained storage. The content-report fix intentionally left general feedback separate; optional CAPTCHA does not impose an aggregate quota. |
+| [R01 — CAPTCHA verification work](#r01--captcha-verification-has-no-attempt-budget-before-outbound-work) | Implemented locally in revision 71; regression evidence below | Deploy Turnstile and its new budget component together; verify limits, retries and trusted peer attribution under the actual FPM/proxy. No new migration or JavaScript build is required on an updated installation. |
+| [R03 — General-feedback quotas](#r03--general-feedback-has-no-submission-or-storage-budget) | **Open — P2 / Medium** | Independently bound anonymous feedback requests and retained storage. Verification limits apply only when CAPTCHA is enabled; retained-feedback storage remains unbudgeted. |
 | A01–A16 | Source fixes or hardening implemented; local regression checks recorded | Complete the deployment, historical-data and integration checks below. These are not sixteen unfinished source fixes. |
 | [R02 — Content reports](#r02--anonymous-content-reports-without-quotas) | Implemented in revision 70; 200 focused checks pass | Deploy the PHP changes and rebuild `globaljs`; verify behavior under the actual web identity and trusted client-IP configuration. |
 
-R01 and R03 are the remaining source fixes established by this consolidated
-record. No new high/critical source finding was established in the October 8
+R03 is the remaining source fix established by this consolidated record.
+R01 is locally implemented and tested; deployment acceptance remains separate.
+No new high/critical source finding was established in the October 8
 follow-up. This is a source review plus local fixture evidence, not a production
 readiness sign-off or an exhaustive new audit of every endpoint.
 
@@ -1381,9 +1384,13 @@ historical/host acceptance requirements still apply.
 
 ### R01 — CAPTCHA verification has no attempt budget before outbound work
 
-**Priority:** P2 / Medium. **Status:** confirmed source behavior; introduced with
-the optional Turnstile integration. Applies when a form's CAPTCHA is enabled
-and its private keys and site hostname are configured.
+**Priority:** P2 / Medium. **Status:** source fix implemented and locally
+validated in revision 71 on October 8, 2026. Deployment acceptance is unverified.
+This finding was introduced with the optional Turnstile integration and applies
+when a form's CAPTCHA is enabled and its private keys/hostname are configured.
+
+**Original evidence (revision 69):** the following source behavior and observation
+predate the revision 71 remediation.
 
 [Turnstile::verify](../includes/components/turnstile.class.php):33–50 rejects
 missing/malformed tokens locally, but any nonempty, syntactically acceptable
@@ -1427,6 +1434,41 @@ Cloudflare requires server-side validation because submitted token strings may
 be forged; its [validation documentation](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/)
 also describes expiry and single use. CAPTCHA verification is not a substitute
 for limiting the application's verification workload.
+
+**Implemented policy (revision 71):** [TurnstileBudget](../includes/components/turnstilebudget.class.php)
+reserves 20 attempts per canonical trusted peer IP per five-minute fixed window
+and 120 attempts globally per one-minute fixed window, shared across all six
+form actions. It uses separate verification buckets in the existing InnoDB
+`aowow_contribution_budget` table, independent of password/retained-content
+accounting. The reservation is committed before Siteverify; no database locks
+span the provider request. Failed, rejected and replayed tokens consume capacity.
+Missing/failed budgets, exhausted allowances and uncertain commit acknowledgments
+deny without outbound verification or downstream account/mail/report work. The
+existing CAPTCHA error is returned; ordinary limit denial raises no application
+warning. Disabled forms, malformed local input and missing configuration perform
+no reservation/network work. Existing TLS/action/hostname/token/response checks
+remain unchanged.
+
+At most 4,096 peer keys and one global key are admitted. Up to eight expired
+verification peer keys are reclaimed per reservation, and existing CLI pruning
+also removes expired verification rows. Canonical IPv6 and mapped IPv4 addresses
+share allowances. Limits cannot be evaded by switching sessions/accounts/actions.
+Unrelated contribution rows and permanent byte reservations are preserved. No
+new migration, Composer dependency or JavaScript rebuild is needed for R01 on an
+updated installation. Deploy the new component together with Turnstile/kernel;
+see [revision 71](changelog.md#captcha-verification-budgets-revision-71).
+
+**Remediation evidence:** 96 real MySQL admission/concurrency/key-cap/provider/
+retention checks and 119 existing TLS/token/handler-boundary checks pass. The SQL
+fixture exercises the actual components with an intercepted provider and
+independent workers/connections. It checks invalid-token accounting, outage and
+legitimate retries, canonical IPs, quota/key limits, missing/failed SQL, uncertain
+commits, hard process interruption before/after commit, no locks during provider
+work and preservation of unrelated reservations. The TLS fixture independently
+checks real loopback TLS/deadlines and all six actual handler denial boundaries.
+No real Cloudflare, production database, keys or complete deployed-site traffic
+were used. This bounds admitted verification work and peer-key storage; it does
+not cap all inbound PHP startup or prove hosting/load acceptance. R03 remains open.
 
 ### R02 — Anonymous content reports without quotas
 
@@ -1515,7 +1557,10 @@ permits `Report::MODE_GENERAL` when `FEEDBACK_ENABLE` is enabled. Its optional
 Turnstile challenge verifies the feedback form, but neither the responder nor
 [Report::create](../includes/components/report.class.php) reserves a general-
 feedback request or retained-byte budget. The contribution reservation is
-conditional on a content-report mode. Anonymous feedback with a known peer IP
+conditional on a content-report mode. R01 now bounds verification when feedback
+CAPTCHA is enabled, but disabled CAPTCHA performs no verification reservation,
+and neither case applies a retained-feedback storage budget. Anonymous feedback
+with a known peer IP
 still inserts into `aowow_reports`, and changing the supplied page URL bypasses
 the existing general-feedback duplicate match. Metadata lengths are bounded,
 but the number and aggregate size of retained submissions are not.
@@ -1544,8 +1589,8 @@ test.
 
 **Remaining source work:** keep anonymous feedback if desired, but reserve
 independent trusted-peer/global request and retained-storage allowances before
-feedback persistence. Coordinate with R01 so exhausted verification/request
-budgets avoid outbound work. Charge failed/uncertain attempts conservatively,
+feedback persistence. Keep the existing R01 verification admission intact so exhausted verification
+budgets avoid outbound work; feedback limits must also apply with CAPTCHA disabled. Charge failed/uncertain attempts conservatively,
 bound/expire budget keys, preserve existing records, and test changed URLs,
 concurrent callers, missing budgets, CAPTCHA on/off and legitimate submissions.
 Disabling `FEEDBACK_ENABLE` rejects the general-feedback endpoint while keeping
@@ -1582,7 +1627,7 @@ certification.
 | Surface | Result and practical boundary |
 | --- | --- |
 | SMTP account mail | No new credential-disclosure, TLS-downgrade, header-injection or shell-injection defect established in the reviewed transport. Credentials remain in private PHP configuration. A single validated host/port is accepted, authenticated plaintext is refused, certificate/hostname checks remain enabled, provider details are not logged, and SMTP failure does not fall back to native mail. All 132 SMTP checks pass. Delivery is synchronous with per-operation timeouts, not an overall send deadline; real relay/DNS/FPM behavior was not tested. |
-| Turnstile authority | Server verifies strict success, expected action and configured hostname; missing keys, bad certificates, malformed/expired/replayed tokens and service failures deny the protected form. No account/mail work occurs on rejection. Disabled forms make no verification request. R01 concerns workload before rejection, not acceptance of an invalid token. |
+| Turnstile authority | Server verifies strict success, expected action and configured hostname; missing keys, bad certificates, malformed/expired/replayed tokens and service failures deny the protected form. No account/mail work occurs on rejection. Disabled forms make no verification request. R01 concerns workload before rejection, not acceptance of an invalid token; revision 71 now reserves verification capacity before outbound work. |
 | Profiler switches | Reviewed guards reject disabled HTML and specialized profile/guild/arena-team routes before realm work. Menus follow the loaded configuration; ordinary reads do not perform per-toggle database queries. Configured characters credentials are still connected during shared bootstrap: disabling the feature is not removal of those credentials/grants. |
 | Sounds, goodies and missing screenshots | Route/menu/data guards and the sound-dependent cache key remain covered. Disabled missing-screenshots requests do not generate the listing. Existing static audio/widget files are still static assets; disabling a feature is not an asset-access revocation policy. Enabled listing cost and hosting traffic limits were not benchmarked. |
 | General feedback | Disabled general feedback is rejected at responder and service boundaries. Content reporting remains separate and R02 is fixed; R03 records the remaining general-feedback quota gap, while R01 covers verification workload. |
@@ -1648,9 +1693,10 @@ necessarily use the same identity.
 
 ## 5. Ordered remediation backlog
 
-The remaining source work is **R01**, then **R03**, or one coordinated change
-that independently bounds verification and feedback persistence. R02's source
-fix is complete. The current status table is authoritative for unfinished work.
+The remaining source work is **R03**: independent general-feedback request
+and retained-storage limits, including when CAPTCHA is disabled. R01 and R02
+have implemented source fixes with local regressions; deployment acceptance is
+separate. The current status table is authoritative for unfinished work.
 The original remediation order below is preserved for staging/deployment
 acceptance; its completed source tasks should not be read as open defects.
 
@@ -1940,7 +1986,8 @@ it was not counted as a new runtime failure. SQL fixtures used disposable
 databases and synthetic community records only, with no application credentials.
 SMTP and CAPTCHA TLS tests used loopback providers, not real external accounts.
 
-Remaining source work includes R01's verification-work budget and R03's feedback quotas, plus staging verification
+At revision 70, remaining source work included R01's verification-work budget
+and R03's feedback quotas, plus staging verification
 of the R02 remediation under the actual PHP-FPM/proxy, permissions and database
 configuration. Relay/mail acceptance remains separate. R02 was implemented and
 validated with local fixtures only; no deployment, production database changes
@@ -1958,3 +2005,31 @@ sections, all 16 original A01–A16 detail sections preserved byte-for-byte, and
 No runtime source, private configuration, real database, mail provider or deployed
 site was changed.
 Full regression gates were not repeated for this documentation-only change.
+
+### Revision 71 R01 remediation validation — October 8, 2026
+
+The R01 working-tree implementation was subsequently validated with PHP
+**8.5.10**, Node **24.21.0**, Python **3.12.14**, disposable MySQL **8.4.10**,
+local Chrome **155.0.8059.39** and the existing Apache fixture image. No runtime
+configuration, real credentials, deployed site or production database was used.
+Provider execution in the SQL fixture is intercepted; the transport fixture
+separately uses real loopback TLS. Existing source and historical findings were
+preserved; only R01's implementation/status and its regression coverage changed.
+
+| Gate | Result after R01 remediation |
+| --- | --- |
+| `bash tests/ci/run.sh lint` | Exit 0; PHP/JS/shell/Python syntax and binary-asset checks pass. |
+| `bash tests/ci/run.sh php` | Exit 0, including 119 Turnstile TLS/token/action/hostname/form-boundary checks. |
+| `bash tests/ci/run.sh javascript` | Exit 0; existing CAPTCHA retry/expiry/submission and generated-asset compatibility checks pass. |
+| `bash tests/ci/run.sh sql` | Exit 0; 2,853 checks across 11 suites, including 96 verification-budget SQL/concurrency/provider/failure/interruption/key-cap/retention checks and the existing 200 content-report checks. |
+| `bash tests/ci/run.sh browser` | Exit 0; 967 numbered checks across eight completed scenarios. |
+| `bash tests/ci/run.sh apache` | Exit 0; 14,680 assertions across eight routing/asset/upload-denial combinations. |
+| Documentation | Local file links/heading anchors, whitespace, public-document boundaries and preservation of original A01–A16 detail sections checked. |
+
+All six regression gates exited 0; no suite skip or failure was reported.
+Deliberate safe-error output from existing retention/legacy fixtures was assessed
+against their passing results. No new SQL migration or Composer dependency was
+introduced. The earlier dated Composer advisory result is unchanged; it was not
+rerun for this source-only change. PHP 8.5.11, MariaDB, Windows, actual Cloudflare,
+FPM/proxy traffic/load and production deployment acceptance remain unverified.
+R03's independent general-feedback persistence/request quotas are still open.
