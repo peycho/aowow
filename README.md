@@ -252,6 +252,11 @@ and static origin, including subdirectory installations. See the
 
 ## Configuration
 
+Optional SMTP delivery is configured privately through `AOWOW_MAIL` in
+`config/security.php`; host, port, username, password, encryption, sender and
+timeouts are supported. Install the locked dependency with `composer install`.
+PHP mail remains the default. See the [SMTP/Gmail configuration example](docs/changelog.md#smtp-mail).
+
 The optional 468×60 linked header image appears on pages other than the homepage.
 Run `php8.5 aowow --update`, then set `HEADER_IMAGE_URL` and `HEADER_IMAGE_LINK`
 under Site Configuration → Site and enable `HEADER_IMAGE_ENABLE` (default Disabled).

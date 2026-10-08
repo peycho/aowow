@@ -5,6 +5,79 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-08
+
+### SMTP mail
+
+All existing account mail templates now share a configurable transport. Missing
+`AOWOW_MAIL` or `transport => 'mail'` preserves PHP `mail()` delivery. `smtp` uses
+PHPMailer, locked through Composer; `disabled` sends nothing and returns failure
+to the existing form handling. Templates, localization, tokens and expiration
+formatting remain unchanged. General feedback continues using its existing
+report storage; this change does not add feedback notification emails.
+
+Run `composer install --no-interaction --prefer-dist --no-plugins --no-scripts`
+to install the new locked dependency. Add the following to the existing private
+`config/security.php`, preserving its cache key and other settings:
+
+```php
+define('AOWOW_MAIL', [
+    'transport'  => 'smtp',
+    'host'       => 'smtp.gmail.com',
+    'port'       => 587,
+    'encryption' => 'tls',
+    'auth'       => true,
+    'username'   => 'database@example.com',
+    'password'   => 'YOUR_GMAIL_APP_PASSWORD',
+    'from_email' => 'database@example.com'
+]);
+```
+
+Gmail uses the full account email as username and an app password when available
+under the account's two-step verification and organization policy. Use an
+authorized sender address/alias. See Google's
+[app password guidance](https://support.google.com/accounts/answer/185833) and
+PHPMailer's [Gmail example](https://github.com/PHPMailer/PHPMailer/blob/master/examples/gmail.phps).
+OAuth2 tokens are not configured by this adapter.
+
+Available settings (see `setup/security.php.example`):
+
+| Setting | Default | Behavior |
+| --- | --- | --- |
+| `transport` | `mail` | `mail`, `smtp`, or `disabled` |
+| `host` | empty | One SMTP hostname or IP, without URL prefix or port |
+| `port` | `587` | Integer from 1 to 65535 |
+| `encryption` | `tls` | `tls`: required STARTTLS; `ssl`: implicit TLS, usually port 465; `none`: explicitly unauthenticated relay |
+| `auth` | `true` | Authenticate to the SMTP server; credentials require encryption |
+| `username`, `password` | empty | Private SMTP credentials |
+| `auth_type` | empty | Automatic selection, or `LOGIN`, `PLAIN`, `CRAM-MD5` |
+| `from_email`, `from_name` | empty | Empty uses `CONTACT_EMAIL` and `NAME_SHORT` |
+| `reply_to` | empty | Empty uses `CONTACT_EMAIL` |
+| `timeout` | `10` | Connection/socket timeout in seconds, integer 1–30 |
+| `command_timeout` | `10` | Per-command time limit in seconds, integer 1–30; PHPMailer permits twice this for the final DATA acknowledgment |
+| `ca_file` | empty | Optional readable trusted CA bundle; otherwise PHP's configured trust store |
+
+TLS certificate and hostname verification remain enabled. Invalid configuration,
+TLS/authentication failure and relay rejection return false without falling back
+to native mail. Diagnostics contain only a generic failure category, never SMTP
+credentials, recipients, tokens, provider replies or message content. Mail
+delivery failures do not raise application warnings or activate maintenance.
+SMTP is synchronous; timeout limits apply per operation, not to the entire send.
+A successful send means relay acceptance, not proof of inbox delivery.
+
+Existing Info-level debug mode still previews the message instead of sending it.
+SMTP bypasses `sendmail_path`, including `/bin/true`: development installations
+that must not send email should explicitly use
+`define('AOWOW_MAIL', ['transport' => 'disabled']);`. Keep credentials out of
+database/site settings, JavaScript and version control. No database migration or
+asset rebuild is required. Configure OpenSSL, a trusted CA store and outbound
+access to the chosen relay on the deployment host.
+
+Validation: Composer lock/platform checks, full PHP 8.5 lint, PHP and JavaScript
+gates and the full SQL gate on disposable MySQL 8.4 passed. Focused fixtures
+exercise actual loopback SMTP/TLS and synthetic mail; no real Gmail delivery or
+production configuration was attempted.
+
 ## 2026-10-07
 
 ### Maintenance page

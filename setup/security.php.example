@@ -24,3 +24,23 @@ define('AOWOW_OPERATOR_IPS', []);
 // Form switches under Site Configuration remain disabled until explicitly enabled.
 define('AOWOW_TURNSTILE_SITE_KEY', '');
 define('AOWOW_TURNSTILE_SECRET_KEY', '');
+
+// Outgoing account mail: mail (existing PHP transport), smtp, or disabled.
+// Keep credentials in this private file. SMTP bypasses PHP's sendmail_path;
+// explicitly choose disabled on development installations that must not send mail.
+define('AOWOW_MAIL', [
+    'transport'       => 'mail',
+    'host'            => 'smtp.gmail.com',
+    'port'            => 587,
+    'encryption'      => 'tls',       // tls: STARTTLS; ssl: implicit TLS (usually 465); none: unauthenticated relay only
+    'auth'            => true,
+    'username'        => '',          // Gmail: full account email address
+    'password'        => '',          // Gmail: app password; never commit real credentials
+    'auth_type'       => '',          // automatic; optionally LOGIN, PLAIN or CRAM-MD5
+    'from_email'      => '',          // empty: CONTACT_EMAIL; Gmail requires the account or an authorized alias
+    'from_name'       => '',          // empty: NAME_SHORT
+    'reply_to'        => '',          // empty: CONTACT_EMAIL
+    'timeout'         => 10,          // connection/socket timeout, seconds (1–30)
+    'command_timeout' => 10,          // SMTP command time limit, seconds (1–30; final DATA acknowledgment allows twice this)
+    'ca_file'         => ''           // optional trusted CA bundle path; certificate/hostname verification stays enabled
+]);

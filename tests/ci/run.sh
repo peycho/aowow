@@ -42,6 +42,7 @@ PY
     php tests/setup-debug.php
     php tests/schema-validator.php
     php tests/maintenance-response.php
+    php tests/security-smtp.php
     php tests/setup-maps.php
     php tests/maps-picker.php
     php tests/external-links.php
