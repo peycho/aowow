@@ -45,6 +45,10 @@ final class Turnstile
         if (!$secret || !self::key('AOWOW_TURNSTILE_SITE_KEY') || !is_string($host) || $host === '')
             return false;
 
+        // Commit a durable reservation before any network work, including rejected/replayed tokens.
+        if (!TurnstileBudget::reserve())
+            return false;
+
         $result = self::request($secret, $token);
         return ($result['success'] ?? null) === true && ($result['action'] ?? null) === $action &&
             is_string($result['hostname'] ?? null) && strtolower($result['hostname']) === strtolower($host);

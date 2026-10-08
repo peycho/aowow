@@ -7,6 +7,51 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-08
 
+### CAPTCHA verification budgets (revision 71)
+
+Enabled Turnstile forms reserve verification work before contacting Siteverify.
+Registration, login, password/username recovery, activation-email resend and
+general feedback share 20 attempts per trusted peer IP per five-minute window
+and 120 attempts globally per one-minute window. These are fixed windows starting
+with the first reservation; requests do not extend an active window. Switching
+forms, accounts or sessions does not give the same peer a new allowance. IPv6
+spellings and mapped IPv4 addresses share canonical peer keys.
+
+Reservations commit before network work, so database locks never span the
+verification request. Invalid/replayed tokens, provider failures and uncertain
+commit acknowledgments retain any committed charge. Exhaustion, missing budget
+data and failed/uncertain reservations return the existing CAPTCHA form error
+without contacting the provider or advancing authentication, mail or report work.
+No additional application warning is raised for ordinary quota denial. Disabled
+CAPTCHA and locally malformed tokens/configuration perform no reservation or
+verification request. Existing TLS/hostname/action/replay checks and response
+limits remain in place.
+
+Verification uses the existing InnoDB `aowow_contribution_budget` table with
+separate `captcha-*` buckets, independent of password and retained-content
+allowances. At most 4,096 peer keys and one global key are admitted. A reservation
+reclaims at most eight expired verification peer keys; the hard key cap bounds
+storage without relying on cron. Existing peers can retry at key capacity.
+`php aowow --prune` previews expired reservations and `php aowow --prune=apply`
+removes them; unrelated permanent byte reservations remain intact.
+
+Deploy the new `turnstilebudget.class.php`, updated Turnstile component and kernel
+together. No new SQL migration, Composer dependency or JavaScript rebuild is
+needed for R01. An older installation still needs the existing budget migration
+through `php aowow --update`; runtime needs normal budget DML, not DDL. Confirm
+trusted client-IP handling and normal CAPTCHA retry behavior under the actual
+PHP-FPM/proxy setup before accepting the rollout. These limits bound verification
+work, not all inbound traffic or concurrent PHP startup; hosting capacity/rate
+controls and load acceptance remain separate.
+
+The real SQL fixture covers admission before provider calls, shared form limits,
+IPv4/IPv6 canonicalization, independent concurrent workers, hard interruption
+before/after commit, missing/failed budgets, lost commit acknowledgments, bounded
+key admission/reclamation, provider outages and legitimate retries. Existing TLS
+and all six handler fixtures verify budget denial does not start account/mail/
+report work. General-feedback persistence quotas (R03) remain separate and open,
+especially when its CAPTCHA is disabled.
+
 ### Content report limits (revision 70)
 
 Comment, screenshot, video, guide and character reports now require an activated,
@@ -52,8 +97,8 @@ metadata bounds, quotas, independent concurrent workers, unavailable budgets,
 insertion/lookup failures, uncertain commit acknowledgments and existing data
 preservation. The JavaScript fixtures cover guest sign-in redirects and anonymous
 general-feedback compatibility. Local regression validation is not a production
-rollout or a traffic benchmark. The separate CAPTCHA verification-work budget
-finding remains open; this change does not address it.
+rollout or a traffic benchmark. This revision did not address the separate CAPTCHA
+verification-work finding; revision 71 implements its budget above.
 
 ### SMTP mail
 
