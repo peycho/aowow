@@ -1,5 +1,12 @@
 # Security regressions
 
+`php tests/security-smtp.php` uses disposable loopback SMTP fixtures and synthetic
+credentials. It covers native/disabled transports, all six localized activation
+templates, required STARTTLS and implicit TLS, certificate trust/hostname checks,
+authentication after encryption, UTF-8 encoding, sender overrides, relay failures,
+timeouts, generic diagnostics and refusal to fall back to native mail. No external
+email or application database is used. It belongs to the PHP regression gate.
+
 `php tests/maintenance-response.php` exercises maintenance response construction,
 metadata and the rendered page across all six locales. HTTP 503/Retry-After,
 separate logo/artwork elements, current copy and the optimized asset are checked.

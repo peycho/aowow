@@ -1126,7 +1126,8 @@ abstract class Util
             return true;
         }
 
-        return mail($email, $subject, $body, $header);
+        require_once __DIR__.'/components/mailtransport.class.php';
+        return MailTransport::send($email, $subject, $body, $header);
     }
 }
 
