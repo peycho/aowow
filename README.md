@@ -317,6 +317,12 @@ screenshots, videos and other content remain available. Install the setting and
 client guards with `php aowow --update`; subsequent toggles need no rebuild or
 additional database queries. Authored email links remain available. See the
 [feedback switch details](docs/changelog.md#feedback-switch).
+Anonymous and signed-in feedback share independent IP/site request quotas and a
+permanent retained-storage cap, whether its CAPTCHA is enabled or disabled.
+Existing feedback is preserved and included in the initial storage baseline;
+keep permanent budget rows when pruning. See
+[feedback limits and rollout](docs/changelog.md#general-feedback-budgets-revision-72).
+
 
 `missing_screenshots_enable` under Site Configuration → Site defaults to Disabled.
 It hides Tools → Utilities → Missing Screenshots and rejects `?missing-screenshots`

@@ -25,9 +25,16 @@ namespace Aowow {
         public function selectRow(mixed ...$args) : never { throw new \RuntimeException('DB_REACHED'); }
     }
     class Report {
-        public const int MODE_GENERAL = 0;
+        public const int MODE_GENERAL = 0, ERR_LIMIT = 8, ERR_INVALID_CAPTCHA = 1;
+        private int $mode;
         public static function canCreateContent() : bool { return true; }
-        public function __construct(mixed ...$args) { throw new \RuntimeException('REPORT_REACHED'); }
+        public function __construct(int $mode, mixed ...$args) { $this->mode = $mode; }
+        // Persistence is a sentinel here; real Report and feedback admission execute in SQL fixtures.
+        public function create(mixed ...$args) : bool {
+            if ($this->mode === 0 && !Turnstile::verify('feedback', $args[6] ?? null)) return false;
+            throw new \RuntimeException('REPORT_REACHED');
+        }
+        public function getError() : int { return self::ERR_INVALID_CAPTCHA; }
     }
     // Transport/handler tests spy on admission; real transactions have a separate SQL fixture.
     class TurnstileBudget {
