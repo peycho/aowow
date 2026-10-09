@@ -45,12 +45,6 @@ class ContactusBaseResponse extends TextResponse
             return;
         }
 
-        if ($this->_post['mode'] === Report::MODE_GENERAL && !Turnstile::verify('feedback', $_POST['cf-turnstile-response'] ?? null))
-        {
-            $this->result = Lang::main('captchaError');
-            return;
-        }
-
         if (!is_string($this->_post['desc'] ?? null))
         {
             $this->result = 3;
@@ -71,10 +65,14 @@ class ContactusBaseResponse extends TextResponse
 
         $report = new Report($this->_post['mode'], $this->_post['reason'], $subject);
         if ($report->create($this->_post['desc'], $this->_post['ua'] ?? null, $this->_post['appname'] ?? null,
-            $this->_post['page'] ?? null, $this->_post['relatedurl'] ?? null, $this->_post['email'] ?? null))
+            $this->_post['page'] ?? null, $this->_post['relatedurl'] ?? null, $this->_post['email'] ?? null, $_POST['cf-turnstile-response'] ?? null))
             $this->result = 0;
         else if (($e = $report->getError()) > 0)
-            $this->result = $e === Report::ERR_LIMIT ? Lang::main('contributionLimit') : $e;
+            $this->result = match ($e) {
+                Report::ERR_LIMIT => Lang::main('contributionLimit'),
+                Report::ERR_INVALID_CAPTCHA => Lang::main('captchaError'),
+                default => $e
+            };
         else
             $this->result = Lang::main('intError');
     }

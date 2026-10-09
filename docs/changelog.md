@@ -7,6 +7,62 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-08
 
+### General feedback budgets (revision 72)
+
+General feedback remains available to anonymous visitors when enabled. Validated
+submissions reserve 10 attempts per trusted peer IP per hour and 1,000 site-wide
+per day before CAPTCHA or duplicate/persistence work. Fixed windows start with
+the first admission; changing URL, reason, subject, account or session does not
+reset the peer allowance. Canonical IPv6 and mapped IPv4 spellings share a key.
+Invalid/replayed tokens, provider failures, duplicate submissions and uncertain
+acknowledgments retain committed attempts. Invalid local fields and disabled
+feedback avoid reservations. Content-report and CAPTCHA verification limits
+remain independent.
+
+The feedback service now verifies the optional CAPTCHA itself, with the endpoint
+passing its token, so direct service callers cannot bypass either policy. Known
+request or storage exhaustion returns the existing localized contribution-limit
+message before provider work. SQL/uncertain failures fail closed without raw
+values, SQL or new application warnings. No database locks span network calls.
+
+General feedback has a permanent cumulative cap of 10,000 records and 64 MiB of
+charged bytes, whichever is reached first. Charges include UTF-8 description and
+metadata bytes plus 1,024 bytes per record; this is conservative application
+accounting, not a measurement of physical MySQL/disk allocation. A first-use
+transaction counts existing general feedback, including closed records, and
+persists the baseline independently of new submissions. Later requests read the
+counters without rescanning the inbox. An already-full inbox rejects new feedback
+without deleting old records. Storage charges, duplicate serialization and the
+new row share one transaction; failures roll back uncommitted storage and
+records. Lost commit acknowledgments retain any committed state and do not claim
+success. Closing/deleting records does not refund permanent charges.
+
+The existing InnoDB `aowow_contribution_budget` table holds separate `feedback-*`
+buckets: at most 4,096 hashed peer keys, one global work key and two permanent
+storage counters. An admitted request reclaims at most eight expired peer keys;
+`php aowow --prune` and `php aowow --prune=apply` also handle expired work windows.
+They preserve reports and permanent counters. Do not clear permanent budget rows
+as routine cleanup. Existing accounts, content reports and community data are
+unchanged.
+
+Deploy the new feedback budget component, Report, contact responder and kernel
+together. No new SQL migration, dependency or JavaScript build is required for
+R03 on an updated installation. Older installations need the existing budget
+migration through `php aowow --update`. Runtime requires DML on the InnoDB budget
+and reports tables, not DDL. Verify trusted client-IP attribution, real FPM/proxy
+limits and anonymous/authenticated feedback with CAPTCHA on/off after rollout.
+The bounded first-use baseline scan and actual historical inbox size need hosting
+acceptance; these limits do not replace inbound traffic controls or DB/disk
+monitoring.
+
+All six regression gates pass locally, including 148 focused feedback checks and
+3,001 checks across 12 disposable SQL suites. Coverage includes a full historical
+inbox seeded once, independent workers competing for peer/global/key/storage
+capacity, duplicate serialization, failures and interrupted/uncertain commits,
+retention and representative community data preservation. Fixtures use synthetic
+records and an intercepted provider; they do not establish production, actual
+Cloudflare, MariaDB or PHP-FPM/load acceptance.
+
 ### CAPTCHA verification budgets (revision 71)
 
 Enabled Turnstile forms reserve verification work before contacting Siteverify.

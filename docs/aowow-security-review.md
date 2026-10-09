@@ -14,12 +14,13 @@ current source paths remain linked, but line numbers can move.
 | Finding | Current source status | Remaining action |
 | --- | --- | --- |
 | [R01 — CAPTCHA verification work](#r01--captcha-verification-has-no-attempt-budget-before-outbound-work) | Implemented locally in revision 71; regression evidence below | Deploy Turnstile and its new budget component together; verify limits, retries and trusted peer attribution under the actual FPM/proxy. No new migration or JavaScript build is required on an updated installation. |
-| [R03 — General-feedback quotas](#r03--general-feedback-has-no-submission-or-storage-budget) | **Open — P2 / Medium** | Independently bound anonymous feedback requests and retained storage. Verification limits apply only when CAPTCHA is enabled; retained-feedback storage remains unbudgeted. |
+| [R03 — General-feedback quotas](#r03--general-feedback-has-no-submission-or-storage-budget) | Implemented locally in revision 72; 148 focused checks pass | Deploy the feedback budget/service/responder together; accept trusted-IP limits, first-use historical storage accounting and CAPTCHA on/off under the actual FPM/proxy. No new migration or JavaScript build is required on an updated installation. |
 | A01–A16 | Source fixes or hardening implemented; local regression checks recorded | Complete the deployment, historical-data and integration checks below. These are not sixteen unfinished source fixes. |
 | [R02 — Content reports](#r02--anonymous-content-reports-without-quotas) | Implemented in revision 70; 200 focused checks pass | Deploy the PHP changes and rebuild `globaljs`; verify behavior under the actual web identity and trusted client-IP configuration. |
 
-R03 is the remaining source fix established by this consolidated record.
-R01 is locally implemented and tested; deployment acceptance remains separate.
+R01, R02 and R03 now have locally implemented source fixes and regression
+evidence. No established source fix remains open in this consolidated record;
+deployment acceptance remains separate.
 No new high/critical source finding was established in the October 8
 follow-up. This is a source review plus local fixture evidence, not a production
 readiness sign-off or an exhaustive new audit of every endpoint.
@@ -1468,7 +1469,8 @@ work and preservation of unrelated reservations. The TLS fixture independently
 checks real loopback TLS/deadlines and all six actual handler denial boundaries.
 No real Cloudflare, production database, keys or complete deployed-site traffic
 were used. This bounds admitted verification work and peer-key storage; it does
-not cap all inbound PHP startup or prove hosting/load acceptance. R03 remains open.
+not cap all inbound PHP startup or prove hosting/load acceptance. R03 is
+separately addressed below in revision 72.
 
 ### R02 — Anonymous content reports without quotas
 
@@ -1548,9 +1550,10 @@ unexpected warning.
 
 ### R03 — General feedback has no submission or storage budget
 
-**Priority:** P2 / Medium. **Status:** confirmed current source behavior on
-October 8, 2026, revision 70. Reported separately during audit consolidation;
-this was intentionally outside the content-report remediation.
+**Priority:** P2 / Medium. **Status:** source fix implemented locally in
+revision 72 on October 8, 2026; 148 focused regressions pass. Deployment
+acceptance remains unverified. The evidence below describes revision 70,
+reported separately during consolidation and outside R02 remediation.
 
 **Evidence:** [ContactusBaseResponse](../endpoints/contactus/contactus.php)
 permits `Report::MODE_GENERAL` when `FEEDBACK_ENABLE` is enabled. Its optional
@@ -1576,7 +1579,7 @@ cost. Report records are not expired by `--prune`; do not delete legitimate
 feedback/moderation records as a workaround. No deployed storage exhaustion or
 compromise was demonstrated.
 
-**Local observation:** five invocations of the actual current contact handler and
+**Pre-fix local observation:** five invocations of the actual revision-70 contact handler and
 Report service with an anonymous synthetic identity, feedback enabled, CAPTCHA
 disabled and differing page URLs returned five successes, five duplicate
 queries, five intercepted insert calls and zero contribution-budget calls.
@@ -1587,14 +1590,44 @@ checks that anonymous general feedback remains independent of content quotas.
 These observations confirm source behavior, not a complete HTTP exploit or load
 test.
 
-**Remaining source work:** keep anonymous feedback if desired, but reserve
-independent trusted-peer/global request and retained-storage allowances before
-feedback persistence. Keep the existing R01 verification admission intact so exhausted verification
-budgets avoid outbound work; feedback limits must also apply with CAPTCHA disabled. Charge failed/uncertain attempts conservatively,
-bound/expire budget keys, preserve existing records, and test changed URLs,
-concurrent callers, missing budgets, CAPTCHA on/off and legitimate submissions.
-Disabling `FEEDBACK_ENABLE` rejects the general-feedback endpoint while keeping
-content reports available; it is an optional feature mitigation, not a quota fix.
+**Implemented fix — revision 72:** [FeedbackBudget](../includes/components/feedbackbudget.class.php)
+reserves independent trusted-peer and global work before CAPTCHA, duplicates or
+persistence. Anonymous and authenticated feedback share 10 attempts per peer per
+hour and 1,000 globally per day, with canonical hashed peer keys independent of
+supplied URLs, reasons, subjects, accounts or sessions. Windows do not slide;
+failed CAPTCHA, provider failures and duplicates retain committed attempts.
+At most 4,096 peer keys are admitted, with bounded eight-key online cleanup and
+existing expiry pruning. Disabled feedback/local field errors avoid reservations.
+
+The service enforces optional CAPTCHA and reserves permanent general-feedback
+capacity independently of content-report budgets. Existing general feedback,
+including closed records, initializes a durable baseline once. The cumulative
+caps are 10,000 records and 64 MiB charged storage (description/metadata bytes
+plus 1,024 bytes per row), not a physical DB/disk quota. Exhaustion rejects before
+provider work, including when CAPTCHA is disabled; existing records remain
+intact. Partial/missing ledgers and SQL/uncertain failures fail closed. Storage
+charges and inserts commit together; duplicates serialize on the permanent
+counter and roll back tentative storage. No network call holds database locks.
+Existing pruning preserves reports and permanent charges; closing/deleting
+records does not refund charges.
+
+**Validation and limits:** the new [feedback SQL fixture](../tests/security-feedback.php)
+passes 148 checks with actual service, endpoint, CAPTCHA and budget methods on a
+disposable MySQL database. Provider calls are intercepted; a separate connection
+proves admission durability and unlocked rows during verification. Independent
+workers test peer/global/key/storage boundaries and duplicate races, plus hard
+interruption and uncertain acknowledgments. Historical full-inbox initialization
+is scanned once, malformed fields/partial ledgers/missing schema fail safely,
+and community snapshots and old feedback/content reports remain unchanged.
+All six existing gates also pass; detailed results are recorded below.
+
+Deploy the component, Report, responder and kernel together. R03 needs no new
+migration, dependency or JavaScript build on an updated installation; keep the
+existing budget and reports tables InnoDB and permanent counters intact.
+Actual historical inbox size/first-use scan cost, FPM/proxy attribution,
+CAPTCHA on/off retries and hosting/load/provider behavior remain acceptance
+work. No production database, real token/key or deployed site was used.
+See [policy and rollout details](changelog.md#general-feedback-budgets-revision-72).
 
 ## 3. Review coverage and controls that exist
 
@@ -1630,7 +1663,7 @@ certification.
 | Turnstile authority | Server verifies strict success, expected action and configured hostname; missing keys, bad certificates, malformed/expired/replayed tokens and service failures deny the protected form. No account/mail work occurs on rejection. Disabled forms make no verification request. R01 concerns workload before rejection, not acceptance of an invalid token; revision 71 now reserves verification capacity before outbound work. |
 | Profiler switches | Reviewed guards reject disabled HTML and specialized profile/guild/arena-team routes before realm work. Menus follow the loaded configuration; ordinary reads do not perform per-toggle database queries. Configured characters credentials are still connected during shared bootstrap: disabling the feature is not removal of those credentials/grants. |
 | Sounds, goodies and missing screenshots | Route/menu/data guards and the sound-dependent cache key remain covered. Disabled missing-screenshots requests do not generate the listing. Existing static audio/widget files are still static assets; disabling a feature is not an asset-access revocation policy. Enabled listing cost and hosting traffic limits were not benchmarked. |
-| General feedback | Disabled general feedback is rejected at responder and service boundaries. Content reporting remains separate and R02 is fixed; R03 records the remaining general-feedback quota gap, while R01 covers verification workload. |
+| General feedback | Disabled general feedback is rejected at responder and service boundaries. Content reporting remains separate and R02 is fixed; R03 is fixed in revision 72 with independent general-feedback work/storage quotas, while R01 separately covers verification workload. |
 | Header image and external links | Configured URLs are limited to absolute HTTP/HTTPS without credentials, controls or ambiguous backslashes; values are escaped at rendering. New-tab image links use `noopener noreferrer`. The server does not fetch a configured header image, so this feature adds no server-side image-fetch SSRF path. Image content and availability remain the operator's choice. |
 | Maintenance/footer/media | Escaped image URLs and fixed maintenance copy preserve 503 behavior. The image passes Git binary-filter checks. No security regression found in these presentation changes. The previously observed empty icon filename is a correctness issue, separate from this audit. |
 | Legacy updates and schema reconciliation | Archived/current ordering, legacy bootstrap, MyISAM preparation, journal/lock handling, conservative interruption failure, pending generator accounting and guarded conversion remain tested. Checksum persistence/readback is covered; this is not an integrity scan of every historically applied SQL file. No production upgrade or full extracted-data generation was performed. |
@@ -1693,9 +1726,8 @@ necessarily use the same identity.
 
 ## 5. Ordered remediation backlog
 
-The remaining source work is **R03**: independent general-feedback request
-and retained-storage limits, including when CAPTCHA is disabled. R01 and R02
-have implemented source fixes with local regressions; deployment acceptance is
+R01, R02 and R03 have implemented source fixes with local regressions. No
+established source fix remains pending in this record; deployment acceptance is
 separate. The current status table is authoritative for unfinished work.
 The original remediation order below is preserved for staging/deployment
 acceptance; its completed source tasks should not be read as open defects.
@@ -2032,4 +2064,36 @@ against their passing results. No new SQL migration or Composer dependency was
 introduced. The earlier dated Composer advisory result is unchanged; it was not
 rerun for this source-only change. PHP 8.5.11, MariaDB, Windows, actual Cloudflare,
 FPM/proxy traffic/load and production deployment acceptance remain unverified.
-R03's independent general-feedback persistence/request quotas are still open.
+At revision 71, R03's independent general-feedback quotas remained open;
+the subsequent revision 72 remediation is recorded below.
+
+
+### Revision 72 R03 remediation validation — October 8, 2026
+
+The R03 working-tree implementation was validated with PHP **8.5.10**, Node
+**24.21.0**, Python **3.12.14**, disposable MySQL **8.4.10**, local Chrome
+**155.0.8059.39** and the existing Apache fixture image. No runtime configuration,
+application credentials, production data, real Cloudflare tokens or deployed site
+was used. The feedback fixture executes real persistence and admission methods
+with an intercepted provider; the transport fixture separately uses loopback TLS.
+
+| Gate | Result after R03 remediation |
+| --- | --- |
+| `bash tests/ci/run.sh lint` | Exit 0; PHP/JS/shell/Python syntax and binary-asset checks pass. |
+| `bash tests/ci/run.sh php` | Exit 0, including 119 Turnstile TLS/token/action/hostname/form-boundary checks. |
+| `bash tests/ci/run.sh javascript` | Exit 0; existing feedback/CAPTCHA and generated-asset compatibility checks pass. |
+| `bash tests/ci/run.sh sql` | Exit 0; 3,001 checks across 12 suites, including 148 feedback checks, 200 content-report checks and 96 verification-budget checks. |
+| `bash tests/ci/run.sh browser` | Exit 0; 967 numbered checks across eight completed scenarios. |
+| `bash tests/ci/run.sh apache` | Exit 0; 14,680 assertions across eight routing/asset/upload-denial combinations. |
+| Documentation | Local source links/heading anchors, whitespace, public-document boundaries and original A01–A16 detail-section preservation checked. |
+
+All six gates exited 0 without suite skips. Existing deliberate safe-error output
+in retention and legacy-null fixtures was assessed against passing results.
+Existing communities/reports were preserved in synthetic disposable fixtures;
+this does not prove historical production data or a deployed migration. No new
+SQL migration, dependency or asset build was introduced. The earlier dated
+Composer advisory result remains unchanged and was not rerun. PHP 8.5.11,
+MariaDB, Windows, actual Cloudflare/FPM/proxy traffic, historical first-use
+baseline cost and production deployment acceptance remain unverified. R01,
+R02 and R03 source remediations are complete locally; the current acceptance
+table and launch gates remain outstanding evidence requirements.

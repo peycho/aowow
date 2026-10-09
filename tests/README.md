@@ -957,6 +957,42 @@ batches, preserve permanent counters, and review existing storage separately.
 See [A15](../docs/aowow-security-review.md#a15--outbound-calls-quotas-and-retention).
 
 
+## General feedback admission and storage (R03)
+
+Run the dedicated SQL fixture with PHP 8.5, mysqli, Composer/Dibi, mbstring, cURL
+and process functions. It drops every table in the exact disposable database
+`aowow_security_test_feedback` on `127.0.0.1`; it never reads application
+configuration. Use an isolated empty-password root fixture, never a shared or
+production database:
+
+```sh
+AOWOW_TEST_DATABASE=aowow_security_test_feedback \
+AOWOW_TEST_DB_HOST=127.0.0.1 AOWOW_TEST_DB_PORT=33063 \
+php tests/security-feedback.php
+```
+
+The suite executes the actual Report, contact responder, feedback budget,
+Turnstile and verification-budget components. The external provider is
+intercepted; separate SQL connections during verification prove both admission
+charges are durable and their locks released. Coverage includes anonymous and
+signed-in feedback, CAPTCHA on/off, changed URL/reason/subject/identity, local
+field rejection, shared canonical peer keys, window expiry, provider failures,
+permanent record/byte boundaries, first-use historical accounting and a full
+inbox scanned once. It exercises missing schema/partial ledgers, SQL failure,
+uncertain commit acknowledgments, hard worker interruption, concurrent final
+peer/global/key/storage slots and duplicate submissions. Existing pruning retains
+reports and permanent charges, and snapshots preserve representative community
+rows and old general/content reports. Actual endpoint errors remain localized
+without warning/maintenance side effects.
+
+The normal SQL gate includes this fixture and the existing content-report and
+verification suites. The PHP TLS/form fixture uses a feedback-service sentinel
+for transport checks; actual service enforcement is tested here. Browser tests
+retain the real ContactTool behavior. These are synthetic fixture results, not
+production/Cloudflare/FPM/proxy/MariaDB/load acceptance. Deploy all PHP components
+together and preserve the permanent counters; see
+[feedback policy and rollout](../docs/changelog.md#general-feedback-budgets-revision-72).
+
 ## CAPTCHA verification admission (R01)
 
 The existing `php tests/security-turnstile.php` suite uses a disposable loopback

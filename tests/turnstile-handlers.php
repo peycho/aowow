@@ -43,7 +43,7 @@ namespace {
             if (in_array($case, ['valid','disabled'], true)) check($caught === $sentinel, 'Verified/disabled '.$action.' retains its original work path');
             else {
                 if ($action === 'feedback') $result = (new ReflectionProperty($response, 'result'))->getValue($response);
-                check(!$caught && ($action === 'login' ? $result === false && $error === 'captchaError' : $result === 'captchaError'), 'Missing/expired token blocks '.$action.' before authentication/database/mail/report work');
+                check(!$caught && ($action === 'login' ? $result === false && $error === 'captchaError' : $result === 'captchaError'), 'Missing/expired token blocks '.$action.' before authentication/account-mail/feedback-persistence work');
             }
             if (in_array($case, ['disabled','missing','limited'], true)) check(Aowow\Fixture::$calls === $calls, 'Disabled/missing-token/limited '.$action.' makes no network call');
         }

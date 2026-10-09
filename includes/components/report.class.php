@@ -104,7 +104,7 @@ class Report
     );
 
     private const int ERR_NONE             = 0;             // aka: success
-    private const int ERR_INVALID_CAPTCHA  = 1;             // captcha not in use
+    public const int ERR_INVALID_CAPTCHA   = 1;
     private const int ERR_DESC_TOO_LONG    = 2;
     private const int ERR_NO_DESC          = 3;
     private const int ERR_ALREADY_REPORTED = 7;
@@ -170,7 +170,7 @@ class Report
         return self::ERR_NONE;                             // content target/author policy is checked under the transaction
     }
 
-    public function create(string $desc, ?string $userAgent = null, ?string $appName = null, ?string $pageUrl = null, ?string $relUrl = null, ?string $email = null) : bool
+    public function create(string $desc, ?string $userAgent = null, ?string $appName = null, ?string $pageUrl = null, ?string $relUrl = null, ?string $email = null, mixed $captchaToken = null) : bool
     {
         $content = $this->mode !== self::MODE_GENERAL;
         if ($content && (!self::canCreateContent() || $this->mode === self::MODE_FORUM_POST ||
@@ -241,15 +241,36 @@ class Report
             return false;
         }
 
-        $db = DB::Aowow();
+        if (!$content)
+        {
+            if (!FeedbackBudget::reserve())
+            {
+                $this->errorCode = FeedbackBudget::blocked() ? self::ERR_LIMIT : self::ERR_MISCELLANEOUS;
+                return false;
+            }
+            if (!FeedbackBudget::prepareStorage(strlen($desc.$userAgent.$appName.$pageUrl.$relUrl.$email.User::$ip)))
+            {
+                $this->errorCode = FeedbackBudget::blocked() ? self::ERR_LIMIT : self::ERR_MISCELLANEOUS;
+                return false;
+            }
+            if (!Turnstile::verify('feedback', $captchaToken))
+            {
+                $this->errorCode = self::ERR_INVALID_CAPTCHA;
+                return false;
+            }
+        }
+
         $started = false;
         $committed = false;
         try
         {
-            if ($content)
+            $db = DB::Aowow();
+            $started = true;
+            $db->query('START TRANSACTION');
+            if (!$content)
+                FeedbackBudget::lockStorage($db);
+            else
             {
-                $started = true;
-                $db->query('START TRANSACTION');
                 // Serialize this account's report checks/inserts across workers without altering historical rows.
                 $account = $db->query('SELECT `userGroups`, `status` FROM ::account WHERE `id` = %i FOR UPDATE', User::$id)->fetch();
                 if (!$account || ($account->userGroups & U_GROUP_PENDING) ||
@@ -258,6 +279,12 @@ class Report
                     $this->errorCode = self::ERR_MISCELLANEOUS;
                     return false;
                 }
+            }
+
+            if (!$content && !FeedbackBudget::charge($db, strlen($desc.$userAgent.$appName.$pageUrl.$relUrl.$email.User::$ip)))
+            {
+                $this->errorCode = self::ERR_LIMIT;
+                return false;
             }
 
             if ($err = $this->checkTargetContext($pageUrl))
@@ -285,8 +312,6 @@ class Report
             if ($email)
                 $update['email'] = $email;
 
-            if (!$content)
-                return (bool)$db->qry('INSERT INTO ::reports %v', $update);
             $db->query('INSERT INTO ::reports %v', $update);
             if ($db->getAffectedRows() !== 1) throw new \RuntimeException('Report insert failed.');
             $db->query('COMMIT');

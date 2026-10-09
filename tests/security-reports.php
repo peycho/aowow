@@ -31,7 +31,7 @@ namespace {
     $root = dirname(__DIR__);
     require $root.'/includes/defines.php';
     require $root.'/includes/libs/autoload.php';
-    foreach (['database.php', 'utilities.php', 'components/contributionbudget.class.php', 'components/report.class.php',
+    foreach (['database.php', 'utilities.php', 'components/contributionbudget.class.php', 'components/feedbackbudget.class.php', 'components/report.class.php',
               'components/guidemgr.class.php', 'components/communitycontent.class.php', 'components/response/baseresponse.class.php', 'components/response/textresponse.class.php'] as $file)
         require $root.'/includes/'.$file;
     require $root.'/endpoints/contactus/contactus.php';
