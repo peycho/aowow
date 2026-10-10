@@ -30,6 +30,9 @@ RewriteRule (^|/)\. - [F,L]
 # Pending and temporary uploads require authenticated endpoints.
 RewriteRule ^static/uploads/(?:screenshots/(?:pending|temp)|temp)(?:/|$) - [F,L,NC]
 
+# Serve the existing favicon at the conventional root URL.
+RewriteRule ^favicon\.ico$ static/images/logos/favicon.ico [L]
+
 # Public entrypoint and approved assets.
 RewriteRule ^(?:index\.php|robots\.txt|crossdomain\.xml)$ - [L,NC]
 RewriteRule ^static(?:/|$) - [L,NC]
