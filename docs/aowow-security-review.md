@@ -1,8 +1,11 @@
 # AoWoW security review
 
-This is the consolidated audit and remediation record, updated **October 8,
-2026**. The latest remediation is application revision **71**, implemented
-locally in the working tree based on commit **40dfc01bea2d65c9c27bb25823e0121572a7e612**.
+This is the consolidated audit and remediation record, updated **October 9,
+2026**. The latest source remediation is application revision **72**, committed
+as **a4a732c58a345b0127bdc9abb0272b8b8682ef66**. This public record contains
+source findings, reproducible local validation and generic acceptance requirements.
+Private deployment evidence and operator configuration are excluded; this record
+does not disclose or certify the state of a particular production installation.
 Reviewed snapshots and completed commits are recorded in the dated history.
 It combines the October 2–3 audit and October 8 follow-up,
 retaining original evidence, finding IDs, implementation history and validation
@@ -26,8 +29,8 @@ follow-up. This is a source review plus local fixture evidence, not a production
 readiness sign-off or an exhaustive new audit of every endpoint.
 
 The following acceptance work remains **unverified by these audits**. This does
-not imply it was never done by the operator; no evidence of completion is recorded
-here. The detailed [launch gates](#4-deployment-acceptance-and-launch-gates) still
+not imply it was never done by an operator; private deployment evidence is not
+published here. The detailed [launch gates](#4-deployment-acceptance-and-launch-gates) still
 apply.
 
 | Acceptance area | Evidence still needed |
