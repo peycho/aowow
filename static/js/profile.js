@@ -195,7 +195,7 @@ function pr_updateStatus(page, div, id, request, tryAgain)
             var
                 a           = eval(text),
                 processes   = a[0],
-                profile     = (location.search || location.pathname).substr(1),
+                profile     = Markup._safeQuotes((location.search || location.pathname).substr(1)),
                 working     = false,
                 action      = false,
                 statusTotal = { 1: 0, 2: 0, 3: 0, 4: 0 },

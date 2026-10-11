@@ -101,8 +101,8 @@ function Summary(opt) {
         this.autoSave = 0;
     }
 
-    if (GET.l && !isNaN(GET.l)) {
-        this.level = parseInt(GET.l);
+    if (GET.l != null) {
+        this.level = GET.l;
     }
     else {
         var l = g_getWowheadCookie('compare_level');
@@ -110,6 +110,8 @@ function Summary(opt) {
             this.level = l;
         }
     }
+
+    this.level = Summary.normalizeLevel(this.level);
 
     if (this.groups == null) {
         this.groups = [];
@@ -159,6 +161,11 @@ function Summary(opt) {
     // this.initialize();
     setTimeout(this.initialize.bind(this), 250);
 }
+
+Summary.normalizeLevel = function(value) {
+    var level = (typeof value === 'number' || typeof value === 'string') ? Number(value) : NaN;
+    return Number.isInteger(level) && level >= 1 && level <= 80 ? level : 80;
+};
 
 Summary.prototype = {
     initialize: function() {
@@ -1093,7 +1100,7 @@ Summary.prototype = {
 
                 var s = $WH.ce('select');
                 s.onchange = (function(s) {
-                    this.level = s.options[s.selectedIndex].value;
+                    this.level = Summary.normalizeLevel(s.options[s.selectedIndex].value);
                     this.refreshAll();
                 }).bind(this, s);
 

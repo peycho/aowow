@@ -117,9 +117,10 @@ $WH.rtrim = function(z, y) {
 }
 
 $WH.sprintf = function(z) {
-    var i;
+    var i, len;
     for (i = 1, len = arguments.length; i < len; ++i) {
-        z = z.replace('$' + i, arguments[i]);
+        var value = arguments[i];
+        z = z.replace('$' + i, function() { return value; });
     }
 
     return z;

@@ -25,6 +25,7 @@ if (process.argv.includes('--browser')) {
         script(assets['static/widgets/power.js']) +
         script('var wt_presets=[];var retirementLocales='+JSON.stringify(locales).replaceAll('<', '\\u003c')+';') +
         script(readFileSync('tests/retirement-markup.js', 'utf8')) +
+        script(readFileSync('tests/security-codeql-markup.js', 'utf8')) +
         script(readFileSync('tests/retirement-browser.js', 'utf8')) +
         script("setTimeout(function(){var result=document.getElementById('result');if(result.textContent==='RUNNING')result.textContent='FAIL: fixture did not finish; '+errors.join('; ');},9000);");
     await new Promise(resolve => process.stdout.write(fixture, resolve));
@@ -42,7 +43,9 @@ for (const file of readdirSync('static/js').filter(file => /^locale_.*\.js$/.tes
     vm.runInContext(readFileSync(`static/js/${file}`, 'utf8'), context);
     vm.runInContext(readFileSync('setup/tools/filegen/templates/global.js/markup.js', 'utf8'), context);
     vm.runInContext(readFileSync('tests/retirement-markup.js', 'utf8'), context);
+    vm.runInContext(readFileSync('tests/security-codeql-markup.js', 'utf8'), context);
     vm.runInContext('checkRetirementMarkup(check)', context);
+    vm.runInContext('checkCodeqlMarkup(check)', context);
 }
 console.log(`PASS: ${checks} retirement markup checks across six locales; generated assets parse`);
 

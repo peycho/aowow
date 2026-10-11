@@ -3776,7 +3776,8 @@ var Markup = {
 
     _safeQuotes: function(str)
     {
-        return str.replace('"', '\"').replace("'", "\'");
+        var entities = { '&': '&amp;', '"': '&quot;', "'": '&#39;', '<': '&lt;', '>': '&gt;' };
+        return String(str).replace(/[&"'<>]/g, function(character) { return entities[character]; });
     },
 
     _safeHtml: function(html)
