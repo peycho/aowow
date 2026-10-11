@@ -50,7 +50,7 @@ var Markup = {
     CLASS_PENDING: MARKUP_CLASS_PENDING,
 
     /* aowow custom: first element */
-    whitelistedWebsites: [new RegExp('(.*\\.)?' + location.hostname, 'i'), /(.*\.)?wowhead.com/i, /(.*\.)?thottbot.com/i, /(.*\.)?torhead.com/i, /(.*\.)?mmoui.com/i, /(.*\.)?tankspot.com/i, /(.*\.)?guildfans.com/i, /(.*\.)?allakhazam.com/i, /(.*\.)?zam.com/i, /(.*\.)?blizzard.com/i, /(.*\.)?worldofwarcraft.com/i, /(.*\.)?wow-europe.com/i, /(.*\.)?battle.net/i, /(.*\.)?sc2ranks.com/i, /(.*\.)?torchlightarmory.com/i, /(.*\.)?vindictusdb.com/i, /(.*\.)?wowinterface.com/i, /(.*\.)?vginterface.com/i, /(.*\.)?lotrointerface.com/i, /(.*\.)?eq2interface.com/i, /(.*\.)?eqinterface.com/i, /(.*\.)?mmo-champion.com/i, /(.*\.)?joystiq.com/i, /(.*\.)?wow-heroes.com/i, /(.*\.)?be-imba.hu/i, /(.*\.)?wowpedia.org/i, /(.*\.)?curse.com/i, /(.*\.)?elitistjerks.com/i, /(.*\.)?wowwiki.com/i, /(.*\.)?worldoflogs.com/i, /(.*\.)?wowinsider.com/i, /(.*\.)?guildwork.com/i],
+    whitelistedWebsites: [location.hostname, 'wowhead.com', 'thottbot.com', 'mmoui.com', 'allakhazam.com', 'zam.com', 'blizzard.com', 'worldofwarcraft.com', 'wow-europe.com', 'battle.net', 'wowinterface.com', 'vginterface.com', 'lotrointerface.com', 'eq2interface.com', 'eqinterface.com', 'mmo-champion.com', 'joystiq.com', 'wowpedia.org', 'curse.com', 'wowwiki.com', 'guildwork.com'],
 
     rolesToClass: function(roles)
     {
@@ -124,23 +124,29 @@ var Markup = {
     },
     IsLinkAllowed: function(link)
     {
-        var matches = link.match('[a-z]+:\/\/([a-z0-9\.\-]+)');
-
-        if (!matches)
-            return true;
-
-        var domain = matches[1];
-        var allowed = false;
-
-        for (var i in Markup.whitelistedWebsites)
+        try
         {
-            var r = Markup.whitelistedWebsites[i];
+            // Reject malformed absolute HTTP URLs instead of resolving them as local paths.
+            if (/^https?:/i.test(link) && !/^https?:\/\//i.test(link))
+                return false;
 
-            if (domain.search(r) == 0)
-                allowed = true;
+            var url = new URL(link, location.href);
+            if (url.protocol !== 'http:' && url.protocol !== 'https:')
+                return false;
+
+            var domain = url.hostname.toLowerCase().replace(/\.+$/, '');
+            if (!domain)
+                return false;
+
+            return Markup.whitelistedWebsites.some(function(website) {
+                website = website.toLowerCase().replace(/\.+$/, '');
+                return website && (domain === website || domain.endsWith('.' + website));
+            });
         }
-
-        return allowed;
+        catch (error)
+        {
+            return false;
+        }
     },
     tags: {
         '<text>':
@@ -1604,13 +1610,7 @@ var Markup = {
                 }
 
                 return [ [parseFloat(attr.x || 0), parseFloat(attr.y || 0), { label: label, url: attr.url, type: attr.type, lines: lines }] ];
-                /*var str = '[' + parseFloat(attr.x || 0) + ',' + parseFloat(attr.y || 0) + ',{label: \'' + Markup._safeJsString(label) + '\'';
-                if (attr.url)
-                    str += ', url: \'' + Markup._safeJsString(Markup._fixUrl(attr.url)) + '\'';
-                if (attr.type)
-                    str += ', type: \'' + Markup._safeJsString(attr.type) + '\'';
-                str += '}]';
-                return [ [str] ];*/
+
             }
         },
         markupdoc:
@@ -3322,7 +3322,7 @@ var Markup = {
                         if (styles.length)
                             html += ' style="' + styles.join(';') + '"';
                         if (video.hasCaption)
-                            html += 'alt="' + Markup.removeTags(video.caption, { mode: Markup.MODE_SIGNATURE, skipReset: true }) + '" ';
+                            html += 'alt="' + Markup._safeQuotes(Markup.removeTags(video.caption, { mode: Markup.MODE_SIGNATURE, skipReset: true })) + '" ';
 
                         html += '/><img src="' + g_staticUrl + '/images/icons/play-sm.png" style="opacity: 0.6; filter:alpha(opacity=60); position: absolute; width: 48px; height: 48px; top: 23px; left: 38px" />';
                         html += '</a></div>';
@@ -3769,14 +3769,10 @@ var Markup = {
         }
     },
 
-    _safeJsString: function(str)
-    {
-        return str.replace(/'/g, '\'');
-    },
-
     _safeQuotes: function(str)
     {
-        return str.replace('"', '\"').replace("'", "\'");
+        var entities = { '&': '&amp;', '"': '&quot;', "'": '&#39;', '<': '&lt;', '>': '&gt;' };
+        return String(str).replace(/[&"'<>]/g, function(character) { return entities[character]; });
     },
 
     _safeHtml: function(html)
@@ -4199,13 +4195,16 @@ var Markup = {
 
     fromHtml: function(str, depth)
     {
+        // Editor conversion only: the result is markup text, not sanitized HTML.
         // Clean up the html source
         str = str.replace(/\n+/g, '');
         str = str.replace(/\s+/g, ' ');
         str = str.replace(/> </g, '><');
         //str = str.replace(/<br\b[\s\S]*?></gi, '<');
-        str = str.replace(/&amp;/gi, '&');
-        str = str.replace(/(&#160;|$nbsp;)/gi, ' ');
+        // Decode original tokens once; &amp;#160; must remain &#160;, not become a space.
+        str = str.replace(/&(amp|#160|nbsp);/gi, function(match, entity) {
+            return entity.toLowerCase() === 'amp' ? '&' : ' ';
+        });
 
         // Replace html with markup
         for (var tag in Markup.tags)
@@ -4215,9 +4214,17 @@ var Markup = {
         }
 
         // Strip remaining html
-        str = str.replace(/<style\b[\s\S]*?>[\s\S]*?<\/style>/g, '');
-        str = str.replace(/<\/?[a-z][a-z0-9]*\b[\s\S]*?>/g, ' ');
-        str = str.replace(/<!--(.*?)-->/g, '');
+        // A removal can reveal another tag. Repeat while shortening the source.
+        var previous;
+        do
+        {
+            previous = str;
+            str = str.replace(/<!--[\s\S]*?-->|<style\b[\s\S]*?>[\s\S]*?<\/style\s*>/gi, '');
+            if (str !== previous)
+                continue;
+            str = str.replace(/<\/?[a-z][a-z0-9]*\b[\s\S]*?>/gi, ' ');
+        }
+        while (str !== previous);
         str = str.replace(/\n[\n]+/g, "\n\n");
         str = str.replace(/[ ]+/g, ' ');
         str = str.replace(/\t/g, '  ');
@@ -4619,7 +4626,8 @@ MarkupTree.prototype = {
             processNodes(this.nodes);
         else {
             var str = processNodes(this.nodes);
-            str = str.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+            var entities = {amp: '&', lt: '<', gt: '>', quot: '"'};
+            str = str.replace(/&(amp|lt|gt|quot);/g, function(match, entity) { return entities[entity]; });
             return str;
         }
     },

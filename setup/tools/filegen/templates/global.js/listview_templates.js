@@ -7141,7 +7141,7 @@ Listview.templates = {
                 name: "Name",
                 compute: function (changelog, td) {
                     var c = $(changelog.tooltip).find("b").first().text();
-                    $(td).html(c);
+                    $(td).text(c);
                     td.className += " listview-cleartext";
                 },
             },

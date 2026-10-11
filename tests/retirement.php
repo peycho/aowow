@@ -110,6 +110,37 @@ namespace {
         exit;
     }
 
+    // The same callback can appear with both marker formats in one template.
+    $placeholderDir = sys_get_temp_dir().'/aowow-placeholders-'.bin2hex(random_bytes(6));
+    mkdir($placeholderDir, 0700);
+    $generatedFiles = CLISetup::$files;
+    try {
+        file_put_contents($placeholderDir.'/mixed.in', 'legacy = /*setup:fixture*/; modern = /*setup:fixture*/ null;');
+        $placeholder = new class($placeholderDir.'/') {
+            use Aowow\TrTemplateFile;
+            public bool $success = true, $formatNumbers = false;
+            public array $fileTemplateSrc = ['mixed.in'], $fileTemplateDest = ['placeholder-fixture.js'];
+            public function __construct(public string $fileTemplatePath) {}
+            public function getName() : string { return 'placeholder-fixture'; }
+            private function fixture() : string { return '42'; }
+        };
+        check($placeholder->generate(), 'Mixed placeholder formats generate');
+        check(CLISetup::$files['placeholder-fixture.js'] === "legacy = 42; modern = 42;\n", 'Fallback is consumed only with its own marker');
+        file_put_contents($placeholderDir.'/mixed.in', 'missing = /*setup:missing*/ null;');
+        try {
+            $placeholder->generate();
+            check(false, 'Missing placeholder function must fail');
+        }
+        catch (RuntimeException $error) {
+            check(str_contains($error->getMessage(), 'placeholder missing()'), 'Missing callback keeps the existing diagnostic');
+        }
+    }
+    finally {
+        CLISetup::$files = $generatedFiles;
+        unlink($placeholderDir.'/mixed.in');
+        rmdir($placeholderDir);
+    }
+
     $account = new ReflectionClass(Aowow\AccountUpdategeneralsettingsResponse::class);
     $expected = $account->getProperty('expectedPOST')->getDefaultValue();
     check(array_keys($expected) === ['idsInLists'], 'Only list preference is accepted');

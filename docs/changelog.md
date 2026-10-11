@@ -5,6 +5,38 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-11 — JavaScript rendering and CodeQL review
+
+Setup JavaScript templates now parse before configuration substitution, and the
+syntax gate covers them. The locale placeholder's fallback is consumed during
+generation without changing its output. HTML attributes encode repeated
+metacharacters, profile status links retain literal query values, changelog names
+render as text, and comparison levels normalize to integers from 1 to 80.
+Interpolation preserves literal replacement tokens.
+
+Automatically detected links for pending users compare parsed hostnames against
+the domain list using exact/subdomain boundaries. Removed eleven obsolete,
+repurposed or unverified domains after checking their availability. Explicit authored
+links retain their separate permission rules. Video bulk-selection counts now
+update the existing moderation links correctly.
+
+Removed the obsolete handwritten JSON fallback and unused string helper.
+Text extraction decodes entities once, and editor HTML conversion handles
+case differences and tags revealed by prior removals. Conversion remains a
+markup-authoring tool, not a security sanitizer. Regression fixtures cover all
+six locales and root/subdirectory browser installations; CodeQL configuration
+and existing CI check names remain unchanged.
+
+Existing installations must rebuild the generated bundle alongside the changed
+static scripts, using the site's normal configuration and deployment account:
+
+```sh
+php aowow --build=globaljs
+```
+
+No database migration is required. Repository fixtures use synthetic configuration;
+their success does not establish deployed-site acceptance.
+
 ## 2026-10-11 — Contributor guidance and pull-request checks
 
 External contributions target `master`. Added contributor and support guides,
