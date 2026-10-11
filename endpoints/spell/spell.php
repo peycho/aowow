@@ -2759,8 +2759,7 @@ class SpellBaseResponse extends TemplateResponse implements ICache
 
         if ($customAttr = DB::World()->selectCell('SELECT `attributes` FROM spell_custom_attr WHERE `entry` = %i', $this->typeId))
         {
-            if ($list)
-                $list[] = null;                             // add <hr> between lists
+            $customList = [];
 
             for ($j = 1; $j <= (1 << 31); $j <<= 1)
             {
@@ -2773,8 +2772,12 @@ class SpellBaseResponse extends TemplateResponse implements ICache
                 else if (!$listItem)
                     continue;
 
-                $list[] = $this->fmtStaffTip($listItem, 'AttributesCu: '.Util::asHex($j));
+                $customList[] = $this->fmtStaffTip($listItem, 'AttributesCu: '.Util::asHex($j));
             }
+
+            if ($list && $customList)
+                $list[] = null;                             // add <hr> between visible lists
+            array_push($list, ...$customList);
         }
 
         $this->attributes = $list;

@@ -1,5 +1,20 @@
 # Security regressions
 
+`php tests/security-spell-sync.php` exercises the actual spell, item, quest and
+achievement filters, spell effect/model helpers, spell/enchantment templates and
+custom-data trait with synthetic identities, database responses and game rows.
+It checks employee-only custom-attribute filtering, forged URLs, malformed and
+out-of-range bit selectors, role loss before querying, failed/empty world reads,
+unchanged target/stance/family filters, all six locales, speed percentages, duel
+object links/models, attribute separators and custom-data failure reporting.
+It runs in the PHP gate without application credentials or a configured database.
+
+`node tests/security-spell-sync.mjs` executes all six locale scripts and the real
+criterion selector with DOM fixtures. It checks readable 32-bit option tables,
+the new custom-attribute criterion, preserved legacy criteria and employee-only
+UI visibility. It runs in the JavaScript gate. These fixtures do not verify a
+deployed world database, extracted assets or complete gameplay acceptance.
+
 `php tests/security-smtp.php` uses disposable loopback SMTP fixtures and synthetic
 credentials. It covers native/disabled transports, all six localized activation
 templates, required STARTTLS and implicit TLS, certificate trust/hostname checks,

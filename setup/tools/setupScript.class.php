@@ -44,7 +44,11 @@ trait TrCustomData
     public function applyCustomData() : bool
     {
         $ok = true;
-        foreach ((DB::Aowow()->selectCol('SELECT `entry` AS ARRAY_KEY, `field` AS ARRAY_KEY2, `value` FROM ::setup_custom_data WHERE `command` = %s', $this->getName()) ?: []) as $id => $data)
+        $dataById = DB::Aowow()->selectCol('SELECT `entry` AS ARRAY_KEY, `field` AS ARRAY_KEY2, `value` FROM ::setup_custom_data WHERE `command` = %s', $this->getName());
+        if ($dataById === null)
+            return false;
+
+        foreach ($dataById as $id => $data)
         {
             if (DB::Aowow()->qry('UPDATE %n SET %a WHERE id = %i', '::'.$this->getName(), $data, $id) === null)
             {

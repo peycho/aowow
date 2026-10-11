@@ -40,6 +40,7 @@ PY
     php tests/site-sounds.php --cli
     php tests/setup-sounds.php
     php tests/setup-debug.php
+    php tests/security-spell-sync.php
     php tests/schema-validator.php
     php tests/maintenance-response.php
     php tests/security-smtp.php
@@ -53,6 +54,7 @@ PY
     node tests/security-turnstile.mjs
     node tests/site-sounds.mjs
     node tests/external-links.mjs
+    node tests/security-spell-sync.mjs
     php tests/retirement.php --fixtures | node tests/retirement.mjs
     php tests/security-json.php --fixtures | node tests/security-json.mjs
     php tests/security-talentcalc.php --fixtures | node tests/security-talentcalc.mjs

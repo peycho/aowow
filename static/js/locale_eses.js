@@ -4512,6 +4512,7 @@ var LANG = {
         flags7:                     "AttributesExF",        // Flags (7)
         flags8:                     "AttributesExG",        // Flags (8)
         flags9:                     "Flags (9)",
+        flagsCu:                    "Atributos personalizados",
         flags10:                    "Flags (10)",
         flags11:                    "FamilyFlags (1)",      // Flags (11)
         flags12:                    "FamilyFlags (2)",      // Flags (12)

@@ -435,7 +435,8 @@ var fi_filters = {
         { id: 105,  name: 'flags10',      type: 'flags',         staffonly: true },
         { id: 106,  name: 'flags11',      type: 'flags',         staffonly: true },
         { id: 107,  name: 'flags12',      type: 'flags',         staffonly: true },
-        { id: 108,  name: 'flags13',      type: 'flags',         staffonly: true }
+        { id: 108,  name: 'flags13',      type: 'flags',         staffonly: true },
+        { id: 202,  name: 'flagsCu',      type: 'spell_flagsCu', staffonly: true }
     ],
 
     achievements: [
