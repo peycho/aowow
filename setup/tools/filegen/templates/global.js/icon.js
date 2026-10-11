@@ -39,8 +39,12 @@ var Icon = {
         {
             var a = $WH.ce('a');
             a.href = url;
-            if (url.indexOf('wowhead.com') == -1 && url.substr(0, 5) == 'http:')
-                a.target = "_blank";
+            if (url.substr(0, 5) == 'http:')
+            {
+                var hostname = a.hostname.toLowerCase().replace(/\.+$/, '');
+                if (hostname !== 'wowhead.com' && !hostname.endsWith('.wowhead.com'))
+                    a.target = "_blank";
+            }
 
             $WH.ae(icon, a);
         }

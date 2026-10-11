@@ -25,6 +25,19 @@ function checkCodeqlUrls(check) {
         safeLocal(comparison, '?compare=1;2&l=60', 'Comparison keeps its existing URL grammar');
         const icon = Icon.create('inv_misc_questionmark', 1, null, '?item=1&label="<button>"');
         safeLocal(icon.querySelector('a'), '?item=1', 'Icon href is assigned as a URL property');
+        for (const [url, target] of [
+            ['http://wowhead.com/item=1', ''], ['http://sub.wowhead.com/item=1', ''],
+            ['http://WOWHEAD.COM.:8080/item=1', ''], ['http://outside.test@wowhead.com/item=1', ''],
+            ['http://wowhead.com.something-else.test/', '_blank'], ['http://notwowhead.com/', '_blank'],
+            ['http://wowhead.com@outside.test/', '_blank'], ['http://outside.test/?site=wowhead.com', '_blank'],
+            ['http://outside.test/wowhead.com', '_blank'], ['http://wоwhead.com/', '_blank'],
+            ['http://[::1]/', '_blank'], ['http://outside.test/', '_blank'],
+            ['https://outside.test/', ''], ['?item=1', ''], ['javascript:;', '']
+        ]) {
+            const anchor = Icon.create('inv_misc_questionmark', 1, null, url).querySelector('a');
+            check(anchor.target === target, 'Icon target uses hostname boundaries and retains protocol policy: ' + url);
+            check(anchor.getAttribute('href') === url, 'Icon target classification preserves destination: ' + url);
+        }
 
         for (const [kind, tableId, update] of [['screenshots', 'theScreenshotsList', ssm_UpdateMassLinks],
             ['videos', 'theVideosList', vim_UpdateMassLinks]]) {
