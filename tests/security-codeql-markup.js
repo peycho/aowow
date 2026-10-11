@@ -38,6 +38,13 @@ function checkCodeqlMarkup(check) {
         '<sty<style>hidden</style>le>hidden again</style>Visible', '<!<!-- inner -->-- hidden -->Visible'])
         check(Markup.fromHtml(source) === 'Visible', 'HTML conversion removes complete comments/styles: ' + source);
     check(typeof Markup._safeJsString === 'undefined', 'Unused JavaScript-string helper is retired');
+    for (const [id, source] of Object.entries(g_condition_sources)) {
+        const description = source[1];
+        const targets = [...description.matchAll(/\$T([^:]*):([^;]*);/g)];
+        check(targets.length <= 1, 'Condition description has at most one targeting expression: ' + id);
+        for (const expression of targets) for (const branch of expression.slice(1))
+            check((branch.match(/%/g) || []).length <= 1, 'Targeting branch has at most one substitution: ' + id);
+    }
 }
 
 async function checkCodeqlBrowser(check) {

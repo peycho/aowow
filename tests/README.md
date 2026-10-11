@@ -220,6 +220,28 @@ Node checks the generated asset syntax and real markup parser: local defaults,
 explicit external sources, original post links, configurable forum rules, escaped
 model fallbacks, and menus.
 
+The shared CodeQL regression assertions also run against every shipped locale.
+They cover repeated HTML attribute metacharacters, staff-only attributes, parsed
+hostname boundaries, entity decoding, HTML-to-markup conversion and the condition
+description format. The latter intentionally has at most one targeting expression
+and one `%` substitution in each branch; it is not a string sanitizer.
+The lint group checks raw JavaScript setup templates as well as static assets and
+test scripts. Setup consumes an optional `null` fallback after a substitution
+marker, so both the source template and generated JavaScript parse.
+
+Browser checks exercise real changelog text insertion, profile status links,
+comparison level inputs, icon previews and moderation links. An inline-handler
+positive control verifies that CSP is not hiding the tested injection failures.
+The sound checks round-trip playlist quotes, backslashes and newlines through
+native JSON. HTML-to-markup conversion is an editor convenience, not a security
+sanitizer. See [CodeQL's DOM guidance](https://codeql.github.com/codeql-query-help/javascript/js-xss-through-dom/)
+and the [DOM HTML/text reference](https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML).
+
+CodeQL default setup remains independent of this regression workflow. Static
+findings require source, permission and browser-behavior review; a passing fixture
+does not establish the safety of all inputs or consumers. PHP is outside
+[CodeQL's supported languages](https://codeql.github.com/docs/codeql-overview/supported-languages-and-frameworks/).
+
 The browser suite serves stock widgets at root and subdirectory URLs with
 Wowhead/ZAM hosts blocked. It exercises lists, comparisons, profiler rendering,
 talent imports, pet calculators, local tooltip hover, standalone embedding,
