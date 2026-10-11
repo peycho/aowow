@@ -53,10 +53,22 @@ The [README credits](README.md#thanks) recognize Mix, LordJZ, kliver, Sarjuuk an
 the original database website. Attribution does not establish permission to
 relicense inherited code or design.
 
-`static/ZYHei.ttf` contains a Beijing ZhongYi Electronics copyright notice and
-an all-rights-reserved statement. No accompanying redistribution grant has been
-established. Inherited logos, client presentation, game-related imagery and
-other static assets also require component-specific provenance review.
+World of Warcraft game imagery, including game-derived icons, maps, talent-tree
+backgrounds and other client artwork, belongs to Blizzard Entertainment, Inc.
+and its respective rights holders. World of Warcraft, Warcraft and Blizzard
+Entertainment are trademarks or registered trademarks of Blizzard Entertainment,
+Inc. See [Blizzard's copyright notices](https://www.blizzard.com/en-us/legal/9c9cb70b-d1ed-4e17-998a-16c6df46be7b/copyright-notices).
+Other inherited website logos, interface artwork and backgrounds belong to
+their respective authors and rights holders. This fork claims no ownership of
+third-party artwork; the software component licenses above do not relicense it.
+Individual asset sources and redistribution terms remain subject to review.
+
+The bundled `static/ZYHei.ttf` identifies itself as Zhongyi Heiti (中易黑体),
+with the font names `ZYHei` and `ZYHei_FRIZQT`. It is used for Simplified Chinese
+tooltip text in [the locale stylesheet](static/css/locale_zhcn.css).
+Its embedded copyright notice credits Beijing ZhongYi Electronics Co.,
+1995–2003, with all rights reserved. No accompanying redistribution grant has
+been established for this font.
 
 The maintenance illustration has a documented generation history in
 [its artwork record](docs/artwork/maintenance.md). That history does not establish

@@ -22,6 +22,8 @@ Third-party notices and accompanying license texts document component terms.
 The licensing-provenance report distinguishes verified notices from unresolved
 permissions for inherited code, fonts, design and artwork; it does not grant a
 blanket project license.
+Asset notices identify Blizzard Entertainment and applicable rights holders
+for game imagery, and Beijing ZhongYi Electronics for the bundled Chinese font.
 
 ## 2026-10-11
 
