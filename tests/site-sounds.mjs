@@ -18,15 +18,23 @@ for (const locale of ['enus','frfr','dede','zhcn','eses','ruru']) for (const ena
     check(JSON.stringify(context.mn_database)===after,`${locale}: repeated filtering stable`);
 }
 for (const enabled of [false,true]) {
-    let reads=0,created=[];
+    let reads=0,created=[],saved=null;
     const element=tag=>({tag,id:'',style:{},children:[],canPlayType:()=>true,replaceChild(next,old){next.parentNode=this;this.children[this.children.indexOf(old)]=next;}});
     const context=vm.createContext({g_soundsEnabled:enabled,g_staticUrl:'/static',window:{JSON},RedButton:{setText(){}},LANG:{previous:'Previous',next:'Next',add:'Add'},
         $:()=>({click(){},removeClass(){}}),$WH:{is_array:Array.isArray,ce(tag,props){const el=Object.assign(element(tag),props);created.push(el);return el;},
             ae(parent,child){parent.children.push(child);child.parentNode=parent;},aE(){},st(){},ee(){},ct:text=>({text}),
-            g_createButton:()=>element('button'),localStorage:{isSupported:()=>true,get(){reads++;return JSON.stringify([{id:42,title:'Saved track',type:'audio/mpeg',url:'/static/wowsounds/42'}]);},set(){}}}});
+            g_createButton:()=>element('button'),localStorage:{isSupported:()=>true,get(){reads++;return JSON.stringify([{id:42,title:'Saved track',type:'audio/mpeg',url:'/static/wowsounds/42'}]);},set(key,value){saved=[key,value];}}}});
     vm.runInContext(source('setup/tools/filegen/templates/global.js/audio.js'),context);
     check(context.g_audioplaylist.isEnabled()===enabled,'Playlist initialization follows feature flag');
     check(reads===(enabled?1:0),'Disabled feature does not read saved playlists');
+    const track={id:43,title:'Quotes " \' and backslash \\ and newline\n',type:'audio/mpeg',url:'/static/wowsounds/43'};
+    context.g_audioplaylist.addSound(track);
+    if (enabled) {
+        check(saved[0]==='AudioPlaylist','Playlist uses its existing storage key');
+        assert.deepEqual(JSON.parse(saved[1]).at(-1),track); checks++;
+        check(context.window.JSON===JSON,'Audio bundle preserves native JSON');
+    }
+    else check(saved===null,'Disabled playlist does not write storage');
     context.g_audiocontrols.__windowloaded=true;
     vm.runInContext(`(new AudioControls).init([{title:'Fixture',type:'audio/mpeg',url:'/static/wowsounds/42'}],$WH.ce('div'));`,context);
     check(created.filter(el=>el.tag==='audio').length===(enabled?1:0),'Only enabled controls create native audio');

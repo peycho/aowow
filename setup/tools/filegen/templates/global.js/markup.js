@@ -1610,13 +1610,7 @@ var Markup = {
                 }
 
                 return [ [parseFloat(attr.x || 0), parseFloat(attr.y || 0), { label: label, url: attr.url, type: attr.type, lines: lines }] ];
-                /*var str = '[' + parseFloat(attr.x || 0) + ',' + parseFloat(attr.y || 0) + ',{label: \'' + Markup._safeJsString(label) + '\'';
-                if (attr.url)
-                    str += ', url: \'' + Markup._safeJsString(Markup._fixUrl(attr.url)) + '\'';
-                if (attr.type)
-                    str += ', type: \'' + Markup._safeJsString(attr.type) + '\'';
-                str += '}]';
-                return [ [str] ];*/
+
             }
         },
         markupdoc:
@@ -3328,7 +3322,7 @@ var Markup = {
                         if (styles.length)
                             html += ' style="' + styles.join(';') + '"';
                         if (video.hasCaption)
-                            html += 'alt="' + Markup.removeTags(video.caption, { mode: Markup.MODE_SIGNATURE, skipReset: true }) + '" ';
+                            html += 'alt="' + Markup._safeQuotes(Markup.removeTags(video.caption, { mode: Markup.MODE_SIGNATURE, skipReset: true })) + '" ';
 
                         html += '/><img src="' + g_staticUrl + '/images/icons/play-sm.png" style="opacity: 0.6; filter:alpha(opacity=60); position: absolute; width: 48px; height: 48px; top: 23px; left: 38px" />';
                         html += '</a></div>';
@@ -3775,11 +3769,6 @@ var Markup = {
         }
     },
 
-    _safeJsString: function(str)
-    {
-        return str.replace(/'/g, '\'');
-    },
-
     _safeQuotes: function(str)
     {
         var entities = { '&': '&amp;', '"': '&quot;', "'": '&#39;', '<': '&lt;', '>': '&gt;' };
@@ -4206,13 +4195,16 @@ var Markup = {
 
     fromHtml: function(str, depth)
     {
+        // Editor conversion only: the result is markup text, not sanitized HTML.
         // Clean up the html source
         str = str.replace(/\n+/g, '');
         str = str.replace(/\s+/g, ' ');
         str = str.replace(/> </g, '><');
         //str = str.replace(/<br\b[\s\S]*?></gi, '<');
-        str = str.replace(/&amp;/gi, '&');
-        str = str.replace(/(&#160;|$nbsp;)/gi, ' ');
+        // Decode original tokens once; &amp;#160; must remain &#160;, not become a space.
+        str = str.replace(/&(amp|#160|nbsp);/gi, function(match, entity) {
+            return entity.toLowerCase() === 'amp' ? '&' : ' ';
+        });
 
         // Replace html with markup
         for (var tag in Markup.tags)
@@ -4222,9 +4214,17 @@ var Markup = {
         }
 
         // Strip remaining html
-        str = str.replace(/<style\b[\s\S]*?>[\s\S]*?<\/style>/g, '');
-        str = str.replace(/<\/?[a-z][a-z0-9]*\b[\s\S]*?>/g, ' ');
-        str = str.replace(/<!--(.*?)-->/g, '');
+        // A removal can reveal another tag. Repeat while shortening the source.
+        var previous;
+        do
+        {
+            previous = str;
+            str = str.replace(/<!--[\s\S]*?-->|<style\b[\s\S]*?>[\s\S]*?<\/style\s*>/gi, '');
+            if (str !== previous)
+                continue;
+            str = str.replace(/<\/?[a-z][a-z0-9]*\b[\s\S]*?>/gi, ' ');
+        }
+        while (str !== previous);
         str = str.replace(/\n[\n]+/g, "\n\n");
         str = str.replace(/[ ]+/g, ' ');
         str = str.replace(/\t/g, '  ');
@@ -4626,7 +4626,8 @@ MarkupTree.prototype = {
             processNodes(this.nodes);
         else {
             var str = processNodes(this.nodes);
-            str = str.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+            var entities = {amp: '&', lt: '<', gt: '>', quot: '"'};
+            str = str.replace(/&(amp|lt|gt|quot);/g, function(match, entity) { return entities[entity]; });
             return str;
         }
     },

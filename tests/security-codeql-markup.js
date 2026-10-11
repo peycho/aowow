@@ -29,6 +29,15 @@ function checkCodeqlMarkup(check) {
     check(Markup.toHtml('[url=https://example.test/reference]Authored[/url]',
         {mode: Markup.MODE_COMMENT, allow: Markup.CLASS_USER}).includes('<a '),
         'Explicit authored links keep their separate permission policy');
+    check(Markup.removeTags('&lt;button&gt;') === '&lt;button&gt;', 'Text extraction decodes original entities once');
+    check(Markup.removeTags('<button>') === '<button>', 'Text extraction preserves literal angle brackets as text');
+    check(Markup.fromHtml('&amp;#160;') === '&#160;', 'HTML conversion does not recursively decode numeric whitespace');
+    check(Markup.fromHtml('A&nbsp;B&#160;C') === 'A B C', 'Original whitespace entities still convert');
+    check(Markup.fromHtml('<b>Bold</b><br><i>Italic</i>') === '[b]Bold[/b]\n[i]Italic[/i]', 'Supported HTML formatting remains markup');
+    for (const source of ['<!-- first\nsecond -->Visible', '<STYLE>hidden</STYLE>Visible',
+        '<sty<style>hidden</style>le>hidden again</style>Visible', '<!<!-- inner -->-- hidden -->Visible'])
+        check(Markup.fromHtml(source) === 'Visible', 'HTML conversion removes complete comments/styles: ' + source);
+    check(typeof Markup._safeJsString === 'undefined', 'Unused JavaScript-string helper is retired');
 }
 
 async function checkCodeqlBrowser(check) {
@@ -57,6 +66,27 @@ async function checkCodeqlBrowser(check) {
         const td = document.createElement('td');
         Listview.templates.changelog.columns[0].compute({tooltip: '<div><b>' + Markup._safeQuotes(text) + '</b></div>'}, td);
         check(td.textContent === text && !td.firstElementChild, 'Changelog name remains text after entity decoding');
+
+        // Text extraction is also consumed by an HTML attribute in the legacy video tag.
+        const videos = g_videos, uid = Markup.uid, thumbnail = vi_thumbnails[1], site = vi_siteurls[1];
+        const caption = 'Caption " onfocus="window.codeqlMarker++" data-extra="value';
+        try {
+            g_videos = {1: {id: 1, videoType: 1, videoId: 'fixture', hasCaption: true, caption}};
+            Markup.uid = 'codeql-video';
+            vi_thumbnails[1] = g_staticUrl + '/images/ui/misc/selection-h.gif?id=$1';
+            vi_siteurls[1] = '?video=$1';
+            host.innerHTML = Markup.tags.video.toHtml({id: 1});
+            const image = host.querySelector('img[alt]');
+            check(image.getAttribute('alt') === caption, 'Video caption round-trips as an alt value');
+            check(!image.hasAttribute('onfocus') && !image.hasAttribute('data-extra'), 'Extracted video text cannot create attributes');
+            image.dispatchEvent(new Event('focus'));
+        }
+        finally {
+            g_videos = videos;
+            Markup.uid = uid;
+            vi_thumbnails[1] = thumbnail;
+            vi_siteurls[1] = site;
+        }
 
         history.replaceState(null, '', '?profile=eu.realm.Name&literal=$&$%27&label=%22%3Cbutton%3E');
         const expectedLink = '?' + location.search.slice(1);

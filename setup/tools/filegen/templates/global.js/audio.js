@@ -3,35 +3,7 @@ var g_audiocontrols = {
 };
 var g_audioplaylist = {};
 
-// aowow - why is window.JSON here, wedged between the audio controls. It's only used for SearchBrowseButtons (and sourced by Listview)
-if (!window.JSON) {
-    window.JSON = {
-        parse: function (sJSON) {
-            return eval("(" + sJSON + ")");
-        },
-
-        stringify: function (obj) {
-            if (obj instanceof Object)
-            {
-                var str = '';
-                if (obj.constructor === Array)
-                {
-                    for (var i = 0; i < obj.length; str += this.stringify(obj[i]) + ',', i++) {}
-                    return '[' + str.substr(0, str.length - 1) + ']';
-                }
-                if (obj.toString !== Object.prototype.toString)
-                    return '"' + obj.toString().replace(/"/g, '\\$&') + '"';
-
-                for (var e in obj)
-                    str += '"' + e.replace(/"/g, '\\$&') + '":' + this.stringify(obj[e]) + ',';
-
-                return '{' + str.substr(0, str.length - 1) + '}';
-            }
-
-            return typeof obj === 'string' ? '"' + obj.replace(/"/g, '\\$&') + '"' : String(obj);
-        }
-    }
-}
+// Native JSON is available in the browsers supported by this bundle.
 
 AudioControls = function ()
 {
