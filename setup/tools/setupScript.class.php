@@ -133,21 +133,20 @@ trait TrTemplateFile
             if (!$this->success)                            //templateCopy() fucked up somehow?
                 return;
 
-            // PH format: /*setup:<setupFunc>*/
-            if (preg_match_all('/\/\*setup:([\w\-_]+)\*\//i', $content, $m))
+            // Optional null makes JavaScript source templates parse before generation.
+            // PH format: /*setup:<setupFunc>*/ or /*setup:<setupFunc>*/ null
+            $content = preg_replace_callback('/\/\*setup:([\w\-_]+)\*\/(?:[ \t]+null\b)?/i', function(array $match) : string
             {
-                foreach ($m[1] as $func)
-                {
-                    if (method_exists($this, $func))
-                        $content = str_replace('/*setup:'.$func.'*/', $this->$func(), $content);
-                    else
-                    {
-                        CLI::write('['.$this->getName().'] No function for was registered for placeholder '.$func.'().', CLI::LOG_ERROR);
-                        $this->success = false;
-                        return;
-                    }
-                }
-            }
+                $func = $match[1];
+                if (method_exists($this, $func))
+                    return $this->$func();
+
+                CLI::write('['.$this->getName().'] No function for was registered for placeholder '.$func.'().', CLI::LOG_ERROR);
+                $this->success = false;
+                return $match[0];
+            }, $content);
+            if (!$this->success)
+                return;
         }
     }
 

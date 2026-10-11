@@ -14,7 +14,7 @@ var Locale = {
     current: {},
 
     // All
-    locales: /*setup:locales*/,
+    locales: /*setup:locales*/ null,
 
     getAll: function()
     {

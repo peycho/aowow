@@ -13,7 +13,7 @@ case "${1:-}" in
     php -l prQueue
     while IFS= read -r -d '' script; do
       node --check "$script"
-    done < <(find static tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0)
+    done < <(find static tests setup/tools/filegen/templates -type f \( -name '*.js' -o -name '*.mjs' \) -print0)
     bash -n tests/ci/run.sh
     python3 tests/binary-assets.py
     python3 - <<'PY'
