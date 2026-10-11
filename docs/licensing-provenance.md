@@ -53,6 +53,21 @@ Verified installed package notices are retained with package-specific names in
 `licenses/`. They accompany the inventory rather than applying to the entire
 repository. Recheck versions and notices when dependencies change.
 
+## Possible Chinese font replacements
+
+These Chinese sans-serif (Heiti) fonts are candidates for a future replacement
+of `static/ZYHei.ttf`. They are reference options; no replacement font is bundled
+or selected by this report.
+
+| Candidate | Licensing information to consider |
+| --- | --- |
+| Source Han Sans (思源黑体) | Adobe's [official release](https://github.com/adobe-fonts/source-han-sans) uses the [SIL Open Font License 1.1](https://github.com/adobe-fonts/source-han-sans/blob/release/LICENSE.txt), allowing commercial use and distribution with software under its conditions. Preserve the copyright/license notices and observe reserved-font-name rules when modifying it. |
+| Alibaba PuHuiTi (阿里巴巴普惠体) | Another candidate for free personal and commercial use. Consult the [official font distribution](https://www.alibabafonts.com/) for the chosen version's legal statement. Commercial-use, embedding, redistribution and modification terms have not been verified in this inventory; do not assume an OFL or other open-source license. |
+
+Before adopting either font, record the exact version and accompanying terms,
+check Simplified Chinese glyph coverage, and compare tooltip wrapping, alignment
+and download size with the existing font.
+
 ## Follow-up before a blanket license or asset distribution
 
 Obtain original component/source and contributor permission evidence for uncovered
