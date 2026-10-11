@@ -82,6 +82,40 @@ try {
         $r=request($server,'admin=announcements&id=1&status=1','POST',['csrfToken'=>$token],$headers);
         check($r['status']===302 && $r['location']===($expected==='.'?'?admin=announcements':$expected),'actual announcement return target uses safe admin fallback');
     }
-    echo "PASS: $checks real HTTP redirect/operator/role/CSRF checks\n";
+    // Actual video-delete request filters, responder gates and handler; DB writes are recorded by the fixture.
+    $server=start([]);
+    foreach([U_GROUP_ADMIN,U_GROUP_BUREAU,U_GROUP_VIDEO] as $groups) {
+        $token=request($server,'fixture=identity&user=7&groups='.$groups)['json']['token'];
+        foreach(['7'=>[7],'7,9'=>[7,9]] as $ids=>$expected) {
+            $before=request($server,'fixture=state')['json'];
+            $r=request($server,'admin=videos&action=delete&id='.urlencode((string)$ids),'POST',['csrfToken'=>$token],['Origin: http://'.$server[0]]);
+            $after=request($server,'fixture=state')['json'];
+            check($r['status']===200 && $after['writes']===$before['writes']+1,'Authorized video deletion reaches one update');
+            check(end($after['videoDeletes'])===$expected,'Video-delete IDs survive request filtering as integer lists');
+        }
+    }
+    $token=request($server,'fixture=identity&user=7&groups='.U_GROUP_VIDEO)['json']['token'];
+    foreach(['','-1','7,-9','7,','7&action=approve','javascript:alert(1)','7.5'] as $ids) {
+        $before=request($server,'fixture=state')['json']['writes'];
+        request($server,'admin=videos&action=delete&id='.urlencode($ids),'POST',['csrfToken'=>$token],['Origin: http://'.$server[0]]);
+        check(request($server,'fixture=state')['json']['writes']===$before,'Malformed video-delete IDs perform no writes');
+    }
+    foreach(['admin=videos&action=delete','admin=videos&action=delete&id[]=7'] as $query) {
+        $before=request($server,'fixture=state')['json']['writes'];
+        request($server,$query,'POST',['csrfToken'=>$token],['Origin: http://'.$server[0]]);
+        check(request($server,'fixture=state')['json']['writes']===$before,'Missing/array video-delete IDs perform no writes');
+    }
+    foreach([['GET',[],[],405],['POST',[],['Origin: http://'.$server[0]],403],['POST',['csrfToken'=>$token],['Origin: https://evil.example'],403]] as [$method,$body,$headers,$status]) {
+        $before=request($server,'fixture=state')['json']['writes'];
+        check(request($server,'admin=videos&action=delete&id=7',$method,$body,$headers)['status']===$status,'Video deletion retains method/token/origin protections');
+        check(request($server,'fixture=state')['json']['writes']===$before,'Rejected video-delete requests perform no writes');
+    }
+    foreach([[7,0],[7,U_GROUP_SCREENSHOT],[0,0]] as [$user,$groups]) {
+        $token=request($server,'fixture=identity&user='.$user.'&groups='.$groups)['json']['token'];
+        $before=request($server,'fixture=state')['json']['writes'];
+        check(request($server,'admin=videos&action=delete&id=7','POST',['csrfToken'=>$token],['Origin: http://'.$server[0]])['status']===403,'Unrelated roles and guests cannot delete videos');
+        check(request($server,'fixture=state')['json']['writes']===$before,'Video-role denial performs no writes');
+    }
+    echo "PASS: $checks real HTTP redirect/operator/role/CSRF/video-delete checks\n";
 }
 finally {foreach($workers as $process){proc_terminate($process);proc_close($process);}foreach($logs as $log)unlink($log);}

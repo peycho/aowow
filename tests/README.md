@@ -230,7 +230,10 @@ test scripts. Setup consumes an optional `null` fallback after a substitution
 marker, so both the source template and generated JavaScript parse.
 
 Browser checks exercise real changelog text insertion, profile status links,
-comparison level inputs, icon previews and moderation links. An inline-handler
+comparison level inputs, icon previews and moderation links.
+Icon-link target checks cover exact/subdomain Wowhead hosts, case, trailing dots,
+ports, deceptive suffixes, credentials, query/path lookalikes and the existing
+HTTP/HTTPS/local-link policy without changing destinations. An inline-handler
 positive control verifies that CSP is not hiding the tested injection failures.
 The sound checks round-trip playlist quotes, backslashes and newlines through
 native JSON. HTML-to-markup conversion is an editor convenience, not a security
@@ -1106,6 +1109,10 @@ It checks missing/empty/wrong/malformed operator lists, all five protected route
 GET/HEAD, no-store headers, zero privileged work on denial, allowed ADMIN/DEV
 behavior, login/role enforcement, configuration writes with POST/CSRF, and
 locale/announcement redirects with absent, off-origin and legitimate Referers.
+It also executes the video-delete handler with single/multiple unsigned IDs,
+rejects missing or malformed IDs without writes, and checks video staff roles,
+POST/CSRF tokens and same-origin requirements. Database updates are recorded by
+the fixture rather than executed against a real database.
 The fixture substitutes a 403 for template authentication failures; production
 may redirect anonymous users to signin or render a role-denial page. Synthetic
 configuration write counters do not prove deployed DB grants or UI behavior.

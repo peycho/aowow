@@ -5,6 +5,19 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-11 — Icon navigation and video deletion
+
+Icon links now classify Wowhead by the parsed hostname and its subdomains,
+including case and trailing-dot normalization. Deceptive hostname suffixes,
+URL credentials and query/path references no longer receive Wowhead's same-tab
+behavior. Existing destinations and the HTTP/HTTPS tab policy are preserved.
+
+Video deletion now accepts validated unsigned ID lists, allowing authorized
+staff requests to reach the existing deletion handler. Regression checks cover
+single/multiple IDs, malformed inputs, role restrictions and CSRF protections.
+No database migration is required; rebuild `globaljs` during deployment for the
+icon-template change.
+
 ## 2026-10-11 — JavaScript rendering and CodeQL review
 
 Setup JavaScript templates now parse before configuration substitution, and the
