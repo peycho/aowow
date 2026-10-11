@@ -12,9 +12,9 @@ from the original 2008 implementation.
 
 The project takes no credit for the original client scripting, design or layout
 and is not intended for commercial use.
-World of Warcraft game imagery and game-derived backgrounds belong to
-Blizzard Entertainment, Inc. and their respective rights holders. Other
-third-party logos and artwork belong to their respective owners.
+World of Warcraft assets originating from Blizzard Entertainment remain the
+property of Blizzard Entertainment and applicable rights holders. Other
+third-party assets belong to their respective owners.
 
 - [Security policy](SECURITY.md): private vulnerability reporting.
 - [Support](SUPPORT.md): bugs, feature requests and installation questions.

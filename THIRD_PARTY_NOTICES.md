@@ -53,14 +53,14 @@ The [README credits](README.md#thanks) recognize Mix, LordJZ, kliver, Sarjuuk an
 the original database website. Attribution does not establish permission to
 relicense inherited code or design.
 
-World of Warcraft game imagery, including game-derived icons, maps, talent-tree
-backgrounds and other client artwork, belongs to Blizzard Entertainment, Inc.
-and its respective rights holders. World of Warcraft, Warcraft and Blizzard
-Entertainment are trademarks or registered trademarks of Blizzard Entertainment,
-Inc. See [Blizzard's copyright notices](https://www.blizzard.com/en-us/legal/9c9cb70b-d1ed-4e17-998a-16c6df46be7b/copyright-notices).
-Other inherited website logos, interface artwork and backgrounds belong to
-their respective authors and rights holders. This fork claims no ownership of
-third-party artwork; the software component licenses above do not relicense it.
+World of Warcraft assets originating from Blizzard Entertainment remain the
+property of Blizzard Entertainment and applicable rights holders. Other
+third-party assets belong to their respective owners.
+World of Warcraft, Warcraft and Blizzard Entertainment are trademarks or
+registered trademarks of Blizzard Entertainment, Inc. See
+[Blizzard's copyright notices](https://www.blizzard.com/en-us/legal/9c9cb70b-d1ed-4e17-998a-16c6df46be7b/copyright-notices).
+This fork claims no ownership of third-party artwork; the software component
+licenses above do not relicense it.
 Individual asset sources and redistribution terms remain subject to review.
 
 The bundled `static/ZYHei.ttf` identifies itself as Zhongyi Heiti (中易黑体),

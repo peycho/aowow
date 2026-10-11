@@ -28,14 +28,14 @@ noncommercial intention are not substitutes for a redistribution grant.
 | Composer dependencies | Versions/identifiers in lockfile and copyright/license notices in installed packages | Metadata alone does not select between alternative terms or establish combined-project compatibility |
 | AoWoW PHP/client code and design | README credits and existing repository history | Rights and license coverage for files without explicit grants, original client/design and contributor changes |
 | Font | Name table identifies Zhongyi Heiti (中易黑体), ZYHei/ZYHei_FRIZQT, version 3.00, Beijing ZhongYi Electronics, 1995–2003, all rights reserved; Simplified Chinese tooltip stylesheet loads it | No accompanying redistribution grant found |
-| Logos and static/game imagery | World of Warcraft game imagery and game-derived backgrounds are attributed to Blizzard Entertainment and applicable rights holders; other website logos and artwork belong to their respective owners | Individual asset sources and redistribution terms are not established for every asset |
+| Logos and static/game imagery | Ownership notices attribute World of Warcraft assets originating from Blizzard Entertainment to Blizzard and applicable rights holders; other third-party assets belong to their respective owners | Individual asset sources and redistribution terms are not established for every asset |
 | Maintenance illustration | Existing generation/encoding record | Project-wide licensing and game-related intellectual-property rights are not established by generation history |
 | Client extractions and community uploads | Separate generated/operator inputs excluded by ignore rules | Operators need appropriate rights for their own inputs and uploads; this review grants none |
 
 ## Accompanying texts
 
 The [asset notices](../THIRD_PARTY_NOTICES.md#inherited-assets-and-project-attribution)
-identify the owners of game-derived imagery using
+attribute World of Warcraft assets originating from Blizzard Entertainment using
 [Blizzard's copyright notices](https://www.blizzard.com/en-us/legal/9c9cb70b-d1ed-4e17-998a-16c6df46be7b/copyright-notices).
 The font attribution comes from its embedded TrueType name table, including
 the Chinese family name and copyright statement. Attribution does not establish
