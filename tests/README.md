@@ -237,12 +237,14 @@ skipped. Run it only in `aowow_security_test_updates`, as documented below.
 ## Continuous integration
 
 [Security tests](../.github/workflows/security-tests.yml) runs the complete suite
-only on pushes to any branch affecting PHP/CLI sources, endpoints,
-localization, templates, static assets, setup/schema files, Composer dependencies,
-HTTP/legacy policies, tests or workflows. Root README/review-only changes do not
-start CI.
+on every pull request targeting `master`, including documentation-only changes,
+and supports manual dispatch. Pushes to any branch retain the existing source,
+asset, configuration, test and workflow path filters; README-only pushes do not
+start this workflow. PRs intentionally have no path filter so required checks
+cannot remain pending because a workflow was skipped.
 The [GitHub workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)
-describes these push path filters.
+describes these triggers. Push and PR concurrency groups include the event type,
+so the two events cannot cancel one another.
 
 The PHP 8.5 job uses Node 24 and its own disposable MySQL 8.4 service.
 It installs `composer.lock` without plugins/scripts, verifies platform requirements,
@@ -255,7 +257,7 @@ benchmark is a timing diagnostic, with no performance threshold. A separate
 Apache 2.4 job tests routing, upload/script/hidden-path denials, public assets,
 response headers and deny-policy delivery.
 
-The SQL runner creates and normalizes only its seven guarded fixture databases
+The SQL runner creates and normalizes only its ten guarded fixture databases
 with `utf8mb4_unicode_ci`, matching the historical structure fixture. This also
 covers databases left from an earlier local run. MySQL's server defaults are not
 changed. Initial SQL tables without explicit charset/collation inherit the
@@ -281,6 +283,16 @@ permissions, does not persist checkout credentials and needs no repository
 secrets or deployment configuration. No site setup, production migration, asset
 build or deployment is performed.
 
+For an optional local audit of the committed lockfile, including development
+packages, run:
+
+```sh
+composer --no-plugins --no-scripts audit --locked --no-interaction
+```
+
+This reads the lockfile regardless of installed vendor files and reports
+vulnerabilities without suppressing them.
+
 The workflow calls [tests/ci/run.sh](ci/run.sh). With the documented runtimes
 installed, its groups can also run locally from the checkout root:
 
@@ -297,7 +309,7 @@ bash tests/ci/run.sh apache
 fixture, binds only loopback, waits for startup, runs assertions once, and removes
 the container/tree on success or failure. `sql` needs installed Composer
 packages and a **dedicated disposable** MySQL service on `127.0.0.1`; it creates
-four exact fixture databases and destructively rebuilds their tables. Never run
+ten exact fixture databases and destructively rebuilds their tables. Never run
 it against a shared/deployment server. For example, after starting the isolated
 MySQL container described below:
 

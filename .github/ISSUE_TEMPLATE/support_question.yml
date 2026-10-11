@@ -1,0 +1,54 @@
+name: Support question
+description: Ask about repository installation, configuration, updates or tests.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is a public issue. Remove credentials, private keys, tokens, personal data and raw database dumps from all evidence.
+        Report vulnerabilities through [private reporting](https://github.com/peycho/aowow/security/advisories/new), not this form.
+  - type: input
+    id: revision
+    attributes:
+      label: Commit and application revision
+      description: Provide the Git commit and AoWoW revision; include the branch or tag if known.
+    validations:
+      required: true
+  - type: input
+    id: php
+    attributes:
+      label: PHP version
+    validations:
+      required: true
+  - type: input
+    id: database
+    attributes:
+      label: Database engine and version
+      description: Also identify the compatible TrinityCore world-data revision when relevant.
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      description: For browser or display problems provide the browser/version; otherwise enter Not applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Question or task
+    validations:
+      required: true
+  - type: textarea
+    id: attempts
+    attributes:
+      label: Documentation and steps already tried
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized diagnostics
+      description: Use synthetic examples; never attach application database dumps.
+    validations:
+      required: false

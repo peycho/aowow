@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose an improvement to AoWoW.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is a public issue. Remove credentials, private keys, tokens, personal data and raw database dumps from all evidence.
+        Report vulnerabilities through [private reporting](https://github.com/peycho/aowow/security/advisories/new), not this form.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility and alternatives
+      description: Describe implications for existing URLs, localization, configuration, data or assets, and any alternatives considered.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+    validations:
+      required: false
