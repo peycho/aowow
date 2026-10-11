@@ -474,9 +474,10 @@ function vim_UpdateMassLinks() {
     var e = $WH.ge('theVideosList');
     var inp = $WH.gE(e, 'input');
 
-    $WH.array_walk(inp, function (i) {
-        if (i.checked) {
-            idBuff += i.value + ','; ++i
+    $WH.array_walk(inp, function (input) {
+        if (input.checked) {
+            idBuff += input.value + ',';
+            ++i;
         }
     });
 

@@ -15,17 +15,18 @@ if (process.argv.includes('--browser')) {
         '<link rel="stylesheet" href="static/css/Cropper.css">\n' +
         '<pre id="result">RUNNING</pre><div id="list"></div><div id="models"></div><div id="comparison"></div>' +
         '<div id="profile"></div><div id="talent"></div><div id="petcalc"></div>' +
-        '<div id="crop"></div>' +
+        '<div id="crop"></div><div hidden><input id="icon"><div id="iconPreview"></div></div>' +
         '<a id="tooltip-link" href="?item=1" data-wowhead="item=1">Item #1</a><iframe id="widget"></iframe>\n' +
         script("var g_host=location.origin, g_staticUrl=location.pathname.startsWith('/subdir/') ? '/subdir/static' : '/static', g_serverTime=new Date(), g_dataKey='fixture';var errors=[];window.addEventListener('error',e=>errors.push(e.message));window.addEventListener('unhandledrejection',e=>errors.push(String(e.reason)));window.addEventListener('securitypolicyviolation',e=>errors.push('Blocked resource: '+e.blockedURI));") +
         ['jquery-3.7.0.min.js', 'basic.js', 'locale_enus.js'].map(file => script(readFileSync(`static/js/${file}`, 'utf8'))).join('\n') +
         script(assets['static/js/global.js']) +
         script("var g_user={id:0,name:'',roles:0,cookies:{},completion:{},characters:[]};var g_externalLinks={forum:null};var g_gems={},g_enchants={},g_statistics={},g_pet_talents=[],g_pet_icons={},g_weightPresets=[],g_battlegroups={},g_realms={},g_glyphs=[],g_glyph_items=[],g_glyph_order=[],g_skill_order=[],g_faction_order=[],g_quest_catorder=[],g_quest_catorder_total=[],g_achievement_catorder=[],g_achievement_points={},g_excludes={};var aowow_tooltips={renamelinks:true,iconizelinks:true,colorlinks:true};") +
-        ['Draggable.js', 'Cropper.js', 'filters.js', 'profile.js', 'Summary.js', 'TalentCalc.js', 'Profiler.js'].map(file => script(readFileSync(`static/js/${file}`, 'utf8'))).join('\n') +
+        ['Draggable.js', 'Cropper.js', 'filters.js', 'profile.js', 'Summary.js', 'TalentCalc.js', 'Profiler.js', 'screenshot.js', 'video.js', 'article-editing.js'].map(file => script(readFileSync(`static/js/${file}`, 'utf8'))).join('\n') +
         script(assets['static/widgets/power.js']) +
         script('var wt_presets=[];var retirementLocales='+JSON.stringify(locales).replaceAll('<', '\\u003c')+';') +
         script(readFileSync('tests/retirement-markup.js', 'utf8')) +
         script(readFileSync('tests/security-codeql-markup.js', 'utf8')) +
+        script(readFileSync('tests/security-codeql-urls.js', 'utf8')) +
         script(readFileSync('tests/retirement-browser.js', 'utf8')) +
         script("setTimeout(function(){var result=document.getElementById('result');if(result.textContent==='RUNNING')result.textContent='FAIL: fixture did not finish; '+errors.join('; ');},9000);");
     await new Promise(resolve => process.stdout.write(fixture, resolve));

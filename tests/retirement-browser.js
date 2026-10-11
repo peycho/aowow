@@ -11,6 +11,7 @@ $(async function () {
         }
         (0, eval)(retirementLocales.enus); Locale.set(0);
         await checkCodeqlBrowser(check);
+        checkCodeqlUrls(check);
         check(typeof ModelViewer === 'undefined' && typeof swfobject === 'undefined', 'No viewer globals');
 
         const item = {id:1, name:'7Fixture Sword', quality:2, icon:'inv_misc_questionmark', slot:13, classs:2,
