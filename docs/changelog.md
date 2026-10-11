@@ -15,7 +15,8 @@ render as text, and comparison levels normalize to integers from 1 to 80.
 Interpolation preserves literal replacement tokens.
 
 Automatically detected links for pending users compare parsed hostnames against
-the existing domain list using exact/subdomain boundaries. Explicit authored
+the domain list using exact/subdomain boundaries. Removed eleven obsolete,
+repurposed or unverified domains after checking their availability. Explicit authored
 links retain their separate permission rules. Video bulk-selection counts now
 update the existing moderation links correctly.
 

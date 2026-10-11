@@ -26,6 +26,12 @@ function checkCodeqlMarkup(check) {
     check(Markup.IsLinkAllowed('https://' + local + '/'), 'Current hostname remains allowed');
     const html = text => Markup.toHtml(text, {mode: Markup.MODE_COMMENT, allow: Markup.CLASS_PENDING});
     check(!html('https://wowhead.com.evil.test/item=1').includes('<a '), 'Pending autolinks enforce the hostname boundary');
+    for (const domain of ['torhead.com', 'guildfans.com', 'sc2ranks.com', 'tankspot.com', 'be-imba.hu',
+        'vindictusdb.com', 'worldoflogs.com', 'torchlightarmory.com', 'wow-heroes.com', 'elitistjerks.com', 'wowinsider.com']) {
+        check(!Markup.IsLinkAllowed('https://' + domain + '/'), 'Obsolete or unverified domain is not allowed: ' + domain);
+        check(!Markup.IsLinkAllowed('https://sub.' + domain + '/'), 'Removed domain subdomains are not allowed: ' + domain);
+        check(!html('https://' + domain + '/').includes('<a '), 'Pending autolinks exclude removed domain: ' + domain);
+    }
     check(Markup.toHtml('[url=https://example.test/reference]Authored[/url]',
         {mode: Markup.MODE_COMMENT, allow: Markup.CLASS_USER}).includes('<a '),
         'Explicit authored links keep their separate permission policy');

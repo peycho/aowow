@@ -50,7 +50,7 @@ var Markup = {
     CLASS_PENDING: MARKUP_CLASS_PENDING,
 
     /* aowow custom: first element */
-    whitelistedWebsites: [location.hostname, 'wowhead.com', 'thottbot.com', 'torhead.com', 'mmoui.com', 'tankspot.com', 'guildfans.com', 'allakhazam.com', 'zam.com', 'blizzard.com', 'worldofwarcraft.com', 'wow-europe.com', 'battle.net', 'sc2ranks.com', 'torchlightarmory.com', 'vindictusdb.com', 'wowinterface.com', 'vginterface.com', 'lotrointerface.com', 'eq2interface.com', 'eqinterface.com', 'mmo-champion.com', 'joystiq.com', 'wow-heroes.com', 'be-imba.hu', 'wowpedia.org', 'curse.com', 'elitistjerks.com', 'wowwiki.com', 'worldoflogs.com', 'wowinsider.com', 'guildwork.com'],
+    whitelistedWebsites: [location.hostname, 'wowhead.com', 'thottbot.com', 'mmoui.com', 'allakhazam.com', 'zam.com', 'blizzard.com', 'worldofwarcraft.com', 'wow-europe.com', 'battle.net', 'wowinterface.com', 'vginterface.com', 'lotrointerface.com', 'eq2interface.com', 'eqinterface.com', 'mmo-champion.com', 'joystiq.com', 'wowpedia.org', 'curse.com', 'wowwiki.com', 'guildwork.com'],
 
     rolesToClass: function(roles)
     {
