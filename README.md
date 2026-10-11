@@ -2,7 +2,9 @@
 
 # AoWoW
 
-AoWoW is a World of Warcraft database application for version 3.3.5 (build 12340).
+This is the maintained [peycho/aowow](https://github.com/peycho/aowow) fork of
+AoWoW, a World of Warcraft database application for version 3.3.5 (build 12340).
+External contributions target `master`; see the [contributor guide](CONTRIBUTING.md).
 It provides PHP server code and a client interface based on the earlier database
 website with the red smiling rocket. The project dates back to 2008; the original
 creator is unknown. The PHP code was rewritten and the client JavaScript updated
@@ -11,9 +13,12 @@ from the original 2008 implementation.
 The project takes no credit for the original client scripting, design or layout
 and is not intended for commercial use.
 
+- [Security policy](SECURITY.md): private vulnerability reporting.
+- [Support](SUPPORT.md): bugs, feature requests and installation questions.
+- [Third-party notices](THIRD_PARTY_NOTICES.md): component notices and licensing provenance.
 - [Changelog](docs/changelog.md): security, configuration and setup changes.
 - [Test guide](tests/README.md): regression coverage and local commands.
-- [Upstream sync](docs/upstream-sync.md): agent workflow for Sarjuuk reviews and imports with contributor credit.
+- [Upstream sync](docs/upstream-sync.md): integration guide for Sarjuuk changes with contributor credit.
 - [Security review](docs/aowow-security-review.md): findings and deployment acceptance.
 
 ## Requirements
@@ -64,8 +69,8 @@ Servers that ignore `.htaccess` require equivalent rules. See the
 ### 1. Acquire the required repositories
 
 ```sh
-git clone git@github.com:Sarjuuk/aowow.git aowow
-git clone git@github.com:Sarjuuk/MPQExtractor.git MPQExtractor
+git clone https://github.com/peycho/aowow.git aowow
+git clone https://github.com/Sarjuuk/MPQExtractor.git MPQExtractor
 ```
 
 ### 2. Prepare the database
@@ -354,7 +359,8 @@ See the [widget example and upgrade notes](docs/changelog.md#wowhead-integration
 ## Tests
 
 The [security workflow](.github/workflows/security-tests.yml) runs PHP, JavaScript,
-browser, SQL and Apache regressions on affected pushes. See the
+browser, SQL and Apache regressions on affected pushes and every PR to `master`,
+using PHP 8.5, Node 24 and MySQL 8.4. See the
 [test guide](tests/README.md#continuous-integration) for prerequisites and commands.
 
 ## Troubleshooting

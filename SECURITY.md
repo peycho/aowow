@@ -16,8 +16,6 @@ form is the sole vulnerability-reporting channel. Do not put vulnerability
 reports or exploit details in public Issues, pull requests or Discussions.
 
 If the reporting button is unavailable, do not post the details publicly.
-The repository owner must enable private vulnerability reporting before the
-channel is available; adding this file does not enable it.
 
 Include:
 

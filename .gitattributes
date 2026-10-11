@@ -13,3 +13,6 @@ prQueue text eol=lf
 *.webp binary
 *.ttf binary
 *.swf binary
+
+# Preserve the upstream Composer notice, including its final blank line.
+licenses/composer-autoloader-LICENSE.txt whitespace=-blank-at-eof

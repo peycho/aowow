@@ -5,6 +5,24 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-11 — Contributor guidance and pull-request checks
+
+External contributions target `master`. Added contributor and support guides,
+a private vulnerability-report form, structured bug/feature/support forms,
+an issue chooser and a PR template. The README identifies this maintained fork
+and uses its HTTPS clone URL.
+
+Every PR to `master`, including documentation changes, runs the existing
+PHP 8.5 / Node 24 / MySQL 8.4 and Apache regression checks. Manual dispatch is
+available, and separate push/PR concurrency groups prevent cross-event
+cancellation. Existing push path filters and the PHP 8.4 runtime minimum are
+unchanged. The test guide includes an optional Composer lockfile audit command.
+
+Third-party notices and accompanying license texts document component terms.
+The licensing-provenance report distinguishes verified notices from unresolved
+permissions for inherited code, fonts, design and artwork; it does not grant a
+blanket project license.
+
 ## 2026-10-11
 
 ### Sarjuuk upstream integration and spell-filter security (revision 73)

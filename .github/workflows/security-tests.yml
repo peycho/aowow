@@ -1,6 +1,10 @@
 name: Security tests
 
 on:
+  # Required checks must appear for documentation-only PRs too.
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
   push:
     branches: ['**']
     paths:
@@ -27,7 +31,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: security-tests-${{ github.ref }}
+  group: security-tests-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 defaults:
