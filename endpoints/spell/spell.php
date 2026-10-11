@@ -2269,6 +2269,7 @@ class SpellBaseResponse extends TemplateResponse implements ICache
                 case SPELL_EFFECT_SUMMON_OBJECT_SLOT2:
                 case SPELL_EFFECT_SUMMON_OBJECT_SLOT3:
                 case SPELL_EFFECT_SUMMON_OBJECT_SLOT4:
+                case SPELL_EFFECT_DUEL:
                     if ($a = GameobjectList::makeLink($effMV))
                         $_nameMV = $a;
                     else
@@ -2635,6 +2636,14 @@ class SpellBaseResponse extends TemplateResponse implements ICache
                         case SPELL_AURA_MOD_SPEED_NOT_STACK:
                         case SPELL_AURA_MOD_INCREASE_SPEED:
                         case SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED:
+                        case SPELL_AURA_MOD_MOUNTED_SPEED_ALWAYS:
+                        case SPELL_AURA_MOD_MOUNTED_SPEED_NOT_STACK:
+                        case SPELL_AURA_MOD_INCREASE_VEHICLE_FLIGHT_SPEED:
+                        case SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED:
+                        case SPELL_AURA_MOD_INCREASE_FLIGHT_SPEED:
+                        case SPELL_AURA_MOD_MOUNTED_FLIGHT_SPEED_ALWAYS:
+                        case SPELL_AURA_MOD_VEHICLE_SPEED_ALWAYS:
+                        case SPELL_AURA_MOD_FLIGHT_SPEED_NOT_STACK:
                         case SPELL_AURA_MOD_DECREASE_SPEED:
                         case SPELL_AURA_MOD_INCREASE_SWIM_SPEED:
                         case SPELL_AURA_MOD_PARRY_PERCENT:
@@ -2737,7 +2746,7 @@ class SpellBaseResponse extends TemplateResponse implements ICache
 
                 $listItem = Lang::spell('attributes'.$i, $j);
                 if (!$listItem && User::isInGroup(U_GROUP_STAFF))
-                    $listItem = '<span class="q0">Unknown SpellAttribute'.$i.'</span>';
+                    $listItem = '<span class="q0">Unknown SpellAttribute'.$i.': '.Util::asHex($j).'</span>';
                 else if (!$listItem)
                     continue;
 
@@ -2746,6 +2755,29 @@ class SpellBaseResponse extends TemplateResponse implements ICache
 
                 $list[] = $this->fmtStaffTip($listItem, 'Attributes'.$i.': '.Util::asHex($j));
             }
+        }
+
+        if ($customAttr = DB::World()->selectCell('SELECT `attributes` FROM spell_custom_attr WHERE `entry` = %i', $this->typeId))
+        {
+            $customList = [];
+
+            for ($j = 1; $j <= (1 << 31); $j <<= 1)
+            {
+                if (!($customAttr & $j))
+                    continue;
+
+                $listItem = Lang::spell('attributesCu', $j);
+                if (!$listItem && User::isInGroup(U_GROUP_STAFF))
+                    $listItem = '<span class="q0">Unknown CustomAttribute: '.Util::asHex($j).'</span>';
+                else if (!$listItem)
+                    continue;
+
+                $customList[] = $this->fmtStaffTip($listItem, 'AttributesCu: '.Util::asHex($j));
+            }
+
+            if ($list && $customList)
+                $list[] = null;                             // add <hr> between visible lists
+            array_push($list, ...$customList);
         }
 
         $this->attributes = $list;
