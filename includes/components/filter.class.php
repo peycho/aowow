@@ -48,6 +48,7 @@ abstract class Filter
     public const int CR_ENUM      = 6;
     public const int CR_STAFFFLAG = 7;
     public const int CR_CALLBACK  = 8;
+    public const int CR_STAFF_CALLBACK = 9;
     public const int CR_NYI_PH    = 999;
 
     public const int V_EQUAL      = 8;
@@ -123,6 +124,7 @@ abstract class Filter
         [self::CR_ENUM,      <string:colName>, <bool:ANY_NONE>, <bool:isEnumVal>]      # param3 ? crv is val in enum : key in enum
         [self::CR_STAFFFLAG, <string:colName>, null,            null]
         [self::CR_CALLBACK,  <string:fnName>,  <mixed:param1>,  <mixed:param2>]
+        [self::CR_STAFF_CALLBACK, <string:fnName>, null,      null] # employee-only bit selector, 1..32
         [self::CR_NYI_PH,    null,             <int:returnVal>, param2]                # mostly 1: to ignore this criterium; 0: to fail the whole query
 
        $inputFields: fieldName => [VALUE_TYPE, checkInfo, fieldIsArray]
@@ -344,7 +346,11 @@ abstract class Filter
                 {
                     if (in_array($inp, ['cr', 'crs', 'crv']))
                     {
-                        if (!$this->checkInput($type, $valid, $v))
+                        // Bit positions must be integer selectors, not permissively parsed decimals/exponents.
+                        $criterion = $this->values['cr'][$i] ?? null;
+                        $isStaffBit = $inp === 'crs' && is_int($criterion) && in_array(static::$genericFilter[$criterion][0] ?? null, [self::CR_STAFFFLAG, self::CR_STAFF_CALLBACK], true);
+                        $validStaffBit = !$isStaffBit || is_int($v) || (is_string($v) && ctype_digit($v));
+                        if (!$validStaffBit || !$this->checkInput($type, $valid, $v))
                             $cleanupCr[] = $i;
                         $buff[] = $v;                       // always assign, gets removed later as tuple
                     }
@@ -444,7 +450,8 @@ abstract class Filter
                         continue 2;
                     break;
                 case self::CR_STAFFFLAG:
-                    if (User::isInGroup(U_GROUP_EMPLOYEE) && Util::checkNumeric($_crs[$i], NUM_CAST_INT))
+                case self::CR_STAFF_CALLBACK:
+                    if (User::isInGroup(U_GROUP_EMPLOYEE) && Util::checkNumeric($_crs[$i], NUM_CAST_INT) && $_crs[$i] > 0 && $_crs[$i] < 33)
                         continue 2;
                     break;
                 case self::CR_ENUM:
@@ -852,7 +859,7 @@ abstract class Filter
             self::CR_STAFFFLAG => $this->genericBooleanFlags($colOrFn, (1 << ($crs - 1)), true),
             self::CR_BOOLEAN   => $this->genericBoolean($colOrFn, $crs, !empty($param1)),
             self::CR_STRING    => $this->genericString($colOrFn, $param1, $param2),
-            self::CR_CALLBACK  => $this->{$colOrFn}($cr, $crs, $crv, $param1, $param2),
+            self::CR_CALLBACK, self::CR_STAFF_CALLBACK => $this->{$colOrFn}($cr, $crs, $crv, $param1, $param2),
             self::CR_ENUM      => $handleEnum($cr, $crs, $colOrFn, $param1, $param2),
             self::CR_NYI_PH    => $handleNYIPH($crs, $crv, $param1),
             default            => null

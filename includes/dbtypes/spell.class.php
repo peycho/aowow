@@ -59,7 +59,7 @@ class SpellList extends DBTypeList
     );
     public const array EFFECTS_MODEL_OBJECT     = array(
         SPELL_EFFECT_TRANS_DOOR,            SPELL_EFFECT_SUMMON_OBJECT_WILD,                SPELL_EFFECT_SUMMON_OBJECT_SLOT1,               SPELL_EFFECT_SUMMON_OBJECT_SLOT2,               SPELL_EFFECT_SUMMON_OBJECT_SLOT3,
-        SPELL_EFFECT_SUMMON_OBJECT_SLOT4
+        SPELL_EFFECT_SUMMON_OBJECT_SLOT4,   SPELL_EFFECT_DUEL
     );
     public const array EFFECTS_MODEL_NPC        = array(
         SPELL_EFFECT_SUMMON,                SPELL_EFFECT_SUMMON_PET,                        SPELL_EFFECT_SUMMON_DEMON,                      SPELL_EFFECT_KILL_CREDIT,                       SPELL_EFFECT_KILL_CREDIT2
@@ -2557,11 +2557,12 @@ class SpellListFilter extends Filter
      // 121 => [parent::CR_NYI_PH,    null                                                                                        ], // inMyFavorites_stc [yn]
         129 => [parent::CR_CALLBACK,  'cbGivePower'                                                                               ], // givesResourceType_stc [resourcetype]
         200 => [parent::CR_CALLBACK,  'cbSecToMsec',        'recoveryTime'                                                        ], // cooldown [num] (custom)
-        201 => [parent::CR_CALLBACK,  'cbSecToMsec',        'duration'                                                            ]  // duration [num] (custom)
+        201 => [parent::CR_CALLBACK,  'cbSecToMsec',        'duration'                                                            ], // duration [num] (custom)
+        202 => [parent::CR_STAFF_CALLBACK, 'cbCustomAttr'                                                                         ]  // flagsCu [spell_flagsCu] (custom)
     );
 
     protected static array $inputFields = array(
-        'cr'    => [parent::V_RANGE,    [1, 201],                                          true ], // criteria ids
+        'cr'    => [parent::V_RANGE,    [1, 202],                                          true ], // criteria ids
         'crs'   => [parent::V_LIST,     [parent::ENUM_NONE, parent::ENUM_ANY, [0, 99999]], true ], // criteria operators
         'crv'   => [parent::V_REGEX,    parent::PATTERN_CRV,                               true ], // criteria values - only printable chars, no delimiters
         'na'    => [parent::V_NAME,     false,                                             false], // name / text - only printable chars, no delimiter
@@ -2882,6 +2883,19 @@ class SpellListFilter extends Filter
             return null;
 
         return [$field, $crv * 1000, $crs];
+    }
+
+    // World attributes use their own criterion so saved target/stance-mask URLs retain their meaning.
+    protected function cbCustomAttr(int $cr, int $crs, string $crv) : ?array
+    {
+        // Also guard the query here if conditions are requested after the user's groups change.
+        if (!User::isInGroup(U_GROUP_EMPLOYEE) || $crs < 1 || $crs > 32)
+            return [0];
+
+        if (!($ids = DB::World()->selectCol('SELECT `entry` FROM spell_custom_attr WHERE `attributes` & %i', (1 << ($crs - 1)))))
+            return [0];
+
+        return ['s.id', $ids];
     }
 
     protected function cbModifiesSpell(int $cr, int $crs, string $crv) : ?array

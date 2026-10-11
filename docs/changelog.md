@@ -5,6 +5,69 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-11
+
+### Sarjuuk upstream integration and spell-filter security (revision 73)
+
+Reviewed [Sarjuuk/aowow](https://github.com/Sarjuuk/aowow) `master` at
+`bdc2c115e6344acee76c8529dc5af7ad6b45c553`, starting from fork `dev` at
+`c8e553dfdfd696c0e6118c861fee4c4425d88a34`. Six imports use `cherry-pick -x`;
+the filter import applies a reviewed subset of its patch before committing with
+the original author/date and source-SHA trailer. Differing original committers
+and existing coauthor credit are retained. Additional fork changes are separate
+integrator-authored work.
+
+| Upstream revision | Result revision | Decision and adaptation |
+| --- | --- | --- |
+| `a904053b9fbdc1796f6f1a76f1484aae394cb77a` | `457df7879db63d6fd6b00f1d27b2ad6bf2592835` | Already present through the prior SimpleHTML adaptation; retain the fork parser. |
+| `18ad819a3c7a0e072af1a80cacbeef6675d98e27` | `7679d0831a2bb899b4ac67e0aa899f08ab27ff60` | Already present, including the criteria-name migration. |
+| `d7f4716ac1ad27ac7019ea929dd05f4b3f4af8a0` | `6dc6f1ad3b6c3c1d2177f9982fdcd544454053a9` | Maintenance metadata fix originated in this fork and is already present. |
+| `569b3395347fbfdf724c935f28b0e3928c4d511e` | `8486f90394f0cf163dc25adf9feddaea0fc6c93f` | Import custom-data update failure reporting; resolve SQL/build runner conflicts by retaining the fork's failure accounting, per-run completion lists, registry ownership and retry behavior. |
+| `0b0e3198db861cc3aec1bdd6499c47311d165b88` | `465657d50f1c77286628d46f149b18b34bb1dbda` | Import spell/enchantment heading spacing correction. |
+| `43c47f018ece955df209981d29f053498553fc22` | `cf305986b46ee1f4d881a167f869b8f7151e5f79` | Import percentage display for eight additional speed auras. |
+| `45856fd65ec7ddb3d1570b9755bd586b4520fc72` | `f21874ea0cd38ca4024fd3c91fb1552cac150c10` | Import duel object links, related spells and the shared object-model effect list together. |
+| `ecdedc277f8c23ea4803723a761951800ea1823f` | `586fe6b218ec6c2e7bdbed69d797e1543cc20eeb` | Import capture-point duration named-argument correction. |
+| `aa499c2b7b6a55e7f26f2eb60c1d2d3e6c55efb0` | `6b669d025178e83f852c15b6216497169d89311e` | Reply-report query is already corrected; preserve content-report identity and quota enforcement. |
+| `5555f60367e1efad52fc6b4e8194cc6caa3d4058` | `9bcc55252a05907ad0ea2341c37e30aa2640ac53` | Import custom spell attributes and six locale tables; retain the fork revision during the kernel conflict, then advance it to 73 for cache invalidation. |
+| `bdc2c115e6344acee76c8529dc5af7ad6b45c553` | `9b48df0d1d66b79d8c832f825a2f76dd3430db43` | Import readable flag labels and bounded staff-bit validation; omit the unguarded callback and target/stance criterion changes from this import. |
+
+The upstream custom-attribute filter used a general callback, bypassing the
+server-side employee check used by other staff flags. The fork adaptation adds
+employee-only criterion `202`, validates integer bit positions from 1 through 32
+before shifting, and checks the employee role again before its parameterized world
+query. Guest/nonemployee requests perform no world lookup. Existing criterion
+`104` still searches targets and `105` still searches excluded stances, preserving
+saved URLs. Item, quest and achievement staff filters retain their valid high-bit
+behavior and reject malformed positions too.
+
+Custom-data lookup failures now return false as well as update failures; zero
+affected rows remain successful. Existing database error counts prevent failed
+generators from being acknowledged. Custom spell attributes add a separator only
+when both displayed lists contain entries, avoiding empty sections for hidden
+unknown flags. PHP attribute labels follow the upstream translations; the new
+JavaScript bit descriptions are English in all six locales, with localized filter
+captions.
+
+Source preflight checked all 26 custom-attribute values against the README-pinned
+[TrinityCore definitions](https://github.com/TrinityCore/TrinityCore/blob/8300a6d8463aa862ae154392558c1f11dc2fce5d/src/server/game/Spells/SpellInfo.h),
+and the unsigned `entry` and `attributes` columns against its
+[world schema](https://github.com/TrinityCore/TrinityCore/blob/8300a6d8463aa862ae154392558c1f11dc2fce5d/sql/base/dev/world_database.sql).
+Existing installations need runtime SELECT access to `spell_custom_attr` in the
+compatible world database. No new SQL migration or generated-data build is
+introduced by this selection. Deliver the PHP, templates, filter script and all
+six locale scripts together; revision 73 invalidates earlier application caches.
+Supplemented map handling, serialization, setup metadata, access rules and
+community protections are retained.
+
+Validation passed on PHP 8.5.10, Node 24 and disposable MySQL 8.4: full `lint`,
+`php`, `javascript`, `browser` and `sql` gates through `bash tests/ci/run.sh`, plus
+`git diff --check`. Focused suites passed 293 PHP and 366 JavaScript checks.
+Apache was not rerun because access policies are unchanged. Browser checks used
+Chromium's headless-shell runner. These synthetic fixtures and source preflight
+do not establish deployed world-schema/grant, PHP-FPM, MariaDB, extracted-data or
+gameplay acceptance. No deployed migration, data regeneration or rollout was
+performed.
+
 ## 2026-10-08
 
 ### General feedback budgets (revision 72)
