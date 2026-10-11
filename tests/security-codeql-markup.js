@@ -12,6 +12,23 @@ function checkCodeqlMarkup(check) {
         check(Markup._addGlobalAttributes({title: value}) === '', 'User markup cannot add staff attributes');
     }
     finally { Markup.allow = allow; }
+
+    for (const link of ['https://wowhead.com/item=1', 'https://sub.wowhead.com/item=1',
+        'HTTPS://WOWHEAD.COM.:8443/item=1', 'https://unrelated.test@wowhead.com/item=1',
+        '?item=1', '/subdir/?item=1', '#section'])
+        check(Markup.IsLinkAllowed(link), 'Allowed parsed hostname or local reference: ' + link);
+    for (const link of ['https://wowhead.com.evil.test/', 'https://wowheadXcom/',
+        'https://notwowhead.com/', 'https://wowhead.com@evil.test/', 'https://evil.test/?wowhead.com',
+        'https://wowhead.com%2eevil.test/', 'https://wоwhead.com/', 'https:/wowhead.com/',
+        'https://', 'javascript:alert(1)', 'https://[invalid]/'])
+        check(!Markup.IsLinkAllowed(link), 'Rejected deceptive or malformed URL: ' + link);
+    const local = new URL(location.href).hostname.replace(/\.+$/, '');
+    check(Markup.IsLinkAllowed('https://' + local + '/'), 'Current hostname remains allowed');
+    const html = text => Markup.toHtml(text, {mode: Markup.MODE_COMMENT, allow: Markup.CLASS_PENDING});
+    check(!html('https://wowhead.com.evil.test/item=1').includes('<a '), 'Pending autolinks enforce the hostname boundary');
+    check(Markup.toHtml('[url=https://example.test/reference]Authored[/url]',
+        {mode: Markup.MODE_COMMENT, allow: Markup.CLASS_USER}).includes('<a '),
+        'Explicit authored links keep their separate permission policy');
 }
 
 async function checkCodeqlBrowser(check) {

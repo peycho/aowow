@@ -34,12 +34,14 @@ if (process.argv.includes('--browser')) {
 let checks = 0;
 for (const file of readdirSync('static/js').filter(file => /^locale_.*\.js$/.test(file))) {
     const context = vm.createContext({g_staticUrl: '/static', document: {}, location: {hostname: 'local.example', href: 'https://local.example/'},
-        setTimeout() {}, Locale: {getName: () => file.slice(7, 11)},
+        setTimeout() {}, URL, Locale: {getName: () => file.slice(7, 11)},
         $: Object.assign(() => ({ready() {}}), {noop() {}}),
         $WH: {isset: () => false, trim: text => text.trim()},
         g_isExternalUrl: url => /^https?:/.test(url),
         g_items: {}, g_screenshots: {}, g_customColors: {}, check: (ok, message) => {++checks; assert.ok(ok, `${file}: ${message}`);}});
     vm.runInContext("String.prototype.ltrim = function() { return this.trimStart(); }; String.prototype.rtrim = function() { return this.trimEnd(); };", context);
+    // Load the actual interpolation helper required by the pending-user link notice.
+    vm.runInContext(readFileSync('static/js/basic.js', 'utf8').match(/\$WH\.sprintf = function\(z\) \{[\s\S]*?\n\}/)[0], context);
     vm.runInContext(readFileSync(`static/js/${file}`, 'utf8'), context);
     vm.runInContext(readFileSync('setup/tools/filegen/templates/global.js/markup.js', 'utf8'), context);
     vm.runInContext(readFileSync('tests/retirement-markup.js', 'utf8'), context);

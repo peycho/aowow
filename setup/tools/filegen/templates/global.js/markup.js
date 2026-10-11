@@ -50,7 +50,7 @@ var Markup = {
     CLASS_PENDING: MARKUP_CLASS_PENDING,
 
     /* aowow custom: first element */
-    whitelistedWebsites: [new RegExp('(.*\\.)?' + location.hostname, 'i'), /(.*\.)?wowhead.com/i, /(.*\.)?thottbot.com/i, /(.*\.)?torhead.com/i, /(.*\.)?mmoui.com/i, /(.*\.)?tankspot.com/i, /(.*\.)?guildfans.com/i, /(.*\.)?allakhazam.com/i, /(.*\.)?zam.com/i, /(.*\.)?blizzard.com/i, /(.*\.)?worldofwarcraft.com/i, /(.*\.)?wow-europe.com/i, /(.*\.)?battle.net/i, /(.*\.)?sc2ranks.com/i, /(.*\.)?torchlightarmory.com/i, /(.*\.)?vindictusdb.com/i, /(.*\.)?wowinterface.com/i, /(.*\.)?vginterface.com/i, /(.*\.)?lotrointerface.com/i, /(.*\.)?eq2interface.com/i, /(.*\.)?eqinterface.com/i, /(.*\.)?mmo-champion.com/i, /(.*\.)?joystiq.com/i, /(.*\.)?wow-heroes.com/i, /(.*\.)?be-imba.hu/i, /(.*\.)?wowpedia.org/i, /(.*\.)?curse.com/i, /(.*\.)?elitistjerks.com/i, /(.*\.)?wowwiki.com/i, /(.*\.)?worldoflogs.com/i, /(.*\.)?wowinsider.com/i, /(.*\.)?guildwork.com/i],
+    whitelistedWebsites: [location.hostname, 'wowhead.com', 'thottbot.com', 'torhead.com', 'mmoui.com', 'tankspot.com', 'guildfans.com', 'allakhazam.com', 'zam.com', 'blizzard.com', 'worldofwarcraft.com', 'wow-europe.com', 'battle.net', 'sc2ranks.com', 'torchlightarmory.com', 'vindictusdb.com', 'wowinterface.com', 'vginterface.com', 'lotrointerface.com', 'eq2interface.com', 'eqinterface.com', 'mmo-champion.com', 'joystiq.com', 'wow-heroes.com', 'be-imba.hu', 'wowpedia.org', 'curse.com', 'elitistjerks.com', 'wowwiki.com', 'worldoflogs.com', 'wowinsider.com', 'guildwork.com'],
 
     rolesToClass: function(roles)
     {
@@ -124,23 +124,29 @@ var Markup = {
     },
     IsLinkAllowed: function(link)
     {
-        var matches = link.match('[a-z]+:\/\/([a-z0-9\.\-]+)');
-
-        if (!matches)
-            return true;
-
-        var domain = matches[1];
-        var allowed = false;
-
-        for (var i in Markup.whitelistedWebsites)
+        try
         {
-            var r = Markup.whitelistedWebsites[i];
+            // Reject malformed absolute HTTP URLs instead of resolving them as local paths.
+            if (/^https?:/i.test(link) && !/^https?:\/\//i.test(link))
+                return false;
 
-            if (domain.search(r) == 0)
-                allowed = true;
+            var url = new URL(link, location.href);
+            if (url.protocol !== 'http:' && url.protocol !== 'https:')
+                return false;
+
+            var domain = url.hostname.toLowerCase().replace(/\.+$/, '');
+            if (!domain)
+                return false;
+
+            return Markup.whitelistedWebsites.some(function(website) {
+                website = website.toLowerCase().replace(/\.+$/, '');
+                return website && (domain === website || domain.endsWith('.' + website));
+            });
         }
-
-        return allowed;
+        catch (error)
+        {
+            return false;
+        }
     },
     tags: {
         '<text>':
