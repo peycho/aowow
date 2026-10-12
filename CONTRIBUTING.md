@@ -1,12 +1,12 @@
 # Contributing to AoWoW
 
 This maintained fork targets World of Warcraft 3.3.5a and the compatible
-TrinityCore database described in the [README](README.md#requirements).
+TrinityCore database described in the [installation requirements](docs/installation.md#requirements).
 External pull requests target **`master`**. Work in your own branch or fork.
 
 ## Development and validation
 
-Follow the [installation guide](README.md#install) for PHP 8.4 or 8.5, required
+Follow the [installation guide](docs/installation.md) for PHP 8.4 or 8.5, required
 extensions, Composer and compatible data. Install the committed dependencies
 with development packages when running tests:
 
@@ -48,8 +48,10 @@ TrinityCore behavior unless the PR explicitly explains a necessary change.
 
 Use the PR template to explain the problem, resulting behavior and validation.
 Distinguish synthetic/local checks from deployed-site, historical-data and
-external-integration acceptance. Update the README for everyday usage changes
-and [changelog](docs/changelog.md) for dated technical details.
+external-integration acceptance. Update the relevant
+[documentation guide](docs/README.md) for usage changes and
+[changelog](docs/changelog.md) for dated technical details. Keep the README focused
+on the project overview and entry points.
 
 For schema changes, include an ordered migration with upgrade/recovery
 prerequisites and validate both fresh and retained-data paths. Do not silently

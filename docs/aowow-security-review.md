@@ -1,8 +1,12 @@
 # AoWoW security review
 
-This is the consolidated audit and remediation record, updated **October 9,
-2026**. The latest source remediation is application revision **72**, committed
-as **a4a732c58a345b0127bdc9abb0272b8b8682ef66**. This public record contains
+This is the consolidated audit and remediation record, updated **October 12,
+2026**. The reference review covers merged application revision **73** at
+[04b73824][commit-codeql-merge] and the local follow-up commit
+`9eaee549d1f50054d9793a5a19dadfc3161becfc`. R03's revision **72** remediation
+is [a4a732c5][commit-r03]. Fixes are linked in the
+[remediation references](#remediation-references); publication and deployment
+status are recorded separately. This public record contains
 source findings, reproducible local validation and generic acceptance requirements.
 Private deployment evidence and operator configuration are excluded; this record
 does not disclose or certify the state of a particular production installation.
@@ -16,14 +20,17 @@ current source paths remain linked, but line numbers can move.
 
 | Finding | Current source status | Remaining action |
 | --- | --- | --- |
-| [R01 — CAPTCHA verification work](#r01--captcha-verification-has-no-attempt-budget-before-outbound-work) | Implemented locally in revision 71; regression evidence below | Deploy Turnstile and its new budget component together; verify limits, retries and trusted peer attribution under the actual FPM/proxy. No new migration or JavaScript build is required on an updated installation. |
-| [R03 — General-feedback quotas](#r03--general-feedback-has-no-submission-or-storage-budget) | Implemented locally in revision 72; 148 focused checks pass | Deploy the feedback budget/service/responder together; accept trusted-IP limits, first-use historical storage accounting and CAPTCHA on/off under the actual FPM/proxy. No new migration or JavaScript build is required on an updated installation. |
-| A01–A16 | Source fixes or hardening implemented; local regression checks recorded | Complete the deployment, historical-data and integration checks below. These are not sixteen unfinished source fixes. |
-| [R02 — Content reports](#r02--anonymous-content-reports-without-quotas) | Implemented in revision 70; 200 focused checks pass | Deploy the PHP changes and rebuild `globaljs`; verify behavior under the actual web identity and trusted client-IP configuration. |
+| [R01 — CAPTCHA verification work](#r01--captcha-verification-has-no-attempt-budget-before-outbound-work) | Merged in [PR #21][pr-r01], revision 71; regression evidence below | Deploy Turnstile and its new budget component together; verify limits, retries and trusted peer attribution under the actual FPM/proxy. No new migration or JavaScript build is required on an updated installation. |
+| [R03 — General-feedback quotas](#r03--general-feedback-has-no-submission-or-storage-budget) | Merged in [PR #22][pr-r03], revision 72; 148 historical focused checks pass | Deploy the feedback budget/service/responder together; accept trusted-IP limits, first-use historical storage accounting and CAPTCHA on/off under the actual FPM/proxy. No new migration or JavaScript build is required on an updated installation. |
+| A01–A16 | Merged in [PR #1][pr-security]; local regression checks recorded | Complete the deployment, historical-data and integration checks below. These are not sixteen unfinished source fixes. |
+| [R02 — Content reports](#r02--anonymous-content-reports-without-quotas) | Merged in [PR #19][pr-r02], revision 70; 200 historical focused checks pass | Deploy the PHP changes and rebuild `globaljs`; verify behavior under the actual web identity and trusted client-IP configuration. |
 
-R01, R02 and R03 now have locally implemented source fixes and regression
-evidence. No established source fix remains open in this consolidated record;
-deployment acceptance remains separate.
+A01–A16 and R01–R03 have merged source fixes or hardening and dated local
+regression evidence. The October 11 spell-filter and CodeQL changes are also
+merged; the additional icon/video-delete fix is present only in the local
+follow-up history inspected here. See the
+[later-change review](#october-1112-review-of-later-security-related-changes).
+Deployment acceptance remains separate.
 No new high/critical source finding was established in the October 8
 follow-up. This is a source review plus local fixture evidence, not a production
 readiness sign-off or an exhaustive new audit of every endpoint.
@@ -41,6 +48,46 @@ apply.
 | Account, mail and contribution flows | Pending/active/banned/staff lifecycle checks, recovery/session revocation, activation/resend delivery, uploads/cropping/moderation, and R02 denial/limit behavior through the deployed site. Keep public production `DEBUG=0`; high debug levels still display mail/token content and suppress actual sending. |
 | Operations and capacity | Backup/restore and interrupted-upgrade recovery rehearsal; scheduled `--prune` preview/apply under the web OS user; disk/database/FPM/SMTP monitoring and traffic limits; hashing, SMTP/outbound deadlines and enabled expensive-listing load acceptance. |
 | Optional integrations/platforms | Auth/characters/profiler integrations when enabled, real relay/DNS/Cloudflare behavior, and the actual database/PHP-FPM/proxy versions. MySQL fixtures do not establish MariaDB, Windows or external-provider acceptance. |
+
+## Remediation references
+
+Each finding below links to the patch that delivered its source control.
+Application revisions **53–68** describe the original implementation sequence;
+all sixteen fixes were published together in [PR #1][pr-security] as
+[12e8f561][commit-security]. There are no separate published fix commits for
+those intermediate revisions in the inspected history. R01–R03 were delivered
+in their own PRs. A merged PR establishes repository integration, not acceptance
+of an installed site.
+
+| Finding | Implementation revision | Remediation PR / commit | Primary current source |
+| --- | --- | --- | --- |
+| [A01 — Executable JavaScript serialization](#a01--stored-executable-javascript-through-utiltojson) | 53 | [PR #1][pr-security] · [12e8f561][commit-security] | [Serialization and explicit trusted expressions](../includes/utilities.php) |
+| [A02 — Guide-editor output](#a02--unescaped-guide-editor-output) | 54 | [PR #1][pr-security] · [12e8f561][commit-security] | [Contextual HTML escaping](../template/pages/guide-edit.tpl.php) |
+| [A03 — CSRF and GET mutations](#a03--missing-csrf-controls-and-get-mutations) | 55 | [PR #1][pr-security] · [12e8f561][commit-security] | [POST, token and origin gates](../includes/components/csrf.class.php) |
+| [A04 — Security tokens](#a04--non-cryptographic-security-tokens) | 56 | [PR #1][pr-security] · [12e8f561][commit-security] | [CSPRNG token generation](../includes/utilities.php) |
+| [A05 — Client-IP attribution](#a05--untrusted-client-ip-headers) | 59 | [PR #1][pr-security] · [12e8f561][commit-security] | [Validated SAPI peer authority](../includes/user.class.php) |
+| [A06 — Secrets in error records](#a06--plaintext-secrets-in-error-records) | 57 | [PR #1][pr-security] · [12e8f561][commit-security] | [Safe diagnostic metadata](../includes/components/errorlog.class.php) |
+| [A07 — Recovery and session revocation](#a07--recovery-validation-and-session-revocation) | 58 | [PR #1][pr-security] · [12e8f561][commit-security] | [Transactional token consumption and session revocation](../includes/components/passwordrecovery.class.php) |
+| [A08 — Activation expiry/replay](#a08--activation-expiry-and-replay) | 60 | [PR #1][pr-security] · [12e8f561][commit-security] | [Expiry, one-time use and resend handling](../includes/components/accountactivation.class.php) |
+| [A09 — Password policy/work budgets](#a09--password-policy-and-hashing-resource-budget) | 61 | [PR #1][pr-security] · [12e8f561][commit-security] | [Bounded credentials and atomic hashing budgets](../includes/components/passwordbudget.class.php) |
+| [A10 — Private pending uploads](#a10--public-pendingtemp-assets) | 62 | [PR #1][pr-security] · [12e8f561][commit-security] | [Authenticated previews and static-path denial](../includes/components/privateupload.class.php) |
+| [A11 — Screenshot completion replay](#a11--screenshot-completion-replay-and-permission-changes) | 63 | [PR #1][pr-security] · [12e8f561][commit-security] | [Owner/session-bound completion claims](../endpoints/screenshot/complete.php) |
+| [A12 — Guide upload validation](#a12--guide-upload-validation-and-naming) | 64 | [PR #1][pr-security] · [12e8f561][commit-security] | [Bounded image decoding, re-encoding and exclusive filenames](../includes/components/imageupload.class.php) |
+| [A13 — Cache/build trust boundaries](#a13--consequences-of-compromised-local-data-boundaries) | 65 | [PR #1][pr-security] · [12e8f561][commit-security] | [Authenticated cache envelopes and restricted builds](../includes/components/cacheenvelope.class.php) |
+| [A14 — Migration failure accounting](#a14--migration-failure-accounting) | 66 | [PR #1][pr-security] · [12e8f561][commit-security] | [Interruption journal and CLI failure propagation](../includes/setup/sqlupdate.class.php) |
+| [A15 — Outbound work, quotas and retention](#a15--outbound-calls-quotas-and-retention) | 67 | [PR #1][pr-security] · [12e8f561][commit-security] | [Contribution budgets, bounded calls/paging and cleanup](../includes/components/contributionbudget.class.php) |
+| [A16 — Redirects and diagnostics](#a16--redirects-and-legacydiagnostic-exposure) | 68 | [PR #1][pr-security] · [12e8f561][commit-security] | [Local return targets, operator gates and deny policy](../includes/components/operatoraccess.class.php) |
+| [R01 — CAPTCHA verification work](#r01--captcha-verification-has-no-attempt-budget-before-outbound-work) | 71 | [PR #21][pr-r01] · [d09c8ba4][commit-r01] | [Admission budget before provider work](../includes/components/turnstilebudget.class.php) |
+| [R02 — Content-report quotas](#r02--anonymous-content-reports-without-quotas) | 70 | [PR #19][pr-r02] · [6b669d02][commit-r02] | [Activated-account checks, target validation and durable quotas](../includes/components/report.class.php) |
+| [R03 — General-feedback quotas](#r03--general-feedback-has-no-submission-or-storage-budget) | 72 | [PR #22][pr-r03] · [a4a732c5][commit-r03] | [Independent feedback work and retained-storage budgets](../includes/components/feedbackbudget.class.php) |
+
+Later compatibility fixes preserve the original controls:
+[PR #7][pr-talents] ([41447ba6][commit-talents]) restores trusted talent-generator
+expressions after A01's serializer change, and
+[PR #5][pr-apache] ([8d6814ec][commit-apache]) corrects Apache override/routing
+compatibility while retaining private-upload and script denials for A10–A12.
+The [October 11–12 review](#october-1112-review-of-later-security-related-changes)
+records subsequent authorization and browser-boundary changes.
 
 ## Review history
 
@@ -1374,7 +1421,7 @@ and no Flash/Acrobat policy client. These checks do not establish complete brows
 FPM, proxy, real DB grants or hosting acceptance.
 
 **Deployment acceptance remains required:** follow
-[install step 11](../README.md#11-restrict-diagnosticsconfiguration-and-deploy-the-legacy-deny-policy)
+[install step 11](installation.md#11-restrict-diagnosticsconfiguration-and-deploy-the-legacy-deny-policy)
 and [the regression guide](../tests/README.md#redirects-and-operator-administration-a16).
 Deploy the PHP/endpoints/components and XML together; A16 needs no new SQL or
 JavaScript build. Verify canonical `HOST_URL`, actual FPM peer attribution,
@@ -1672,6 +1719,33 @@ certification.
 | Legacy updates and schema reconciliation | Archived/current ordering, legacy bootstrap, MyISAM preparation, journal/lock handling, conservative interruption failure, pending generator accounting and guarded conversion remain tested. Checksum persistence/readback is covered; this is not an integrity scan of every historically applied SQL file. No production upgrade or full extracted-data generation was performed. |
 | Pruning and diagnostics | Bounded deletion remains limited to eligible staging/cache/budget/error data; symlinks, protected roots and unreadable scans are covered. Scan failures do not reset maintenance or silently claim completion. The hosting warning caused by output after a private configuration's closing PHP tag is a startup/configuration issue, not evidence of credential disclosure. |
 
+### October 11–12 review of later security-related changes
+
+The October 12 reference review traced the earlier findings to their published
+patches and checked later changes against the current source. The merged
+snapshot is [04b73824][commit-codeql-merge], application revision **73**.
+The inspected checkout additionally contains local commit
+`9eaee549d1f50054d9793a5a19dadfc3161becfc`; it is not part of that merged
+snapshot and no published PR is recorded for it here.
+
+| Surface | Remediation reference | Result and remaining boundary |
+| --- | --- | --- |
+| Staff-only spell filters | [PR #24][pr-spell] · [f24e161f][commit-spell] | Custom-attribute lookup checks the employee role before its world query; bit positions are bounded before shifting. Existing target/stance filter IDs remain compatible. The [spell-sync fixtures](../tests/security-spell-sync.php) cover guest/staff and malformed-bit paths. |
+| HTML rendering and comparison levels | [PR #26][pr-codeql] · [1fd2e06f][commit-html] · [74692f33][commit-entities] | Repeated attribute metacharacters are encoded; changelog names render as text; profile query values stay literal; comparison levels normalize to integers 1–80; extracted video captions are escaped for their final attribute context. These changes extend A02's contextual-output controls. |
+| Pending-user automatic links | [PR #26][pr-codeql] · [fecb33f7][commit-hostnames] · [05aa76bb][commit-domains] | Parsed hostnames use exact/subdomain allowlist boundaries and obsolete/unverified entries are removed. Explicit authored links retain separate permission rules. |
+| JSON and editor conversion | [PR #26][pr-codeql] · [74692f33][commit-entities] | Native JSON replaces an obsolete handwritten fallback. Text extraction decodes original entities once; editor conversion handles case and newly revealed tags. HTML-to-markup conversion remains an authoring convenience, not a security sanitizer. |
+| Setup templates and reviewed URL/placeholder paths | [PR #26][pr-codeql] · [843bf9cf][commit-templates] · [fd1086aa][commit-url-tests] · [e4f758ec][commit-placeholders] | Raw setup templates parse before generation. URL-property and condition-placeholder paths have explicit regression assertions; this does not establish exhaustive DOM-XSS safety. Video bulk-selection counts are repaired. |
+| Icon host classification and video-delete inputs | Local commit `9eaee549d1f50054d9793a5a19dadfc3161becfc` | Icon targets compare parsed Wowhead hostnames rather than URL substrings. Video deletion declares scalar unsigned ID-list input, retaining role, POST, CSRF and origin checks. These are confirmed navigation/request-filtering defects; no privilege bypass or icon-link exploit is established. Publication remains separate from the merged fixes above. |
+
+Current fixture definitions are documented in the
+[viewer/local-asset tests](../tests/README.md#viewer-retirement-and-local-assets)
+and [operator/admin tests](../tests/README.md#redirects-and-operator-administration-a16).
+Deploy generated `globaljs` together with the changed PHP/static scripts; these
+October 11 browser/input fixes require no new SQL migration. Merged or local
+patches do not establish hosted CodeQL alert closure. No fresh hosted analysis,
+application regressions, dependency audit or deployed-site acceptance was
+performed during this documentation/reference pass.
+
 ### Dependency and supply-chain status
 
 [composer.lock](../composer.lock) locks production **dibi/dibi v5.1.1** and **phpmailer/phpmailer v7.1.1**.
@@ -1729,9 +1803,11 @@ necessarily use the same identity.
 
 ## 5. Ordered remediation backlog
 
-R01, R02 and R03 have implemented source fixes with local regressions. No
-established source fix remains pending in this record; deployment acceptance is
-separate. The current status table is authoritative for unfinished work.
+A01–A16 and R01–R03 have merged source fixes or hardening with dated local
+regressions. Publication of the additional local icon/video-delete fix and
+deployment acceptance remain separate. The current status table and
+[later-change review](#october-1112-review-of-later-security-related-changes)
+are authoritative for unfinished work.
 The original remediation order below is preserved for staging/deployment
 acceptance; its completed source tasks should not be read as open defects.
 
@@ -1758,7 +1834,7 @@ of source work does not satisfy the launch gates automatically.
 
 The entries below are dated history. Phrases such as "remains open" in an early
 entry describe that point in the sequence, not today's source status. Use the
-current status table and the October 8 record for the latest audit conclusion.
+current status table and the later dated records for the latest audit conclusion.
 
 **Executed during the source review:** pinned Git revision verification, source
 inventory, targeted manual traces, and public dependency-advisory lookup.
@@ -2100,3 +2176,44 @@ MariaDB, Windows, actual Cloudflare/FPM/proxy traffic, historical first-use
 baseline cost and production deployment acceptance remain unverified. R01,
 R02 and R03 source remediations are complete locally; the current acceptance
 table and launch gates remain outstanding evidence requirements.
+
+
+### October 12 documentation and remediation-reference review
+
+The review matched all **19 finding IDs** to source changes and their Git
+history. GitHub PR metadata confirmed the merged status and patch/merge hashes
+for PRs **#1, #5, #7, #19, #21, #22, #24 and #26**. The A01–A16 implementation
+revisions remain historical steps within one published security bundle; no
+unavailable intermediate commits are invented. The later CodeQL follow-up is
+identified by its local commit rather than an unverified public link.
+
+Documentation validation checks local file/heading targets, moved README content,
+remediation commit ancestry and patch paths, historical finding preservation and
+whitespace. The earlier runtime counts remain dated evidence. PHP/JavaScript,
+SQL, browser, Apache and dependency-advisory suites were not rerun for this
+documentation change. No hosted CodeQL closure or deployment acceptance is
+claimed.
+
+[pr-security]: https://github.com/peycho/aowow/pull/1
+[commit-security]: https://github.com/peycho/aowow/commit/12e8f56191de46a977b319f2c746b4542b925d64
+[pr-apache]: https://github.com/peycho/aowow/pull/5
+[commit-apache]: https://github.com/peycho/aowow/commit/8d6814ecbbaea8d725caca0fe75dc9de6ae73395
+[pr-talents]: https://github.com/peycho/aowow/pull/7
+[commit-talents]: https://github.com/peycho/aowow/commit/41447ba66dd666b5b77bcbe2963e65d7b0232545
+[pr-r01]: https://github.com/peycho/aowow/pull/21
+[commit-r01]: https://github.com/peycho/aowow/commit/d09c8ba4779023c7662d6e75eee365e6e2622cdb
+[pr-r02]: https://github.com/peycho/aowow/pull/19
+[commit-r02]: https://github.com/peycho/aowow/commit/6b669d025178e83f852c15b6216497169d89311e
+[pr-r03]: https://github.com/peycho/aowow/pull/22
+[commit-r03]: https://github.com/peycho/aowow/commit/a4a732c58a345b0127bdc9abb0272b8b8682ef66
+[pr-spell]: https://github.com/peycho/aowow/pull/24
+[commit-spell]: https://github.com/peycho/aowow/commit/f24e161f276efa7e793ff54ad9e107bc592016b2
+[pr-codeql]: https://github.com/peycho/aowow/pull/26
+[commit-codeql-merge]: https://github.com/peycho/aowow/commit/04b73824f2bf645c4012e1470eb362705513844b
+[commit-html]: https://github.com/peycho/aowow/commit/1fd2e06ff6910772a17e094f2df6e4cb65976d21
+[commit-entities]: https://github.com/peycho/aowow/commit/74692f334cd6c8fdc6b993d29c423654ecc0112d
+[commit-hostnames]: https://github.com/peycho/aowow/commit/fecb33f769746eae2d2be622946a8e4dbfabcdf2
+[commit-domains]: https://github.com/peycho/aowow/commit/05aa76bb87014e888d96a1550d9e0de08f3cbe5e
+[commit-templates]: https://github.com/peycho/aowow/commit/843bf9cf083890520445f695645de0b421fbb4c2
+[commit-url-tests]: https://github.com/peycho/aowow/commit/fd1086aa94edde891351d869c4e889478d4c9452
+[commit-placeholders]: https://github.com/peycho/aowow/commit/e4f758ecd861f2b27bb322838c5f8689ea5d81a5

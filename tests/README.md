@@ -1132,7 +1132,7 @@ are needed; preserve its cache key. The default denies those five routes.
 Verify actual FPM `REMOTE_ADDR`, login/roles, unlisted staff and spoofed-header
 denials, POST/CSRF, no-store and proxy cache behavior. Never authorize a shared
 proxy IP. Native diagnostic output remains sensitive for allowed operators.
-See [install step 11](../README.md#11-restrict-diagnosticsconfiguration-and-deploy-the-legacy-deny-policy)
+See [install step 11](../docs/installation.md#11-restrict-diagnosticsconfiguration-and-deploy-the-legacy-deny-policy)
 and [A16](../docs/aowow-security-review.md#a16--redirects-and-legacydiagnostic-exposure).
 
 ## Optional site sounds
