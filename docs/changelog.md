@@ -1,9 +1,25 @@
 # Changelog
 
-Installation and everyday commands are documented in the [README](../README.md).
+Current setup and everyday commands are documented in the
+[installation](installation.md), [configuration](configuration.md) and
+[troubleshooting](troubleshooting.md) guides. Browse the
+[documentation index](README.md) for other topics.
 The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
+
+## 2026-10-12 — Documentation organization and audit references
+
+The README now introduces the project and points to dedicated installation,
+configuration and troubleshooting guides. A documentation index groups operation,
+development and review documents; contributor/support guidance and links to moved
+sections follow the new structure.
+
+The security review maps all A01–A16 and R01–R03 findings to their remediation
+PRs and commits, records the later spell-filter and CodeQL changes, and separates
+merged fixes from the local follow-up commit. This documentation review does not
+establish fresh runtime regressions, hosted CodeQL closure or deployed-site
+acceptance.
 
 ## 2026-10-11 — Icon navigation and video deletion
 
@@ -459,7 +475,7 @@ CSRF, attempt budgets, password policy, email activation and recovery authority
 remain intact. Email confirmation/reset links themselves require no new captcha.
 
 Setup prerequisites and switches are documented in the
-[README](../README.md#configuration). Provider semantics follow
+[configuration guide](configuration.md#cloudflare-turnstile). Provider semantics follow
 [Cloudflare's server validation documentation](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/).
 
 Validation: full PHP 8.5, JavaScript, lint and MySQL 8.4 regression gates passed
@@ -1039,7 +1055,7 @@ by the skipped steps.
 
 With this option, extraction of `<localeCode>/Sound/` and audio reencoding can
 be omitted. To add sounds later, extract and reencode the files described in the
-[installation guide](../README.md#5-reencode-the-audio-files), then run:
+[installation guide](installation.md#5-reencode-the-audio-files), then run:
 
 ```sh
 php aowow --sql=sounds

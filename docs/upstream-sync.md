@@ -218,7 +218,7 @@ merge. This keeps authorship and provenance available in the final branch.
 
 Keep source integration separate from applying `php aowow --update` or rebuilding
 operator-provided assets on a deployed installation. Record the required follow-up
-using the [existing update guidance](../README.md#9-apply-updates-with-verified-migration-accounting).
+using the [existing update guidance](installation.md#9-apply-updates-with-verified-migration-accounting).
 On the next sync, fetch again and compare against the newly integrated fork tip;
 review records and cherry-pick trailers explain previously adapted or deferred
 commits that patch-equivalence checks alone cannot classify.

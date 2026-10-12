@@ -7,10 +7,12 @@ repository questions:
 - **Feature request:** a proposed change to repository behavior.
 - **Support question:** installation, configuration, updates or development tests.
 
-Check the [README](README.md), [test guide](tests/README.md) and existing issues
-first. Include your exact commit/application revision and sanitized environment
-information. Remove credentials, tokens, personal data and raw database dumps
-from logs and screenshots. Public issues are visible to everyone.
+Check the [installation](docs/installation.md), [configuration](docs/configuration.md)
+and [troubleshooting](docs/troubleshooting.md) guides, the
+[test guide](tests/README.md) and existing issues first. Include your exact
+commit/application revision and sanitized environment information. Remove
+credentials, tokens, personal data and raw database dumps from logs and
+screenshots. Public issues are visible to everyone.
 
 Report vulnerabilities privately through the [security policy](SECURITY.md).
 The private vulnerability channel is not for ordinary support or conduct reports.
