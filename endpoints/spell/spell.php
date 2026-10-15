@@ -1282,14 +1282,14 @@ class SpellBaseResponse extends TemplateResponse implements ICache
 
         // we know this spell effect is only in use on index 1
         if ($this->subject->getField('effect1Id') == SPELL_EFFECT_OPEN_LOCK && ($lockId = $this->subject->getField('effect1MiscValue')))
-            $lockIds += DB::Aowow()->selectCol(
+            $lockIds = array_unique(array_merge($lockIds, DB::Aowow()->selectCol(
                'SELECT `id` FROM ::lock WHERE            (`type1` = %i AND `properties1` = %i) OR
                 (`type2` = %i AND `properties2` = %i) OR (`type3` = %i AND `properties3` = %i) OR
                 (`type4` = %i AND `properties4` = %i) OR (`type5` = %i AND `properties5` = %i)',
                 LOCK_TYPE_SKILL, $lockId, LOCK_TYPE_SKILL, $lockId,
                 LOCK_TYPE_SKILL, $lockId, LOCK_TYPE_SKILL, $lockId,
                 LOCK_TYPE_SKILL, $lockId
-            );
+            )));
 
         if (!$lockIds)
             return [null, null];
@@ -2847,11 +2847,11 @@ class SpellBaseResponse extends TemplateResponse implements ICache
                 break;
             case  -7:                                       // only spells unique in skillLineAbility will always point to the right skillLine :/
                 if ($cf & SPELL_CU_PET_TALENT_TYPE0)
-                    $path[] = 411;                          // Ferocity
+                    $path[] = 410;                          // Ferocity
                 else if ($cf & SPELL_CU_PET_TALENT_TYPE1)
                     $path[] = 409;                          // Tenacity
                 else if ($cf & SPELL_CU_PET_TALENT_TYPE2)
-                    $path[] = 410;                          // Cunning
+                    $path[] = 411;                          // Cunning
                 break;
             case -5:
                 if ($this->subject->getField('effect2AuraId') == SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED ||

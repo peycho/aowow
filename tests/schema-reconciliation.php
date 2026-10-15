@@ -71,7 +71,38 @@ $migration=$root.'/setup/sql/updates/'.SchemaUpdate::DATE.'_01.sql';
 $fixture=$root.'/tests/fixtures/schema-before-reconciliation.sql';
 try {
     mkdir($temp.'/config'); copy($root.'/aowow',$temp.'/aowow');
-    foreach(['includes','setup','localization'] as $name)symlink($root.'/'.$name,$temp.'/'.$name);
+    foreach(['includes','localization'] as $name)symlink($root.'/'.$name,$temp.'/'.$name);
+    // Keep the real setup/update/build registry, replacing only SQL data production.
+    // New migrations request game-data regeneration; this structure/data-preservation
+    // fixture has no client extraction and must not rebuild its retained spell rows.
+    mkdir($temp.'/setup'); mkdir($temp.'/setup/tools'); mkdir($temp.'/setup/tools/clisetup');
+    foreach(new DirectoryIterator($root.'/setup') as $file)
+        if(!$file->isDot() && $file->getFilename()!=='tools')symlink($file->getPathname(),$temp.'/setup/'.$file->getFilename());
+    foreach(new DirectoryIterator($root.'/setup/tools') as $file)
+        if(!$file->isDot() && $file->getFilename()!=='clisetup')symlink($file->getPathname(),$temp.'/setup/tools/'.$file->getFilename());
+    foreach(new DirectoryIterator($root.'/setup/tools/clisetup') as $file)
+        if(!$file->isDot() && $file->getFilename()!=='datagen.us.php')symlink($file->getPathname(),$temp.'/setup/tools/clisetup/'.$file->getFilename());
+    file_put_contents($temp.'/setup/tools/clisetup/datagen.us.php', <<<'PHP'
+<?php
+namespace Aowow;
+CLISetup::registerUtility(new class extends UtilityScript {
+    public const string COMMAND='sql';
+    public int $optGroup=CLISetup::OPT_GRP_UTIL;
+    public function __construct() {
+        // Preserve actual generator registration and build dependencies after CLI init.
+        foreach(glob('setup/tools/sqlgen/*.ss.php') as $file)include_once $file;
+    }
+    public function run(array &$args):bool {
+        $tasks=(array)$args['doSql'];
+        if(array_diff($tasks,['items','stats','spell']) || Cfg::get('MAINTENANCE')!==1)
+            throw new \RuntimeException('Unexpected schema fixture generation request');
+        file_put_contents('sql-tasks.jsonl',json_encode($tasks,JSON_THROW_ON_ERROR)."\n",FILE_APPEND);
+        $args['doneSql']=$tasks;
+        return true;
+    }
+});
+PHP);
+
     $config=['host'=>'127.0.0.1','port'=>$port,'user'=>'root','pass'=>'','db'=>$options['database'],'prefix'=>'aowow_'];
     file_put_contents($temp.'/config/config.php','<?php $AoWoWconf = '.var_export(['aowow'=>$config,'world'=>$config],true).';');
     mkdir($temp.'/static/uploads/screenshots/normal',0700,true);file_put_contents($temp.'/static/uploads/screenshots/normal/1001.jpg','SYNTHETIC_UPLOAD_BYTES');
@@ -138,6 +169,9 @@ try {
     $db->query('ALTER TABLE ::spell DROP INDEX idx_name4');
     [$code,$out]=invoke($temp);
     check($code===0 && str_contains($out,'schema reconciliation data preflight passed'),'Real --update completes the guarded reconciliation: '.$out);
+    $tasks=json_decode(trim(file_get_contents($temp.'/sql-tasks.jsonl')),true,flags:JSON_THROW_ON_ERROR);
+    check(!array_diff(['items','stats','spell'],$tasks),'real update dispatches every newly scheduled SQL generator');
+    check($db->query('SELECT `sql` FROM ::dbversion')->fetchSingle()==='','only reported-complete synthetic generation clears pending SQL work');
     $after=SchemaValidator::inspect($db,$root.'/setup/sql/01-db_structure.sql');
     check($after['checked']===108 && !$after['issues'],'All 108 historical application table definitions converge exactly with the corrected initial schema: '.json_encode($after['issues']));
     check(snapshot()==$rows,'Accounts, passwords, community text, ownership, favorites, profiles, ratings and long legacy content survive');
@@ -312,8 +346,9 @@ try {
     check($db->query("SELECT value FROM ::config WHERE `key`='header_image_url'")->fetchSingle()==='https://images.example.test/custom.gif', 'Header image update preserves existing URL');
     $entry=$db->query('SELECT * FROM ::sql_update_journal WHERE date=1791331200 AND part=7')->fetch();
     check($entry->status==='applied' && (int)$entry->statements===3 && $entry->checksum===hash_file('sha256',$root.'/setup/sql/updates/1791331200_07.sql'), 'Header image update uses durable checksummed accounting');
-    check(!$db->query('SELECT build FROM ::dbversion')->fetchSingle() && !$db->query('SELECT `sql` FROM ::dbversion')->fetchSingle(), 'Header image settings need no generation tasks');
+    check(!$db->query('SELECT build FROM ::dbversion')->fetchSingle() && !$db->query('SELECT `sql` FROM ::dbversion')->fetchSingle(), 'Header image update and later migrations leave no pending generation tasks');
+    $journalCount=(int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle();
     [$code,$out]=invoke($temp);
-    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===1, 'Already-current header image update does not replay');
+    check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===$journalCount, 'Already-current header image update does not replay');
     echo 'PASS: '.$checks.' guarded reconciliation/parity/community/enum/concurrency checks ('.$db->query('SELECT VERSION()')->fetchSingle().")\n";
 } finally { clean($temp); }

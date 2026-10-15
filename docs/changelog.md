@@ -8,6 +8,62 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-15 — Sarjuuk integration and spell scaling (revision 74)
+
+Reviewed [Sarjuuk/aowow](https://github.com/Sarjuuk/aowow) `master` at
+`0729fb23054b60267f69868bb38c1f877b2c1809`, starting from fork `dev` at
+`0203c414410f0ae38c0af2fd9f6c9002e0a4e839`. Integration branch:
+`upstream-sync/20261015`. Seven imports use `cherry-pick -x` and preserve the
+original authors, author dates and source-SHA trailers. The lock fix also retains
+Sarjuuk's differing original committer credit. Existing October 11 adaptations
+remain in place; the older eleven source commits are accounted for by those
+prior integrations.
+
+| Upstream revision | Result revision | Decision and adaptation |
+| --- | --- | --- |
+| `aa04e14d3afced5b061ca81bd6f72cdf8d4c9e59` | `49b3d33e22fb1a2ec96fe93a78d52e01a8542663` | Incorporate merged/deduplicated spell and skill lock IDs, preserving entries with overlapping numeric result keys. |
+| `3092fe259a58e0d0283f9433e881bcdce4caf36a` | `9148b4d25cf2ab0884d07daeed32739d1f727fa1` | Adapt title editing to one integer ID and UTF-8 caption truncation. Keep the existing video-delete scalar/list checks, role checks, POST/CSRF and origin enforcement. |
+| `9075f0e7c9973383cdcc83d3aa878b4601b66986` | Already present | Retain the fork's employee-only criterion 202, bounded selectors and role recheck before the custom-attribute query. Preserve saved target/stance criteria 104/105. |
+| `2c12b43870de7bc85250e098b862af6966161448` | `eda718d4318ba4101fc694cd7db190fb279ae7ae` | Incorporate miscellaneous equipment categorization and nonnegative equipment scores; preserve fork configuration and pending client builds in fresh-setup metadata. |
+| `d1d614fa080093efb77f574e213d36110e8db25b` | `1897bc3aa25f39172bd5d26cf0d4686187926129` | Incorporate obsolete shaman spell categories for 16253/16298. Separate adaptation narrows migration deletion to `typeCat`, preserving unrelated custom fields. |
+| `3611d7dc5bf8529a090a72264b99e7b6aa252875` | `1953d34c879566257bbaa64b44057b6fac4ba0d0` | Adapt scaling modifiers without reintroducing runtime PHP evaluation. Apply operations once after the complete amount/scaling calculation; additions and subtractions do not alter growth per level. |
+| `e0a6e3f40eadb415c64ec51ac08e84b0fe4fa967` | `7bf752701b5788ef69fed2e7cd65ec45fc562e9f` | Incorporate correct pet-talent links/categories, listview pet types and passive cast-time handling. Preserve explicit frontend serialization and check all six locale menus. |
+| `0729fb23054b60267f69868bb38c1f877b2c1809` | `ecd2e83fcd614ef43f61d34d7ddfb7e21bccd8b3` | Adapt parent-zone fishing loot fallback while retaining subzone priority, localized notes and `JsExpression` labels/callbacks. |
+
+Separate integrator-authored adaptations are `0bfabc07847e8e3c02b34c84039422397011eea8`
+(custom-field preservation) and `cf5c2ac3` (scaling, scalar unsigned title IDs,
+explicit UTF-8, fishing helper and setup/cache accounting). Regression coverage
+is recorded in `c9793292` and `c6896e01`. The reconciliation fixture retains
+real generator registration and updater accounting while substituting SQL data
+production; its retained-row checks require no extracted client files.
+
+Scaling metadata keeps its raw coefficients and carries only a validated numeric
+operation to the browser. Both sides apply that operation after scaling, including
+periodic totals and NPC scaling. Invalid/nonfinite arithmetic keeps the original
+value and metadata. Existing markers still work; repeated level updates do not
+compound the modifier. The PHP and JavaScript changes must be delivered together.
+Revision 74 invalidates earlier application caches.
+
+Validation: full `lint`, `php`, `javascript`, `browser` and `sql` gates passed
+through `bash tests/ci/run.sh` on PHP 8.5.10, Node 24 and disposable MySQL 8.4.10.
+The SQL gate includes 421 update checks, 989 legacy-upgrade checks across
+53 archived and 100 current migrations, and 92 reconciliation checks.
+Focused checks cover 273 expression/config/spell/filter cases, 32 PHP-generated
+browser scaling cases, 384 locale/criterion cases, 26 lock/fishing/gearscore cases
+and 163 administration HTTP cases. Composer validation and platform checks pass;
+its existing license/version recommendations remain. `git diff --check` and
+source attribution checks pass. Apache was not rerun because access policies
+are unchanged. These synthetic fixtures do not establish deployed PHP-FPM,
+MariaDB, world data, operator grants, extracted assets or gameplay acceptance.
+
+For existing installations, deliver the complete source/static-asset changes,
+then run the normal verified `php aowow --update` workflow. The new migrations
+`1791805587_01.sql`, `1791808400_01.sql` and `1791840861_01.sql` queue `items`,
+`stats` and `spell` regeneration while preserving pending work. Fresh metadata
+advances to `1791840861 / 1` and retains `globaljs`. No source publication,
+maintained-branch merge, deployed database update, operator asset build or
+deployment was performed as part of this integration.
+
 ## 2026-10-12 — Documentation organization and audit references
 
 The README now introduces the project and points to dedicated installation,

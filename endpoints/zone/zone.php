@@ -754,28 +754,8 @@ class ZoneBaseResponse extends TemplateResponse implements ICache
         }
 
         // tab: fishing
-        $fish = new LootByContainer(Loot::FISHING, $this->typeId);
-        if ($fish->formatListview())
-        {
-            $this->extendGlobalData($fish->jsGlobals);
-            $xCols = array_merge([new JsExpression('Listview.extraCols.percent')], $fish->extraCols);
-
-            $note = null;
-            if ($skill = DB::World()->selectCell('SELECT `skill` FROM skill_fishing_base_level WHERE `entry` = %i', $this->typeId))
-                $note = sprintf(Util::$lvTabNoteString, Lang::zone('fishingSkill'), Lang::formatSkillBreakpoints(Game::getBreakpointsForSkill(SKILL_FISHING, $skill), Lang::FMT_HTML));
-            else if ($_parentArea && ($skill = DB::World()->selectCell('SELECT `skill` FROM skill_fishing_base_level WHERE `entry` = %i', $_parentArea)))
-                $note = sprintf(Util::$lvTabNoteString, Lang::zone('fishingSkill'), Lang::formatSkillBreakpoints(Game::getBreakpointsForSkill(SKILL_FISHING, $skill), Lang::FMT_HTML));
-
-            $this->lvTabs->addListviewTab(new Listview(array(
-                'data'            => $fish->getResult(),
-                'name'            => new JsExpression('LANG.tab_fishing'),
-                'id'              => 'fishing',
-                'extraCols'       => array_unique($xCols),
-                'hiddenCols'      => ['side'],
-                'note'            => $note,
-                'computeDataFunc' => new JsExpression('Listview.funcBox.initLootTable')
-            ), ItemList::$brickFile));
-        }
+        if ($fishing = $this->tabFishing($_parentArea))
+            $this->lvTabs->addListviewTab($fishing);
 
         // tab: spells
         if ($saData = DB::World()->selectAssoc('SELECT * FROM spell_area WHERE `area` = %i', $this->typeId))
@@ -920,6 +900,39 @@ class ZoneBaseResponse extends TemplateResponse implements ICache
                     $this->zoneMusic[] = [Lang::sound('ambience'), $_, 'soundambience', (object)['loop' => true]];
             }
         }
+    }
+
+    private function tabFishing(int $parentArea) : ?Listview
+    {
+        $fish = $fishLootTabs = null;
+        if (($fish = new LootByContainer(Loot::FISHING, $this->typeId))->getItems())
+            $fishLootTabs = $fish->formatListview();
+        else if ($parentArea && ($fish = new LootByContainer(Loot::FISHING, $parentArea))->getItems())
+            $fishLootTabs = $fish->formatListview();
+
+        if ($fishLootTabs)
+        {
+            $this->extendGlobalData($fish->jsGlobals);
+            $xCols = array_merge([new JsExpression('Listview.extraCols.percent')], $fish->extraCols);
+
+            $note = null;
+            if ($skill = DB::World()->selectCell('SELECT `skill` FROM skill_fishing_base_level WHERE `entry` = %i', $this->typeId))
+                $note = sprintf(Util::$lvTabNoteString, Lang::zone('fishingSkill'), Lang::formatSkillBreakpoints(Game::getBreakpointsForSkill(SKILL_FISHING, $skill), Lang::FMT_HTML));
+            else if ($parentArea && ($skill = DB::World()->selectCell('SELECT `skill` FROM skill_fishing_base_level WHERE `entry` = %i', $parentArea)))
+                $note = sprintf(Util::$lvTabNoteString, Lang::zone('fishingSkill'), Lang::formatSkillBreakpoints(Game::getBreakpointsForSkill(SKILL_FISHING, $skill), Lang::FMT_HTML));
+
+            return new Listview(array(
+                'data'            => $fishLootTabs,
+                'name'            => new JsExpression('LANG.tab_fishing'),
+                'id'              => 'fishing',
+                'extraCols'       => array_unique($xCols),
+                'hiddenCols'      => ['side'],
+                'note'            => $note,
+                'computeDataFunc' => new JsExpression('Listview.funcBox.initLootTable')
+            ), ItemList::$brickFile);
+        }
+
+        return null;
     }
 
     private function addMoveLocationMenu(int $_parentArea, int $parentFloor) : void

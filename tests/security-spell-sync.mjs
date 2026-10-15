@@ -7,6 +7,10 @@ for (const locale of ['enus', 'dede', 'eses', 'frfr', 'ruru', 'zhcn']) {
     const context = vm.createContext({g_staticUrl: '/static'});
     vm.runInContext(readFileSync(`static/js/locale_${locale}.js`, 'utf8'), context);
     vm.runInContext(readFileSync('static/js/filters.js', 'utf8'), context);
+    const petMenu = context.mn_spells.find(row => row[0] === -7)[3];
+    for (const [id, icon] of [[411,'Ability_Hunter_CombatExperience'],[410,'Ability_Druid_Swipe'],[409,'Ability_Hunter_Pet_Bear']]) {
+        assert.equal(petMenu.find(row => row[0] === id)[4].tinyIcon, icon, `${locale}: pet talent category matches its type`); ++checks;
+    }
     const filters = context.fi_filters.spells;
     const ids = filters.filter(filter => filter.type).map(filter => filter.id);
     assert.equal(new Set(ids).size, ids.length, 'Criteria IDs remain unique'); ++checks;

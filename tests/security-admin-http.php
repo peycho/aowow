@@ -25,7 +25,8 @@ namespace Aowow {
         public function selectCol(string $sql,mixed ...$args):array {return [];}
         public function qry(string $sql,mixed ...$args):int {
             $_SESSION['writes']++;
-            if(str_starts_with($sql,'UPDATE ::videos SET'))$_SESSION['videoDeletes'][]=end($args);
+            if(str_starts_with($sql,'UPDATE ::videos SET `status`'))$_SESSION['videoDeletes'][]=end($args);
+            if(str_starts_with($sql,'UPDATE ::videos SET `caption`'))$_SESSION['videoTitles'][]=$args;
             return 1;
         }
     }
@@ -61,9 +62,9 @@ namespace Aowow {
     }
 }
 namespace {
-    foreach(['locale/locale','admin/announcements','admin/phpinfo','admin/siteconfig','admin/siteconfig_add','admin/siteconfig_remove','admin/siteconfig_update','admin/videos_delete'] as $endpoint)require __DIR__.'/../endpoints/'.$endpoint.'.php';
+    foreach(['locale/locale','admin/announcements','admin/phpinfo','admin/siteconfig','admin/siteconfig_add','admin/siteconfig_remove','admin/siteconfig_update','admin/videos_delete','admin/videos_edittitle'] as $endpoint)require __DIR__.'/../endpoints/'.$endpoint.'.php';
     session_start();
-    $_SESSION+=['user'=>7,'groups'=>U_GROUP_ADMIN,'writes'=>0,'configReads'=>0,'phpinfoCalls'=>0,'localeSaves'=>0,'videoDeletes'=>[]];
+    $_SESSION+=['user'=>7,'groups'=>U_GROUP_ADMIN,'writes'=>0,'configReads'=>0,'phpinfoCalls'=>0,'localeSaves'=>0,'videoDeletes'=>[],'videoTitles'=>[]];
     Aowow\User::$id=$_SESSION['user'];Aowow\User::$groups=$_SESSION['groups'];
     if(isset($_GET['fixture'])) {
         if($_GET['fixture']==='identity') {$_SESSION['user']=(int)($_GET['user']??7);$_SESSION['groups']=(int)($_GET['groups']??U_GROUP_ADMIN);}
@@ -73,7 +74,7 @@ namespace {
     else $response=match($_GET['admin']??'') {
         'phpinfo'=>new Aowow\AdminPhpinfoResponse('phpinfo'),
         'announcements'=>new Aowow\AdminAnnouncementsResponse('announcements'),
-        'videos'=>new Aowow\AdminVideosActionDeleteResponse('videos'),
+        'videos'=>($_GET['action']??'')==='edittitle' ? new Aowow\AdminVideosActionEdittitleResponse('videos') : new Aowow\AdminVideosActionDeleteResponse('videos'),
         'siteconfig'=>match($_GET['action']??'') {
             'add'=>new Aowow\AdminSiteconfigActionAddResponse('siteconfig'),
             'remove'=>new Aowow\AdminSiteconfigActionRemoveResponse('siteconfig'),
