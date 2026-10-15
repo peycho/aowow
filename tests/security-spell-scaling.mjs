@@ -10,10 +10,18 @@ const start = source.indexOf('$WH.g_setTooltipLevel = function(');
 const end = source.indexOf('$WH.g_setTooltipSpells = function(', start);
 const context = {$WH: {g_convertScalingSpell: (base, spellLevel, level) => base * level / spellLevel}};
 vm.runInNewContext(source.slice(start, end), context);
+// This fixture expects one numeric result between two known metadata comments.
+// Parse that exact protocol instead of trying to strip or sanitize arbitrary HTML.
+function renderedAmount(tooltip) {
+    const match = /^<!--(?:ppl\d+:\d+:\d+(?:\.\d+)?:\d+(?:\.\d+)?|pts\d+:\d+(?:\.\d+)?)(?::[+*/-]:\d+)?-->(\d+(?:\.\d+)?)<!--\?\d+:\d+:\d+:\d+(?::\d+:\d+)?-->$/.exec(tooltip);
+    assert.ok(match, 'Expected exactly one scaling marker, numeric amount and level marker');
+    assert.equal(match[0], tooltip, 'Scaling output contains no trailing content');
+    return Number(match[1]);
+}
 let checks = 0;
 for (const {tooltip, level, expected} of fixtures) {
     const output = context.$WH.g_setTooltipLevel(tooltip, level);
-    assert.equal(Number(output.replace(/<!--.*?-->/g, '')), expected, tooltip); ++checks;
+    assert.equal(renderedAmount(output), expected, tooltip); ++checks;
     const repeated = context.$WH.g_setTooltipLevel(output, level);
     assert.equal(repeated, output, 'Repeated level updates never compound the modifier'); ++checks;
 }
@@ -21,7 +29,19 @@ for (const [tooltip, expected] of [
     ['<!--ppl1:80:100:200-->120<!--?1:1:80:11-->', 140],
     ['<!--pts1:100-->100<!--?1:1:80:1:1:1-->', 2100]
 ]) {
-    assert.equal(Number(context.$WH.g_setTooltipLevel(tooltip, 21).replace(/<!--.*?-->/g, '')), expected);
+    assert.equal(renderedAmount(context.$WH.g_setTooltipLevel(tooltip, 21)), expected);
+    ++checks;
+}
+// Malformed comments and HTML must fail the assertion rather than disappear.
+const valid = '<!--ppl1:80:100:200-->120<!--?1:1:80:11-->';
+for (const malformed of [
+    '<!--multiline\ncomment-->' + valid,
+    '<!--<!--nested-->-->' + valid,
+    '<script>globalThis.scalingMarker = 1</script>' + valid,
+    valid + '<!--extra-->',
+    valid + '\n'
+]) {
+    assert.throws(() => renderedAmount(malformed), assert.AssertionError);
     ++checks;
 }
 console.log(`PASS: ${checks} PHP-generated spell scaling and repeated browser level-update checks`);

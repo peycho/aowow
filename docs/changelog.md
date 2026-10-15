@@ -8,6 +8,24 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-15 — Scaling fixture assertions and CodeQL review
+
+Reviewed [PR #29](https://github.com/peycho/aowow/pull/29) at
+`ba196844e76f58ce6db3a33eda7107f7a5c7b4e7`. CodeQL alerts 39–42 all point to
+the two comment-stripping expressions in `tests/security-spell-scaling.mjs`.
+Their results feed only `Number()` and Node assertions; there is no HTML-rendering
+sink on these paths. The expressions were nevertheless too permissive for the
+fixture's intended output contract.
+
+The assertions now parse the complete expected scaling marker, numeric amount
+and level marker. Extra HTML, multiline/nested comments and trailing content
+fail instead of being removed. Application code is unaffected.
+
+Validation passed on PHP 8.5.10 and Node 24: 37 focused generated-scaling checks,
+the full lint and JavaScript gates, and `git diff --check`. PHP, browser, SQL and
+Apache gates were not repeated for this test-only correction. Hosted CodeQL
+closure remains unverified until the correction is published and analyzed.
+
 ## 2026-10-15 — Sarjuuk integration and spell scaling (revision 74)
 
 Reviewed [Sarjuuk/aowow](https://github.com/Sarjuuk/aowow) `master` at
