@@ -121,6 +121,64 @@ namespace {
     (new ReflectionProperty(Aowow\SpellList::class, 'interactive'))->setValue($spell, 0);
     check($evaluate->invoke($spell, '$AP*2') === '(ATKPWR * 2)', 'noninteractive tooltip labels preserved');
 
+    // Scaling modifiers must affect the complete value exactly once on PHP and JS.
+    $amount = new ReflectionMethod(Aowow\SpellList::class, 'calculateAmountForCurrent');
+    $resolve = new ReflectionMethod(Aowow\SpellList::class, 'resolveVariableString');
+    $rowProperty = new ReflectionProperty(Aowow\DBTypeList::class, 'curTpl');
+    $levelProperty = new ReflectionProperty(Aowow\SpellList::class, 'charLevel');
+    $spell->error = false;
+    $spell->id = 1;
+    $row = ['effect1BasePoints'=>100, 'effect1DieSides'=>0, 'effect1RealPointsPerLevel'=>2,
+        'baseLevel'=>1, 'maxLevel'=>80, 'spellLevel'=>1, 'attributes0'=>SPELL_ATTR0_PASSIVE,
+        'duration'=>9000, 'effect1Periode'=>3000];
+    foreach ([1, 2, 3] as $index)
+        foreach (['Id','AuraId','MiscValue'] as $field) $row['effect'.$index.$field] = 0;
+    $rowProperty->setValue($spell, $row);
+    $levelProperty->setValue($spell, 11);
+    (new ReflectionProperty(Aowow\SpellList::class, 'interactive'))->setValue($spell, Aowow\SpellList::INTERACTIVE_FULL);
+    $scalingFixtures = [];
+    foreach ([[null,null,120], ['+','5',125], ['-','5',115], ['*','3',360], ['/','3',40],
+        ['*','0',0], ['/','0',120], ['+','0',120], [';','5',120], ['+','1;phpinfo()',120],
+        ['*',str_repeat('9',400),120]] as [$op,$operand,$expected]) {
+        $result = $amount->invoke($spell, 1, $op, $operand);
+        check($result[0] == $expected && $result[1] == $expected, 'complete spell amount modifier '.($op??'none'));
+        $scalingFixtures[] = ['tooltip'=>$result[2].abs($result[0]).'<!--?1:1:80:11-->', 'level'=>11, 'expected'=>$expected];
+    }
+    foreach (['m','M','s','S','o','O'] as $variable) {
+        $result = $resolve->invoke($spell, '+', '5', null, $variable, 1, null);
+        check($result[0] == (strtolower($variable)==='o' ? 365 : 125), 'real '.$variable.' caller applies modifier once');
+    }
+    foreach ([1,3] as $ticks) {
+        $result = $amount->invoke($spell, 1, '+', '5', $ticks);
+        check($result[0] === 120*$ticks+5, 'periodic total adds constant once');
+        $scalingFixtures[] = ['tooltip'=>$result[2].$result[0].'<!--?1:1:80:11-->', 'level'=>21, 'expected'=>140*$ticks+5];
+    }
+    $row['effect1RealPointsPerLevel'] = 0.125;
+    $rowProperty->setValue($spell,$row); $levelProperty->setValue($spell,9);
+    $result=$amount->invoke($spell,1,'*','3');
+    check($result[0]===303, 'fractional per-level growth keeps its precision');
+    $scalingFixtures[]=['tooltip'=>$result[2].$result[0].'<!--?1:1:80:9-->', 'level'=>17, 'expected'=>306];
+    $row['effect1RealPointsPerLevel']=0;
+    $row['effect1Id']=SPELL_EFFECT_SCHOOL_DAMAGE;
+    $row['attributes0']=SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION;
+    $rowProperty->setValue($spell,$row);
+    $result=$amount->invoke($spell,1,'+','5');
+    check($result[0]===105 && $result[2]==='<!--pts1:100:+:5-->', 'NPC scaling retains raw base and validated modifier');
+    $scalingFixtures[]=['tooltip'=>$result[2].$result[0].'<!--?1:1:80:1:1:1-->', 'level'=>2, 'expected'=>205];
+    $castRow=['attributes0'=>SPELL_ATTR0_PASSIVE,'attributes1'=>0,'castTime'=>0,'damageClass'=>SPELL_DAMAGE_CLASS_MAGIC];
+    $rowProperty->setValue($spell,$castRow);
+    check($spell->createCastTimeForCurrent()==='', 'passive talents omit cast time');
+    $castRow['attributes0']=0; $castRow['damageClass']=SPELL_DAMAGE_CLASS_MELEE;
+    $rowProperty->setValue($spell,$castRow);
+    check($spell->createCastTimeForCurrent()==='INSTANTPHYS','instant physical abilities retain their label');
+    $castRow['attributes1']=SPELL_ATTR1_CHANNELED_1;
+    $rowProperty->setValue($spell,$castRow);
+    check($spell->createCastTimeForCurrent()==='CHANNELED','channeled abilities retain their label');
+
+    if (in_array('--scaling-fixtures',$argv,true)) {
+        echo json_encode($scalingFixtures,JSON_THROW_ON_ERROR); exit;
+    }
+
     class FilterFixture extends Aowow\Filter {
         protected static array $genericFilter = [1 => [self::CR_NYI_PH, null]];
         protected function createSQLForValues() : array { return []; }

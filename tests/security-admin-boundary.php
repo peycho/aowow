@@ -116,6 +116,22 @@ try {
         check(request($server,'admin=videos&action=delete&id=7','POST',['csrfToken'=>$token],['Origin: http://'.$server[0]])['status']===403,'Unrelated roles and guests cannot delete videos');
         check(request($server,'fixture=state')['json']['writes']===$before,'Video-role denial performs no writes');
     }
+    // Real video-title handler: a single unsigned ID, Unicode caption length and the shared CSRF gate.
+    $token=request($server,'fixture=identity&user=7&groups='.U_GROUP_VIDEO)['json']['token'];
+    $title=str_repeat('Ж',199).'😀'.'discarded';
+    $r=request($server,'admin=videos&action=edittitle&id=7','POST',['csrfToken'=>$token,'title'=>$title],['Origin: http://'.$server[0]]);
+    $state=request($server,'fixture=state')['json'];
+    check($r['status']===200 && end($state['videoTitles'])===[str_repeat('Ж',199).'😀',7],'Video title truncation preserves 200 UTF-8 characters and scalar ID');
+    foreach(['','-1','0','7,9','7.5','4294967296','7&id[]=9'] as $id) {
+        $before=request($server,'fixture=state')['json']['writes'];
+        request($server,'admin=videos&action=edittitle&id='.$id,'POST',['csrfToken'=>$token,'title'=>'Caption'],['Origin: http://'.$server[0]]);
+        check(request($server,'fixture=state')['json']['writes']===$before,'Malformed title ID performs no writes');
+    }
+    foreach([['GET',[],[],405],['POST',[],['Origin: http://'.$server[0]],403],['POST',['csrfToken'=>$token],['Origin: https://evil.example'],403]] as [$method,$body,$headers,$status]) {
+        $before=request($server,'fixture=state')['json']['writes'];
+        check(request($server,'admin=videos&action=edittitle&id=7',$method,$body+['title'=>'Caption'],$headers)['status']===$status,'Video title retains method/token/origin protections');
+        check(request($server,'fixture=state')['json']['writes']===$before,'Denied title edits perform no writes');
+    }
     echo "PASS: $checks real HTTP redirect/operator/role/CSRF/video-delete checks\n";
 }
 finally {foreach($workers as $process){proc_terminate($process);proc_close($process);}foreach($logs as $log)unlink($log);}

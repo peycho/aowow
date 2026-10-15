@@ -15,6 +15,22 @@ the new custom-attribute criterion, preserved legacy criteria and employee-only
 UI visibility. It runs in the JavaScript gate. These fixtures do not verify a
 deployed world database, extracted assets or complete gameplay acceptance.
 
+`php tests/security-upstream-content.php` exercises the real spell-lock and
+zone-fishing tab helpers with synthetic queries/loot, including overlapping
+numeric query keys, subzone precedence, parent fallback, empty loot, fishing
+skill notes, explicit JavaScript expressions, escaping and low-level gearscore.
+The PHP gate also checks caption truncation through the real protected video
+edit endpoint, plus spell modifiers, periodic totals and cast-time behavior.
+
+`php tests/security-expressions.php --scaling-fixtures | node tests/security-spell-scaling.mjs`
+feeds real PHP-generated metadata to the actual browser level updater. It checks
+addition, subtraction, multiplication, division, invalid operands, periodic
+amounts, fractional growth, NPC scaling, existing markers and repeated updates.
+This runs in the JavaScript gate. Pet category menus are checked in all six
+locales. The SQL gate verifies the three upstream migrations, journal replay,
+preserved custom fields and pending generation alongside fresh-install markers.
+These checks use synthetic data and do not establish deployed game-data acceptance.
+
 `php tests/security-smtp.php` uses disposable loopback SMTP fixtures and synthetic
 credentials. It covers native/disabled transports, all six localized activation
 templates, required STARTTLS and implicit TLS, certificate trust/hostname checks,
