@@ -57,7 +57,10 @@ rejection, strict-mode restoration, concurrency, maintenance handling and refusa
 to replay partial SQL are covered. Its guarded `fixtures/taxi-generator.php`
 helper runs the real generator with synthetic DBC/world inputs under strict SQL
 mode, verifying scripted nodes, flightmasters and map filtering.
-See [schema reconciliation](../docs/schema-reconciliation.md).
+SQL data production is synthetic in the reconciliation fixture; its real updater
+still dispatches and acknowledges the newly requested `items`, `stats` and `spell`
+tasks. Actual client extraction and deployed regeneration require acceptance
+separately. See [schema reconciliation](../docs/schema-reconciliation.md).
 
 `php tests/schema-validator.php` exercises the complete initial-schema parser,
 normalization, column/index/FK/generated-column differences, safe diagnostics and
