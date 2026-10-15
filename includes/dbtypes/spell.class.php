@@ -714,7 +714,7 @@ class SpellList extends DBTypeList
     }
 
     // formulae base from TC
-    private function calculateAmountForCurrent(int $effIdx, ?string $op = null, ?int $oparg = null, int $nTicks = 1) : array
+    private function calculateAmountForCurrent(int $effIdx, ?string $op = null, ?string $oparg = null, int $nTicks = 1) : array
     {
         $level    = $this->charLevel;
         $maxBase  = 0;
@@ -727,16 +727,6 @@ class SpellList extends DBTypeList
         $LDSEffs  = $this->canLevelDamageScale();
         $modMin   =
         $modMax   = null;
-
-        $min = $nTicks * ($add ? $base + 1 : $base);
-        $max = $nTicks * ($add + $base);
-
-        if ($op !== null && $oparg !== null)
-        {
-            $min = floor(self::modifyFormulaValue($min, $op, $oparg));
-            $max = ceil(self::modifyFormulaValue($max, $op, $oparg));
-            $rppl = self::modifyFormulaValue($rppl, $op, $oparg);
-        }
 
         if ($rppl)
         {
@@ -751,8 +741,15 @@ class SpellList extends DBTypeList
             $maxBase += (int)(($level - $baseLvl) * $rppl);
             $maxBase *= $nTicks;
 
-            $modMin = '<!--ppl'.$baseLvl.':'.($maxLvl ?: $level).':'.abs($min).':'.floor(abs($rppl) * 100 * $nTicks).'-->';
-            $modMax = '<!--ppl'.$baseLvl.':'.($maxLvl ?: $level).':'.abs($max).':'.floor(abs($rppl) * 100 * $nTicks).'-->';
+        }
+
+        $min = $nTicks * ($add ? $base + 1 : $base);
+        $max = $nTicks * ($add + $base);
+
+        if ($rppl)
+        {
+            $modMin = '<!--ppl'.$baseLvl.':'.($maxLvl ?: $level).':'.abs($min).':'.(abs($rppl) * 100 * $nTicks).'-->';
+            $modMax = '<!--ppl'.$baseLvl.':'.($maxLvl ?: $level).':'.abs($max).':'.(abs($rppl) * 100 * $nTicks).'-->';
         }
         else if ($this->getField('attributes0') & SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION && in_array($effIdx, $LDSEffs) && $spellLvl)
         {
@@ -760,7 +757,33 @@ class SpellList extends DBTypeList
             $modMax = '<!--pts'.$spellLvl.':'.abs($max).'-->';
         }
 
-        return [$min + $maxBase, $max + $maxBase, $modMin, $modMax];
+        $min += $maxBase;
+        $max += $maxBase;
+
+        // Modify the complete amount. Add/subtract must not change growth per level.
+        // Keep raw scaling inputs and carry the validated operation to the browser,
+        // so periodic totals and NPC scaling apply it exactly once after scaling.
+        if (in_array($op, ['+', '-', '*', '/'], true) && $oparg !== null && ctype_digit($oparg))
+        {
+            try
+            {
+                $modifiedMin = NumericExpression::operation($op, $min, $oparg);
+                $modifiedMax = NumericExpression::operation($op, $max, $oparg);
+                $min = $modifiedMin;
+                $max = $modifiedMax;
+                $modifier = ':'.$op.':'.$oparg.'-->';
+                if ($modMin !== null)
+                    $modMin = str_replace('-->', $modifier, $modMin);
+                if ($modMax !== null)
+                    $modMax = str_replace('-->', $modifier, $modMax);
+            }
+            catch (\InvalidArgumentException|\RangeException)
+            {
+                // Invalid/nonfinite arithmetic leaves both value and scaling unchanged.
+            }
+        }
+
+        return [$min, $max, $modMin, $modMax];
     }
 
     public function canCreateItem() : array

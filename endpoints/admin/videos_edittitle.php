@@ -13,7 +13,7 @@ class AdminVideosActionEdittitleResponse extends TextResponse
     protected int   $requiredUserGroup = U_GROUP_ADMIN | U_GROUP_BUREAU | U_GROUP_VIDEO;
 
     protected array $expectedGET       = array(
-        'id'    => ['filter' => FILTER_VALIDATE_INT]
+        'id'    => ['filter' => FILTER_VALIDATE_INT, 'flags' => FILTER_REQUIRE_SCALAR, 'options' => ['min_range' => 1, 'max_range' => 4294967295]]
     );
     protected array $expectedPOST      = array(
         'title' => ['filter' => FILTER_CALLBACK, 'options' => [self::class, 'checkTextLine']]
