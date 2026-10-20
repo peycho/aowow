@@ -1288,7 +1288,9 @@ class SpellList extends DBTypeList
         if (!$var)
             return [null, null, null, null, null];
 
-        $effIdx ??= 1;                                      // if EffectIdx is omitted, assume EffectIdx: 1
+        $effIdx     ??= 1;                                  // if EffectIdx is omitted, assume EffectIdx: 1
+        $outputFmtMin =
+        $outputFmtMax = '%d';
 
         // cache at least some lookups.. should be moved to single spellList :/
         if ($lookup && $lookup != $this->id && !isset($this->refSpells[$lookup]))
@@ -1313,6 +1315,14 @@ class SpellList extends DBTypeList
                 $fmtStringMin = '$l'.$switch[0].':'.$switch[1].';';
                 break;
             // simple cases
+            case 'e':                                       // EffectValueMultiplier
+            case 'E':
+                $base ??= $srcSpell->getField('effect'.$effIdx.'ValueMultiplier');
+                $outputFmtMin = '%.1f';
+            case 'f':                                       // EffectDamageMultiplier
+            case 'F':
+                $base ??= $srcSpell->getField('effect'.$effIdx.'DamageMultiplier');
+                $outputFmtMin = '%.1f';
             case 'a':                                       // EffectRadiusMin
             case 'A':                                       // EffectRadiusMax
                 $base ??= $srcSpell->getField('effect'.$effIdx.'RadiusMax');
@@ -1322,12 +1332,6 @@ class SpellList extends DBTypeList
             case 'c':                                       // powerCost
             case 'C':
                 $base ??= $srcSpell->getField('powerCost');
-            case 'e':                                       // EffectValueMultiplier
-            case 'E':
-                $base ??= $srcSpell->getField('effect'.$effIdx.'ValueMultiplier');
-            case 'f':                                       // EffectDamageMultiplier
-            case 'F':
-                $base ??= $srcSpell->getField('effect'.$effIdx.'DamageMultiplier');
             case 'h':                                       // ProcChance
             case 'H':
                 $base ??= $srcSpell->getField('procChance');
@@ -1348,7 +1352,9 @@ class SpellList extends DBTypeList
                 $base ??= $srcSpell->getField('rangeMaxHostile');
             case 't':                                       // Periode
             case 'T':
+                // note: periode = (procFlags & 0x1) ? 5000 : getField('effectXPeriode');
                 $base ??= $srcSpell->getField('effect'.$effIdx.'Periode') / 1000;
+                // if ($base fraction < 0.01f) ? %d : %.2f
             case 'u':                                       // StackCount
             case 'U':
                 $base ??= $srcSpell->getField('stackAmount');
@@ -1415,14 +1421,12 @@ class SpellList extends DBTypeList
                 $periode  = $srcSpell->getField('effect'.$effIdx.'Periode');
                 $duration = $srcSpell->getField('duration');
 
+                // Keep the established fallback for missing periodic data. Only
+                // regeneration amounts are defined per five seconds.
                 if (!$periode)
                 {
-                    // Mod Power Regeneration & Mod Health Regeneration have an implicit periode of 5sec
                     $aura = $srcSpell->getField('effect'.$effIdx.'AuraId');
-                    if ($aura == SPELL_AURA_MOD_REGEN || $aura == SPELL_AURA_MOD_POWER_REGEN)
-                        $periode = 5000;
-                    else
-                        $periode = 3000;
+                    $periode = in_array($aura, [SPELL_AURA_MOD_REGEN, SPELL_AURA_MOD_POWER_REGEN]) ? 5000 : 3000;
                 }
 
                 if (!in_array($op, $signs) || !is_numeric($oparg))
@@ -1470,16 +1474,18 @@ class SpellList extends DBTypeList
                     $fmtStringMax = $modStrMax.'%s';
                 }
 
+                if (ctype_upper($var))
+                    $outputFmtMax = $outputFmtMin = '%.1f';
+
                 $minPoints = $min;
                 $maxPoints = $max;
                 break;
         }
 
-        // handle excessively precise floats
-        if (is_float($minPoints))
-            $minPoints = round($minPoints, 2);
-        if (is_float($maxPoints))
-            $maxPoints = round($maxPoints, 2);
+        if ($minPoints !== null)
+            sprintf($outputFmtMin, $minPoints);
+        if ($maxPoints !== null)
+            sprintf($outputFmtMax, $maxPoints);
 
         return [$minPoints, $maxPoints, $fmtStringMin, $fmtStringMax, $statId];
     }
