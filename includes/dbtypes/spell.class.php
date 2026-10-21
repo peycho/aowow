@@ -1483,9 +1483,9 @@ class SpellList extends DBTypeList
         }
 
         if ($minPoints !== null)
-            sprintf($outputFmtMin, $minPoints);
+            $minPoints = sprintf($outputFmtMin, $minPoints);
         if ($maxPoints !== null)
-            sprintf($outputFmtMax, $maxPoints);
+            $maxPoints = sprintf($outputFmtMax, $maxPoints);
 
         return [$minPoints, $maxPoints, $fmtStringMin, $fmtStringMax, $statId];
     }
