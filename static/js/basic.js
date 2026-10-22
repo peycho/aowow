@@ -1416,6 +1416,15 @@ $WH.g_setTooltipLevel = function(tooltip, level) {
         }
     }
 
+    function formatSpellAmount(value, precision) {
+        value = Math.abs(value);
+        if (precision === '0')
+            return Math.trunc(value);
+        if (precision === '1')
+            return (Math.round((value + Number.EPSILON) * 10) / 10).toFixed(1);
+        return Math.round(value); // Existing markers retain their original rounding.
+    }
+
     // Retrieve tooltip's global information
     _ = tooltip.match(/<!--\?([0-9:]*)-->/);
     if (!_) {
@@ -1430,7 +1439,7 @@ $WH.g_setTooltipLevel = function(tooltip, level) {
     // Update the tooltip
     if (scaDist) {
      // if (!tooltip.match(/<!--pts[0-9](:[0-9])?-->/g)) { // Not a spell
-        if (!tooltip.match(/<!--pts[0-9]+(:[0-9]+(?:\.[0-9]+)?)?(?::[+*/-]:[0-9]+)?-->/g)) { // aowow - appropriated for 335a
+        if (!tooltip.match(/<!--pts[0-9]+(:[0-9]+(?:\.[0-9]+)?)?(?::[+*/-]:[0-9]+)?(?::f:[01])?-->/g)) { // aowow - appropriated for 335a
             var
                 scaFlags = parseInt(_[5]) || 0,
                 speed = tooltip.match(/<!--spd-->(\d\.\d+)/);
@@ -1542,16 +1551,16 @@ $WH.g_setTooltipLevel = function(tooltip, level) {
 
             // Spell effects
             // aowow - custom: spell level damage calculation
-            tooltip = tooltip.replace(/(<!--pts(\d+):(\d+(?:\.\d+)?)(?::([+*/-]):(\d+))?-->)\s*\d+(?:\.\d+)?/gi, function(_all, marker, spellLvl, base, op, operand) {
-                return marker + Math.round(Math.abs(modifySpellAmount($WH.g_convertScalingSpell(Number(base), Number(spellLvl), level), op, operand)));
+            tooltip = tooltip.replace(/(<!--pts(\d+):(\d+(?:\.\d+)?)(?::([+*/-]):(\d+))?(?::f:([01]))?-->)\s*\d+(?:\.\d+)?/gi, function(_all, marker, spellLvl, base, op, operand, precision) {
+                return marker + formatSpellAmount(modifySpellAmount($WH.g_convertScalingSpell(Number(base), Number(spellLvl), level), op, operand), precision);
             });
         }
     }
 
     // Points per level
-    tooltip = tooltip.replace(/(<!--ppl(\d+):(\d+):(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)(?::([+*/-]):(\d+))?-->)\s*\d+(?:\.\d+)?/gi, function(_all, marker, minLvl, maxLvl, base, ppl, op, operand) {
+    tooltip = tooltip.replace(/(<!--ppl(\d+):(\d+):(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)(?::([+*/-]):(\d+))?(?::f:([01]))?-->)\s*\d+(?:\.\d+)?/gi, function(_all, marker, minLvl, maxLvl, base, ppl, op, operand, precision) {
         var amount = Number(base) + (Math.min(Math.max(level, minLvl), maxLvl) - minLvl) * Number(ppl) / 100;
-        return marker + Math.round(Math.abs(modifySpellAmount(amount, op, operand)));
+        return marker + formatSpellAmount(modifySpellAmount(amount, op, operand), precision);
     });
 
     // Rating to percent

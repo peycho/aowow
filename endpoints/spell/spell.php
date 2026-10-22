@@ -2619,7 +2619,7 @@ class SpellBaseResponse extends TemplateResponse implements ICache
                             }
                             break;
                         case SPELL_AURA_USE_NORMAL_MOVEMENT_SPEED:  // value is the speed cap in yards per second (7 = base run speed)
-                            $valueFmt = Lang::main('parensFmt', ['%s', round(100 * ($effBP + ($effDS ?: 1)) / 7, 1) . '%%']);
+                            $valueFmt = Lang::main('parensFmt', ['%s', round(100 * ($effBP + ($effDS ? 1 : 0)) / 7, 1) . '%%']);
                             break;
                         case SPELL_AURA_MOD_COMBAT_RESULT_CHANCE:
                             $valueFmt = '%s%%';
@@ -2718,6 +2718,8 @@ class SpellBaseResponse extends TemplateResponse implements ICache
                     $valueFmt   = '%s'.Lang::spell('_speedUnit');
                     $valueLabel = Lang::spell('_speedZ');
                     array_walk($_footer['value'], fn(&$x) => $x /= 10);
+                    $effRPPL /= 10;
+                    $effPPCP /= 10;
                     if ($effMV)
                         $_footer = ['speedXY' => Lang::spell('_speedXY').Lang::main('colon').sprintf($valueFmt, $effMV / 10)] + $_footer;
                     $effMV = 0;                             // shown as horizontal speed, not in the header

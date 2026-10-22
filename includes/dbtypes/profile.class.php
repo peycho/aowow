@@ -367,8 +367,10 @@ class ProfileListFilter extends Filter
 
     protected function cbCollectibleSpell(int $cr, int $crs, string $crv, int $catg) : ?array
     {
-        if (!Util::checkNumeric($crv, NUM_CAST_INT))
+        $id = filter_var($crv, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 0xFFFFFFFF]]);
+        if ($id === false)
             return null;
+        $crv = $id;
 
         if (!($this->spellBuffer[$catg] ??= DB::Aowow()->selectCol('SELECT `id` AS ARRAY_KEY, 1 FROM ::spell WHERE `typeCat` = %i', $catg)))
             return null;

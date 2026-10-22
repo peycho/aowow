@@ -1274,7 +1274,7 @@ class SpellList extends DBTypeList
         return [$op, $oparg, $lookup, $var, $effIdx, $switch];
     }
 
-    private function resolveVariableString(?string $op, ?string $oparg, ?int $lookup, ?string $var, ?int $effIdx, ?array $switch) : array
+    private function resolveVariableString(?string $op, ?string $oparg, ?int $lookup, ?string $var, ?int $effIdx, ?array $switch, bool $forFormula = false) : array
     {
         $signs  = ['+', '-', '/', '*', '%', '^'];
 
@@ -1482,10 +1482,23 @@ class SpellList extends DBTypeList
                 break;
         }
 
-        if ($minPoints !== null)
-            $minPoints = sprintf($outputFmtMin, $minPoints);
-        if ($maxPoints !== null)
-            $maxPoints = sprintf($outputFmtMax, $maxPoints);
+        // Display precision must not round operands inside a larger formula.
+        // Keep numeric values separate from their templates and scaling inputs.
+        if (!$forFormula && $statId === null)
+        {
+            $setFormat = static function(mixed &$points, ?string &$format, string $output) : void
+            {
+                if ($points === null)
+                    return;
+                if ($output === '%.1f')
+                    $points = round($points, 1, PHP_ROUND_HALF_UP);
+                $format = str_replace('%s', $output, $format ?? '%s');
+                if (str_contains($format, '<!--ppl') || str_contains($format, '<!--pts'))
+                    $format = str_replace('-->', ':f:'.($output === '%.1f' ? '1' : '0').'-->', $format);
+            };
+            $setFormat($minPoints, $fmtStringMin, $outputFmtMin);
+            $setFormat($maxPoints, $fmtStringMax, $outputFmtMax);
+        }
 
         return [$minPoints, $maxPoints, $fmtStringMin, $fmtStringMax, $statId];
     }
@@ -1563,7 +1576,7 @@ class SpellList extends DBTypeList
             $pos += $len;
 
             // we are resolving a formula -> omit ranges
-            [$minPoints, , $fmtStringMin, , $statId] = $this->resolveVariableString(...$varParts);
+            [$minPoints, , $fmtStringMin, , $statId] = $this->resolveVariableString(...$varParts, forFormula: true);
 
             // time within formula -> rebase to seconds and omit timeUnit
             if (strtolower($varParts[3]) == 'd')            // old $varParts['var']

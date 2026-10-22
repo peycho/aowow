@@ -42,6 +42,7 @@ PY
     php tests/setup-debug.php
     php tests/security-spell-sync.php
     php tests/security-upstream-content.php
+    php tests/security-upstream-october.php
     php tests/schema-validator.php
     php tests/maintenance-response.php
     php tests/security-smtp.php

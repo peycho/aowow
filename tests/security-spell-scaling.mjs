@@ -13,7 +13,7 @@ vm.runInNewContext(source.slice(start, end), context);
 // This fixture expects one numeric result between two known metadata comments.
 // Parse that exact protocol instead of trying to strip or sanitize arbitrary HTML.
 function renderedAmount(tooltip) {
-    const match = /^<!--(?:ppl\d+:\d+:\d+(?:\.\d+)?:\d+(?:\.\d+)?|pts\d+:\d+(?:\.\d+)?)(?::[+*/-]:\d+)?-->(\d+(?:\.\d+)?)<!--\?\d+:\d+:\d+:\d+(?::\d+:\d+)?-->$/.exec(tooltip);
+    const match = /^<!--(?:ppl\d+:\d+:\d+(?:\.\d+)?:\d+(?:\.\d+)?|pts\d+:\d+(?:\.\d+)?)(?::[+*/-]:\d+)?(?::f:[01])?-->(\d+(?:\.\d+)?)<!--\?\d+:\d+:\d+:\d+(?::\d+:\d+)?-->$/.exec(tooltip);
     assert.ok(match, 'Expected exactly one scaling marker, numeric amount and level marker');
     assert.equal(match[0], tooltip, 'Scaling output contains no trailing content');
     return Number(match[1]);

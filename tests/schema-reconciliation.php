@@ -94,7 +94,7 @@ CLISetup::registerUtility(new class extends UtilityScript {
     }
     public function run(array &$args):bool {
         $tasks=(array)$args['doSql'];
-        if(array_diff($tasks,['items','stats','spell']) || Cfg::get('MAINTENANCE')!==1)
+        if(array_diff($tasks,['items','stats','spell','taxi']) || Cfg::get('MAINTENANCE')!==1)
             throw new \RuntimeException('Unexpected schema fixture generation request');
         file_put_contents('sql-tasks.jsonl',json_encode($tasks,JSON_THROW_ON_ERROR)."\n",FILE_APPEND);
         $args['doneSql']=$tasks;
@@ -170,7 +170,7 @@ PHP);
     [$code,$out]=invoke($temp);
     check($code===0 && str_contains($out,'schema reconciliation data preflight passed'),'Real --update completes the guarded reconciliation: '.$out);
     $tasks=json_decode(trim(file_get_contents($temp.'/sql-tasks.jsonl')),true,flags:JSON_THROW_ON_ERROR);
-    check(!array_diff(['items','stats','spell'],$tasks),'real update dispatches every newly scheduled SQL generator');
+    check(!array_diff(['items','stats','spell','taxi'],$tasks),'real update dispatches every newly scheduled SQL generator');
     check($db->query('SELECT `sql` FROM ::dbversion')->fetchSingle()==='','only reported-complete synthetic generation clears pending SQL work');
     $after=SchemaValidator::inspect($db,$root.'/setup/sql/01-db_structure.sql');
     check($after['checked']===108 && !$after['issues'],'All 108 historical application table definitions converge exactly with the corrected initial schema: '.json_encode($after['issues']));
@@ -204,7 +204,7 @@ PHP);
     check($code===0,'Real taxi generator completes without database errors under strict mode: '.$err);
     $generated=json_decode($out,true,flags:JSON_THROW_ON_ERROR);
     check($generated['nodes']===[['id'=>301,'type'=>0,'typeId'=>0,'name_loc8'=>'Задание'],['id'=>302,'type'=>1,'typeId'=>9001,'name_loc8'=>'Полёт']] &&
-        $generated['visible']===[302] && $generated['paths']===1,'Real generator preserves scripted/NPC identities, localized names, map filtering and paths');
+        $generated['visible']===[302] && $generated['paths']===1,'Real generator selects the nearest of two flightmasters and preserves scripted nodes, localized names, map filtering and paths');
     check((int)$db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle()===0,'Successful reconciliation restores prior maintenance');
     $entry=$db->query('SELECT * FROM ::sql_update_journal WHERE date=%i AND part=1',SchemaUpdate::DATE)->fetch();
     check($entry->status==='applied' && $entry->checksum===hash_file('sha256',$migration) && (int)$entry->statements===count(SqlUpdate::statements(file_get_contents($migration))),'All ALTER statements retain durable checksum/progress accounting');

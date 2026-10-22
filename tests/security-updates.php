@@ -417,18 +417,18 @@ CODE;
         $db->query("INSERT INTO ::setup_custom_data VALUES ('spell',1,'typeCat','7','unrelated spell')");
         $db->query("UPDATE ::dbversion SET `sql`='existing', build='globaljs tooltips'");
         $migrations=files(array_combine(
-            ['1791805587_01.sql','1791808400_01.sql','1791840861_01.sql'],
-            array_map(fn($name)=>file_get_contents($root.'/setup/sql/updates/'.$name),['1791805587_01.sql','1791808400_01.sql','1791840861_01.sql'])
+            ['1791805587_01.sql','1791808400_01.sql','1791840861_01.sql','1792413928_01.sql'],
+            array_map(fn($name)=>file_get_contents($root.'/setup/sql/updates/'.$name),['1791805587_01.sql','1791808400_01.sql','1791840861_01.sql','1792413928_01.sql'])
         ));
         SqlUpdate::apply($db,$migrations);
-        check(marker()===['date'=>1791840861,'part'=>1],'new migrations advance the verified marker in order');
+        check(marker()===['date'=>1792413928,'part'=>1],'new migrations advance the verified marker in order');
         foreach ([16253,16298] as $entry) {
             check($db->query("SELECT value FROM ::setup_custom_data WHERE command='spell' AND entry=%i AND field='typeCat'",$entry)->fetchSingle()==='0','obsolete talent category override updated');
             check($db->query("SELECT value FROM ::setup_custom_data WHERE command='spell' AND entry=%i AND field='name_loc0'",$entry)->fetchSingle()==='Custom name','unrelated custom field preserved');
         }
         check($db->query("SELECT value FROM ::setup_custom_data WHERE entry=1")->fetchSingle()==='7','unrelated spell category preserved');
         $tasks=(string)$db->query('SELECT `sql` FROM ::dbversion')->fetchSingle();
-        foreach (['existing','items','stats','spell'] as $task) check(in_array($task,explode(' ',$tasks),true),'pending task retained: '.$task);
+        foreach (['existing','items','stats','spell','taxi'] as $task) check(in_array($task,explode(' ',$tasks),true),'pending task retained: '.$task);
         check($db->query('SELECT build FROM ::dbversion')->fetchSingle()==='globaljs tooltips','pending client assets preserved');
         $snapshot=$db->query('SELECT * FROM ::setup_custom_data ORDER BY entry,field')->fetchAll();
         SqlUpdate::apply($db,$migrations);
@@ -443,7 +443,7 @@ CODE;
         preg_match('/INSERT INTO `aowow_dbversion` VALUES .*?;/', file_get_contents($root.'/setup/sql/02-db_initial_data.sql'), $seed);
         $db->query('TRUNCATE ::dbversion');
         $db->nativeQuery($seed[0]);
-        check(marker()['date'] >= 1791840861, 'fresh schema version includes all imported migrations');
+        check(marker()['date'] >= 1792413928, 'fresh schema version includes all imported migrations');
         check(str_contains((string)$db->query('SELECT build FROM ::dbversion')->fetchSingle(), 'globaljs'), 'fresh setup retains the pending globaljs build');
 
         // The sound setting migration preserves choices and schedules client guards exactly once.

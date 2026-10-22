@@ -165,6 +165,32 @@ namespace {
     $result=$amount->invoke($spell,1,'+','5');
     check($result[0]===105 && $result[2]==='<!--pts1:100:+:5-->', 'NPC scaling retains raw base and validated modifier');
     $scalingFixtures[]=['tooltip'=>$result[2].$result[0].'<!--?1:1:80:1:1:1-->', 'level'=>2, 'expected'=>205];
+    // Display rounding cannot change operands used by nested formulas.
+    $row['attributes0']=SPELL_ATTR0_PASSIVE;
+    $row['effect1Id']=0; $row['effect1AuraId']=0;
+    $row['effect1BasePoints']=101; $row['effect1DieSides']=0;
+    $row['effect1ValueMultiplier']=1.25; $row['effect1DamageMultiplier']=0.75;
+    $row['effect1Periode']=2500;
+    $rowProperty->setValue($spell,$row);
+    $variables = new ReflectionMethod(Aowow\SpellList::class,'handleVariables');
+    $formula = new ReflectionMethod(Aowow\SpellList::class,'resolveFormulaString');
+    foreach ([['$e1','1.3'], ['$f1','0.8'], ['$/3;s1','33'], ['$/3;S1','33.7']] as [$text,$expected])
+        check($variables->invoke($spell,$text) === $expected, 'Variable display precision: '.$text);
+    check($formula->invoke($spell,'$e1*4',2)[0] == 5, 'Formula preserves fractional multiplier before final precision');
+    check($formula->invoke($spell,'$t1*2',2)[0] == 5, 'Formula preserves fractional tick interval');
+    foreach ([['s',33],['S',33.7]] as [$variable,$expected]) {
+        $row['effect1RealPointsPerLevel']=0.125;
+        $rowProperty->setValue($spell,$row); $levelProperty->setValue($spell,1);
+        $tooltip=$variables->invoke($spell,'$/3;'.$variable.'1').'<!--?1:1:80:1-->';
+        $scalingFixtures[]=['tooltip'=>$tooltip,'level'=>1,'expected'=>$expected];
+    }
+    $row['effect1RealPointsPerLevel']=0;
+    $row['effect1Periode']=0; $row['duration']=15000;
+    foreach ([SPELL_AURA_MOD_REGEN=>300, SPELL_AURA_MOD_POWER_REGEN=>300, SPELL_AURA_PERIODIC_DAMAGE=>500] as $aura=>$expected) {
+        $row['effect1AuraId']=$aura; $row['effect1BasePoints']=100;
+        $rowProperty->setValue($spell,$row);
+        check($resolve->invoke($spell,null,null,null,'o',1,null)[0] == $expected, 'Zero-period fallback remains aura-specific');
+    }
     $castRow=['attributes0'=>SPELL_ATTR0_PASSIVE,'attributes1'=>0,'castTime'=>0,'damageClass'=>SPELL_DAMAGE_CLASS_MAGIC];
     $rowProperty->setValue($spell,$castRow);
     check($spell->createCastTimeForCurrent()==='', 'passive talents omit cast time');
