@@ -4258,3 +4258,15 @@ a.button-red.fa-clipboard > em > span {
 /* Staff ID-list dialog formerly shared the Flash viewer presentation. */
 .staff-id-list { padding: 10px; background-color: #303030; font-size: 13px; }
 .staff-id-list-close { float: right; padding: 10px; }
+
+/* Initial content remains readable when enhancement is unavailable. */
+.server-navigation, .server-breadcrumb, .server-pagination { padding: 8px 10px; color: #aaa; }
+.server-navigation, .server-pagination { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.server-breadcrumb { line-height: 1.7; }
+.server-lists { padding: 0 10px; }
+.server-list ul { columns: 2 250px; padding-left: 22px; }
+.server-list li { break-inside: avoid; padding: 3px 0; }
+.server-list li span { color: #aaa; font-size: 11px; }
+.server-pagination { clear: both; }
+
+.server-script-notice { margin: 1em; text-align: center; color: #bbb; }

@@ -42,6 +42,23 @@ SQL name lookups, normalized list links and pending-metadata visibility using th
 real guides schema. Never substitute a retained database. None of these tests
 establishes deployed publication acceptance or indexing outcomes.
 
+`php tests/seo-rendering.php` checks initial article/guide markup, database
+references, source lists, quick facts, author permissions, escaping, approved
+image paths and pagination validation across all six locales. The browser gate
+uses its generated fixture with real Markup, Listview and Tabs code; checks cover
+replacement without duplicate content, lazy tab loading, failed enhancement and
+navigation fallback. A second Chromium run blocks all page scripts through CSP
+and verifies the initial headings and crawlable links remain available.
+
+`tests/seo-pagination-sql.php` uses the same exact disposable SEO database guard.
+It exercises the actual DBTypeList query builder, pagination response trait,
+canonical/head renderer and list/pagination templates over SQL and loopback HTTP.
+It traverses 151 visible records, excludes 10 private records, checks stable page
+boundaries and totals, retains locale/canonical identity, and verifies malformed,
+overflow and beyond-last pages return HTTP 404. No application credentials or
+retained database are used. These checks do not replace acceptance with a full
+extracted game dataset and deployed assets.
+
 For the existing Apache policy suite, set `AOWOW_TEST_APACHE_PORT` to an available
 port in 8010–8020 when running locally. If omitted, Docker assigns a host port.
 

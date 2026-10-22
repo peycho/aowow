@@ -31,6 +31,7 @@ if ($this->pageTemplate):
     echo '                PageTemplate.set('.$this->json('pageTemplate', varRef: true).');'.PHP_EOL;
 endif;
     echo '                PageTemplate.init();'.PHP_EOL;
+    echo '                if (typeof AowowServerContent !== "undefined") AowowServerContent.navigation();'.PHP_EOL;
 
 if (isset($fiQuery) && count($fiMenuItem) > 1 && array_slice($fiMenuItem, 0, 2) == [1, 5]):
     echo "                \$(document).ready(function(){ Menu.modifyUrl(Menu.findItem(mn_path, ".$this->json($fiMenuItem)."), { filter: '".$this->escJS($fiQuery)."'}, { onAppendCollision: fi_mergeFilterParams }) });".PHP_EOL;

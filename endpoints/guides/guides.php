@@ -55,7 +55,8 @@ class GuidesBaseResponse extends TemplateResponse // implements ICache
 
         $this->redButtons = [BUTTON_GUIDE_NEW => User::canWriteGuide()];
 
-        $guides = new GuideList($conditions);
+        $guides = new GuideList($conditions, ['pagination' => $this->paginationOptions()]);
+        $this->setPagination($guides->getMatches());
 
         $this->lvTabs = new Tabs(['parent' => new JsExpression("\$WH.ge('tabs-generic')")]);
 

@@ -46,9 +46,10 @@ if ($this->altHomeLogo):
         </div>
 
         <div class="home-menu" id="home-menu"></div>
+<?php $this->brick('serverNavigation'); ?>
 
 <?php if ($this->oneliner): ?>
-        <p class="home-oneliner text" id="home-oneliner"></p>
+        <div class="home-oneliner text" id="home-oneliner"><?=$this->oneliner->renderHtml($this->jsGlobals); ?></div>
         <script type="text/javascript">//<![CDATA[
             <?=$this->oneliner; ?>
         //]]></script>
@@ -78,7 +79,7 @@ if (['markup' => $fbMarkup, 'extended' => $fbExt, 'boxBG' => $fbBoxBG, 'overlays
 
 <?php endif; ?>
 
-            <div class="home-featuredbox-inner text" id="news-generic"></div>
+            <div class="home-featuredbox-inner text" id="news-generic"><?=$fbMarkup ? $fbMarkup->renderHtml($this->jsGlobals) : ''; ?></div>
         </div>
 
 <?php
@@ -116,6 +117,6 @@ endif;
 
 <?php $this->localizedBrickIf($this->consentFooter, 'consent'); ?>
 
-    <noscript><div id="noscript-bg"></div><div id="noscript-text"><b><?=Lang::main('jsError'); ?></b></div></noscript>
+    <noscript><p class="server-script-notice"><?=\Aowow\ServerContent::label('javascript'); ?></p></noscript>
 </body>
 </html>

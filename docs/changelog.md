@@ -8,6 +8,31 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-22 — Initial HTML content and category pagination
+
+Articles/guides, quick facts, sanitized item/spell tooltips, source links,
+navigation and simple breadcrumbs now render in the initial HTML. Location
+links work without JavaScript, homepage text is included, and an inline notice
+replaces the JavaScript-disabled overlay. A bounded PHP markup renderer escapes
+raw HTML, restricts URLs/images and preserves author permissions. Existing
+JavaScript enhances the same content; lazy list tabs retain their fallback until
+initialization succeeds.
+
+All 23 public database/guide list routes support stable 50-row SQL pages with
+separate cache entries, crawlable Previous/Next links and individual canonicals.
+Invalid/unavailable pages return 404. Grouped item views preserve their first-page
+behavior and reject later pages; event calendars retain their existing dataset.
+
+`make dev-test` passed lint, PHP/HTTP, JavaScript, Chromium, disposable SQL and
+all eight Apache policy combinations. Final focused coverage includes 288
+initial-HTML/markup/permission/URL checks across six locales, 19 browser checks
+with normal/blocked scripting, and 160 SQL/HTTP pagination checks. The final
+rendering adjustments also passed the complete PHP/HTTP gate. See the
+[SEO roadmap](seo-plan.md) for scope and deployment acceptance. Deploy PHP/templates, CSS and the new
+`static/js/server-content.js` together and invalidate affected page caches.
+The generated JavaScript bundle is unchanged. Production and indexing acceptance
+remain pending.
+
 ## 2026-10-22 — SEO indexing, locale and guide visibility
 
 New anonymous sessions use the configured English/fallback default while explicit

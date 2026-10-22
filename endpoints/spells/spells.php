@@ -414,7 +414,8 @@ class SpellsBaseResponse extends TemplateResponse implements ICache
             }
         }
 
-        $spells = new SpellList($conditions, ['calcTotal' => true]);
+        $spells = new SpellList($conditions, ['calcTotal' => true, 'pagination' => $this->paginationOptions()]);
+        $this->setPagination($spells->getMatches());
 
         $this->extendGlobalData($spells->getJSGlobals(GLOBALINFO_SELF | GLOBALINFO_RELATED));
 

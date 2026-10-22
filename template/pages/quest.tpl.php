@@ -25,6 +25,7 @@
 <?php $this->brick('redButtons'); ?>
 
                 <h1><?=$this->h1; ?></h1>
+<?php $this->brick('markup', ['markup' => $this->article]); ?>
 
 <?php if ($this->unavailable): ?>
                 <div class="pad"></div>

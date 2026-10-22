@@ -534,6 +534,9 @@ class PageTemplate
         foreach ($allowed as $key)
             if (isset($queryVars[$key]) && is_scalar($queryVars[$key]) && (string)$queryVars[$key] !== '')
                 $params[$key] = (string)$queryVars[$key];
+        if (self::supportsPagination((string)$route) && isset($queryVars['page']) && is_scalar($queryVars['page']) &&
+            filter_var($queryVars['page'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 2]]))
+            $params['page'] = (string)(int)$queryVars['page'];
 
         // A saved language preference can render a bare URL in another locale.
         // Make that identity explicit, and retain explicit supported locales.
@@ -559,6 +562,19 @@ class PageTemplate
 
         $suffix = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
         return rtrim($host, '/').'/?'.$routePair.($suffix !== '' ? '&'.$suffix : '');
+    }
+
+    public static function supportsPagination(string $route) : bool
+    {
+        return in_array($route, self::SEO_LIST_ROUTES, true);
+    }
+
+    private function serverTooltip(bool $buff = false) : string
+    {
+        require_once __DIR__.'/servercontent.class.php';
+        $data = $this->jsGlobals[$this->type][2][$this->typeId] ?? [];
+        $key = ($buff ? 'buff' : 'tooltip').'_'.$this->locale->json();
+        return \Aowow\ServerContent::safeHtml(is_string($data[$key] ?? null) ? $data[$key] : '');
     }
 
     private function seoUrl(?\Aowow\Locale $locale = null) : string

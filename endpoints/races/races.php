@@ -40,7 +40,8 @@ class RacesBaseResponse extends TemplateResponse implements ICache
 
         $this->lvTabs = new Tabs(['parent' => new JsExpression("\$WH.ge('tabs-generic')")]);
 
-        $races = new CharRaceList($conditions);
+        $races = new CharRaceList($conditions, ['pagination' => $this->paginationOptions()]);
+        $this->setPagination($races->getMatches());
         if (!$races->error)
             $this->lvTabs->addListviewTab(new Listview(['data' => $races->getListviewData()], CharRaceList::$brickFile));
 

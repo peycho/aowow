@@ -86,7 +86,8 @@ class ZonesBaseResponse extends TemplateResponse implements ICache
             }
         }
 
-        $zones = new ZoneList($conditions);
+        $zones = new ZoneList($conditions, ['pagination' => $this->paginationOptions()]);
+        $this->setPagination($zones->getMatches());
 
         if (!$zones->hasSetFields('type'))
             $hiddenCols[] = 'instancetype';

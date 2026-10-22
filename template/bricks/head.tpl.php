@@ -12,6 +12,7 @@
         var g_csrfAdminActions = <?=json_encode(\Aowow\Csrf::ADMIN_ACTIONS, JSON_HEX_TAG);?>;</script>
     <script src="<?=$this->gStaticUrl;?>/js/csrf.js?v=<?=AOWOW_REVISION;?>"></script>
     <script src="<?=$this->gStaticUrl;?>/js/password-policy.js?v=<?=AOWOW_REVISION;?>"></script>
+    <script src="<?=$this->gStaticUrl;?>/js/server-content.js?v=<?=AOWOW_REVISION;?>"></script>
 <?=$this->renderMetaTags(4);?>
 <?php
 if ($this->isIndexable()):

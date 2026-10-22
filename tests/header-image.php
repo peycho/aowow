@@ -29,6 +29,7 @@ namespace {
     require __DIR__.'/../includes/utilities.php';
     require __DIR__.'/../includes/components/externallinks.class.php';
     require __DIR__.'/../includes/components/pagetemplate.class.php';
+    require __DIR__.'/../includes/components/servercontent.class.php';
     require __DIR__.'/../endpoints/admin/siteconfig.php';
     set_error_handler(function (int $level, string $message) : never { throw new ErrorException($message, 0, $level); });
     $checks = 0;
@@ -54,7 +55,7 @@ namespace {
     };
     $scratch = sys_get_temp_dir().'/aowow-header-image-'.bin2hex(random_bytes(6));
     mkdir($scratch.'/template/bricks', 0700, true);
-    foreach (['head','headerMenu','announcement','pageTemplate'] as $brick)
+    foreach (['head','headerMenu','announcement','pageTemplate','serverNavigation','serverBreadcrumb'] as $brick)
         file_put_contents($scratch.'/template/bricks/'.$brick.'.tpl.php', '');
     copy($root.'/template/bricks/headerImage.tpl.php', $scratch.'/template/bricks/headerImage.tpl.php');
     $cwd = getcwd();

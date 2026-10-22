@@ -63,7 +63,8 @@ class PetsBaseResponse extends TemplateResponse implements ICache
             $conditions[] = ['type', $this->category[0]];
 
         $tabData = [];
-        $pets = new PetList($conditions);
+        $pets = new PetList($conditions, ['pagination' => $this->paginationOptions()]);
+        $this->setPagination($pets->getMatches());
         if (!$pets->error)
         {
             $this->extendGlobalData($pets->getJSGlobals(GLOBALINFO_RELATED));

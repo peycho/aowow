@@ -88,7 +88,8 @@ class IconsBaseResponse extends TemplateResponse implements ICache
         /****************/
 
 
-        $icons = new IconList($conditions, ['calcTotal' => true]);
+        $icons = new IconList($conditions, ['calcTotal' => true, 'pagination' => $this->paginationOptions()]);
+        $this->setPagination($icons->getMatches());
 
         $tabData['data'] = $icons->getListviewData();
         $this->extendGlobalData($icons->getJSGlobals());

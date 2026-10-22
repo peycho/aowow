@@ -34,6 +34,32 @@ trait TrListPage
     public  string $subCat          = '';
     public ?Filter $filter          = null;
     public ?string $fiMenuExtension = null;
+    public int     $listPage        = 1;
+    public array   $pagination      = [];
+
+    protected function initPagination() : void
+    {
+        if (!array_key_exists('page', $_GET))
+            return;
+        $raw = $_GET['page'];
+        $page = is_string($raw) && preg_match('/^[1-9][0-9]*$/D', $raw) ? filter_var($raw, FILTER_VALIDATE_INT) : false;
+        if ($page === false || !Template\PageTemplate::supportsPagination($this->pageName))
+            $this->generateNotFound();
+        $this->listPage = $page;
+    }
+
+    protected function paginationOptions() : array
+    {
+        return ['page' => $this->listPage, 'size' => 50];
+    }
+
+    protected function setPagination(int $total) : void
+    {
+        $pages = max(1, (int)ceil($total / 50));
+        if ($this->listPage > $pages)
+            $this->generateNotFound();
+        $this->pagination = ['page' => $this->listPage, 'pages' => $pages, 'total' => $total, 'size' => 50];
+    }
 
     public function getCacheKeyComponents() : array
     {
@@ -62,7 +88,7 @@ trait TrListPage
             $this->type,                                    // DBType
             $catg ?? -1,                                    // DBTypeId/category
             User::$groups,                                  // staff mask
-            $misc ?? ''                                     // misc (here filter)
+            ($misc ?? '').'-page'.$this->listPage             // filter and server page must not share cached rows
         );
     }
 }
@@ -162,6 +188,9 @@ class TemplateResponse extends BaseResponse
         self::$time = microtime(true);
 
         parent::__construct();
+
+        if (in_array(__NAMESPACE__.'\TrListPage', class_uses($this), true))
+            $this->initPagination();
 
         $this->fullParams = $this->pageName;
         if ($this->category)
@@ -659,6 +688,12 @@ class TemplateResponse extends BaseResponse
 
     protected function generate() : void
     {
+        if (isset($this->listPage) && $this->listPage > 1 && !$this->pagination)
+            $this->generateNotFound();                       // never serve page one for an unsupported mode
+        if (!empty($this->pagination))
+            foreach ($this->lvTabs?->iterate() ?? [] as $tab)
+                if ($tab instanceof Listview)
+                    $tab->clearTruncationNote();
         $this->result = new Template\PageTemplate($this->template, $this);
 
         foreach ($this->scripts as $s)

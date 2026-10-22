@@ -1,6 +1,6 @@
 
 <?php if ($markup): ?>
-    <div id="<?=$markup->getParent(); ?>" class="left"></div>
+    <div id="<?=\Aowow\Util::htmlEscape($markup->getParent()); ?>" class="left"><?=$markup->renderHtml($this->jsGlobals ?? []); ?></div>
     <script type="text/javascript">//<![CDATA[
         <?=$markup;?>
     //]]></script>

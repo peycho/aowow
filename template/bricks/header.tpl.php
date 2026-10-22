@@ -38,6 +38,8 @@
             <div class="topbar-browse" id="topbar-browse"></div>
             <div class="topbar-buttons" id="topbar-buttons"></div>
         </div>
+<?php $this->brick('serverNavigation'); ?>
+<?php $this->brick('serverBreadcrumb'); ?>
 
         <script type="text/javascript">
 <?=$this->renderGlobalVars(12); ?>
