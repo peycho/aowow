@@ -2,7 +2,18 @@
 
 // Real CLI, option parser, SQL/build runners and sync; replace only DB and generators.
 namespace Aowow {
-    class Cfg { public static function get(string $key) : int { return 0; } }
+    class Cfg {
+        public const int FLAG_OPT_LIST = 16, FLAG_BITMASK = 32, FLAG_TYPE_BOOL = 4,
+                         FLAG_TYPE_INT = 1, FLAG_TYPE_FLOAT = 2;
+        public static array $scheduled = [];
+        public static function get(string $key, bool $unused = false, bool $full = false) : int|array {
+            return $full ? [0, self::FLAG_TYPE_INT, 0, 0, ''] : 0;
+        }
+        public static function set(string $key, mixed $value, array &$pending) : ?string {
+            $pending = self::$scheduled;
+            return null;
+        }
+    }
     class Lang { public static function concat(array $items) : string { return implode(', ', $items); } }
     class FixtureResult {
         public function __construct(private array $rows) {}
@@ -75,6 +86,17 @@ namespace {
             $out = stream_get_contents($pipes[1]); $err = stream_get_contents($pipes[2]);
             fclose($pipes[1]); fclose($pipes[2]);
             return [proc_close($process), $out.$err];
+        }
+        require $root.'/setup/tools/clisetup/siteconfig.us.php';
+        $utilities = (new ReflectionProperty(CLISetup::class, 'utilScriptRefs'))->getValue();
+        foreach ([[], ['globaljs']] as $pending) {
+            Aowow\Cfg::$scheduled = $pending;
+            $args = ['E', 'cache_mode', '1', null];
+            ob_start();
+            try { $success = $utilities['configure']->run($args); }
+            finally { ob_end_clean(); }
+            check($success, 'Non-interactive configuration edit succeeds');
+            check($args === ['doBuild' => $pending], 'Configuration forwards only pending builds, without consumed CLI operands');
         }
         foreach ([false, true] as $debug) {
             [$code, $out] = process(['--parser', ...($debug ? ['--debug'] : [])]);

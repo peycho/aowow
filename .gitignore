@@ -56,5 +56,5 @@ composer.phar
 /docker/secrets/
 /docker-compose.override.yml
 
-# Local Search Console exports and deployment-specific SEO acceptance reports
+# Local SEO evidence and development input data
 /reports/

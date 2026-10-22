@@ -61,7 +61,7 @@ CLISetup::registerUtility(new class extends UtilityScript
                 $this->showConfigList();
         }
 
-        $args['doBuild'] = $this->updScripts;               // push files to rebuild one level up
+        $args = ['doBuild' => $this->updScripts];           // consumed CLI operands must not trigger an empty follow-up
 
         return $result;
     }

@@ -73,4 +73,13 @@ expect watch-before-restart
     if (!is_writable("includes/kernel.php")) exit(1);
 '
 COMPOSE_PROJECT_NAME="$project" AOWOW_DEV_ENV_FILE="$work/env" bash docker/development/dev.sh cli --help > "$work/cli.log" 2>&1
-echo 'PASS: development initial sync, live asset updates, writable source and private config isolation'
+"${compose[@]}" run --rm --no-deps -T cli php -r '
+    $url = "http://127.0.0.1:".getenv("AOWOW_DEV_HTTP_PORT")."/static/js/".$argv[1];
+    if (trim(file_get_contents($url)) !== "watch-before-restart") exit(1);
+' "$probe"
+set +e
+"${compose[@]}" run --rm --no-deps -T cli php -r 'exit(7);' > "$work/status.log" 2>&1
+status=$?
+set -e
+[[ "$status" == 7 ]] || { echo 'Development CLI did not preserve command status.' >&2; exit 1; }
+echo 'PASS: development sync, writable source, private config isolation, CLI HTTP forwarding and exit status'

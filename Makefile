@@ -30,7 +30,7 @@ docker-composer:
 docker-test:
 	bash tests/docker/smoke.sh
 
-.PHONY: dev-init dev-build dev-up dev-watch dev-down dev-cli dev-shell dev-test
+.PHONY: dev-init dev-build dev-up dev-watch dev-down dev-setup dev-cli dev-shell dev-test
 dev-init:
 	bash docker/development/dev.sh init
 dev-build:
@@ -41,6 +41,8 @@ dev-watch:
 	bash docker/development/dev.sh watch
 dev-down:
 	bash docker/development/dev.sh down
+dev-setup:
+	bash docker/development/dev.sh cli --setup $(ARGS)
 dev-cli:
 	bash docker/development/dev.sh cli $(ARGS)
 dev-shell:

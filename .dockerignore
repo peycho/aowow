@@ -26,6 +26,7 @@ includes/libs/**
 !setup/
 !setup/**
 setup/mpqdata/**
+reports/**
 !static/
 !static/**
 static/download/**

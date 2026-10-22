@@ -27,7 +27,8 @@ RUN mv includes/libs /tmp/aowow-vendor \
 COPY --chown=www-data:www-data . .
 COPY docker/scripts/ /usr/local/lib/aowow/
 COPY docker/development/test.sh /usr/local/bin/aowow-dev-test
-RUN chmod 0755 /usr/local/lib/aowow/entrypoint.sh /usr/local/bin/aowow-dev-test \
+COPY docker/development/cli.sh /usr/local/bin/aowow-dev-cli
+RUN chmod 0755 /usr/local/lib/aowow/entrypoint.sh /usr/local/bin/aowow-dev-test /usr/local/bin/aowow-dev-cli \
     && gosu www-data git init --quiet /opt/aowow \
     && for path in cache config datasets static/download static/widgets static/js static/uploads static/images/wow static/wowsounds static/modelviewer setup/mpqdata; do \
          mkdir -p "$path"; \

@@ -8,6 +8,25 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-22 — Development setup skips audio by default
+
+Added `make dev-setup`. Development CLI setup commands (`--setup` and `-s`)
+automatically include `--skip-sounds`, including resumed runs, so local client
+inputs do not need the audio archive. Explicit `--sql=sounds` and
+`--build=soundfiles` commands remain available. Production setup behavior is
+unchanged. See [Docker development](docker-development.md).
+
+Development maintenance commands now forward their loopback HTTP port to the
+running web service, allowing localhost configuration checks without publishing
+another host port. Configuration edits also discard consumed CLI operands before
+scheduling rebuilds, so changing a setting with no rebuild work returns success.
+
+Validated the complete PHP/HTTP gate (including 74 setup debug/configuration
+checks), isolated Docker source-sync/CLI HTTP/exit-status checks, five CLI
+argument/default/resume cases, 25 sound setup checks and four invalid-port cases.
+Local game inputs remain ignored by Git and excluded from Docker build contexts
+and source synchronization.
+
 ## 2026-10-22 — Initial HTML content and category pagination
 
 Articles/guides, quick facts, sanitized item/spell tooltips, source links,
@@ -18,7 +37,7 @@ raw HTML, restricts URLs/images and preserves author permissions. Existing
 JavaScript enhances the same content; lazy list tabs retain their fallback until
 initialization succeeds.
 
-All 23 public database/guide list routes support stable 50-row SQL pages with
+The 23 database/guide list implementations support stable 50-row SQL pages with
 separate cache entries, crawlable Previous/Next links and individual canonicals.
 Invalid/unavailable pages return 404. Grouped item views preserve their first-page
 behavior and reject later pages; event calendars retain their existing dataset.
