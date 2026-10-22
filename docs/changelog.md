@@ -8,6 +8,87 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-22 — Sarjuuk integration and display compatibility (revision 75)
+
+Reviewed [Sarjuuk/aowow](https://github.com/Sarjuuk/aowow) `master` at
+`80a3f5861cdb43ac06e4afbe97e78c0ffcb619fd`, starting from fork `dev` at
+`316a684ce411cd16d636ee6270e273159da2bc4d`. Integration branch:
+`upstream-sync/20261022`. The 18 newer source commits use `cherry-pick -x`;
+original authors, author dates, coauthors and differing original committer
+credit are retained. Older imports are already accounted for by the prior
+review records and the October 15 integration.
+
+| Upstream revision | Result revision | Decision and adaptation |
+| --- | --- | --- |
+| `a108bcaf65b3db347f9b280bfdb5bff3289e9715` | `09291a262e07ff3c22a05ac9d9368e88ccebfaff` | Incorporate delivered-letter links for esES/frFR/ruRU, preserving sender and delay slots. |
+| `14ba844282e7ebe6cdf152c030879652c36f8298` | `d8c7f5593a8bfdbb6d35de80d2a7175861bd0c35` | Incorporate valid color/icon markup; replace the stale broken-markup assertion and exercise the renderer. |
+| `6613ae9ff018b80af08efffe93f1c520e0b68ede` | `8ba4ad1c8b11bb2e0247af2b1cd7ff66e31d73de` | Incorporate the deDE Talk target conditional correction. |
+| `123f9f300c505b37b6d8c9624de10a6849cc8ed7` | `1b61713db3b91824ffa2211d65590437bfa2098e` | Incorporate actual Talk text-presence conditions in the other five locales. |
+| `96eb82056ce6327a422c64ebd01a5f2edcefb66f` | `a312e9b954d5bea07c6d8fd5ebd0f68449b0938e` | Incorporate specific-spell versus all-auras descriptions in all six locales. |
+| `184cd9e1d16747f947dbd108a5b52dc3ca402eb8` | `c2184a30d07b8e71dadb3a1f2b9dd84bfd880b51` | Incorporate the complete worldstate opening tag. |
+| `6887a75013d49740ec5412c74c8e3682d1987e91` | `5bd828c1de434da02480b827b7bd934eeb6410ae` | Incorporate array-based hyperlink formatting for HTML, markup and raw output. |
+| `d9b73b8088a1878f104fc3784a4aabd07d442de2` | `fc749cedd527288185aba7c0f78e260377f9d456` | Adapt nearest-flightmaster generation and its migration with fresh-setup marker advancement and retained pending work. |
+| `061d1826782ea11c70ba4c7eb4048badbb1a1438` | `31b4d1f2fb21335b26298010c2b34c47c3f24bda` | Adapt aura 191 percentages to preserve the zero-DieSides convention. |
+| `8f54c6467b6920b25e5645021764bbaaa284f0ad` | `c40e36ce4ace647700a0733fc19062b1115ac145` | Adapt mount/pet criteria 80/81 with bounded positive integer IDs, both profile backends and all six frontend labels. |
+| `a8cd418cf9c8e574e486c60e819c1c913bb7ae36` | `b83ef042db0ba72b55d739269b742430cfe6436b` | Incorporate quest progress text before reward text when objectives are absent. |
+| `aeb8ff84238e94ca9ceefdc3d24f3310fd2af00a` | `2744f171016aab337dd4cca80ba6599a26d619e6` | Incorporate aura-only stack/proc icon counts. |
+| `364b7ae4f12d817ae6f8c8372dfb31c998793034` | `90eac96d003a3977a3959c125524de5cb953d8df` | Incorporate SpellModOp constants and localized time, regeneration, distance and percentage units. |
+| `1eb021aaf11f00a4d61aac08a5e5f3f477457f57` | `ba43a49b0d43b8b3dfd754c116e055a4d7da25af` | Adapt display precision while preserving safe arithmetic, raw scaling inputs and formula operands; omit the generic five-second fallback. |
+| `fe3b7dcc2ca4f387d0dcbbec2a50290a56df98d2` | `d46e31065721c48c10641df13617355d6da35e0a` | Incorporate related spell globals for sound-page icons; retain sound feature guards. |
+| `2ac2ed320dadc4eaad165d5d6f94d8bcf10cc418` | `1137cd2a6170599d3d43cad3f67acd768c0ecd78` | Adapt horizontal/vertical speed labels with matching per-level and combo-point units. |
+| `316160ab20c60b566b3335feee04685cdf3850a6` | `b4a5f93f852f773bce4662b42505f142e9861f86` | Incorporate multi-column fulltext prefixing and preserve scalar arithmetic callbacks. |
+| `80a3f5861cdb43ac06e4afbe97e78c0ffcb619fd` | `e8ce2a1377f98571ad4ae30187a35f7d1e77d632` | Adapt the formatting-result correction together with the new display templates. |
+
+Separate integrator adaptation `ef2860bb` preserves `NumericExpression`, complete
+amount arithmetic and unrounded scaling coefficients. Display formatting no
+longer rounds operands inside larger formulas. New scaling markers append an
+optional display-precision field; browser level updates retain integer or
+one-decimal output without compounding operations, and older markers remain
+compatible. The PHP and `static/js/basic.js` changes must be delivered together.
+Revision 75 invalidates earlier application caches. The local fixture-parser
+correction from `94f9ca87564a8395123563f3d5b6afa22692287f` is retained as
+`da78acb5`, with source provenance.
+
+The generic five-second missing-period change from `1eb021aa` is intentionally
+omitted. The pinned TrinityCore
+[`AuraEffect::CalculatePeriodic`](https://github.com/TrinityCore/TrinityCore/blob/8300a6d8463aa862ae154392558c1f11dc2fce5d/src/server/game/Spells/Auras/SpellAuraEffects.cpp#L563)
+starts with the supplied aura period and does not establish that blanket default.
+The fork's existing regeneration/non-regeneration fallback remains, with focused
+regressions. All 30 new `SpellModOp` constants match the same pinned
+[core definitions](https://github.com/TrinityCore/TrinityCore/blob/8300a6d8463aa862ae154392558c1f11dc2fce5d/src/server/game/Spells/SpellDefines.h).
+This source review does not establish client-data or gameplay acceptance.
+
+Additional adaptations reject malformed collectible IDs before category lookups,
+retain explicit guild serialization, fix normal-movement percentages when
+DieSides is zero, and scale knockback level/combo-point values consistently.
+Existing staff checks, saved filter criteria, request protections, supplemented
+maps, access policies and configuration are preserved.
+
+Validation passed through `bash tests/ci/run.sh`: full `lint`, `php`,
+`javascript`, `browser` and `sql` gates on PHP 8.5.11, Node 24, Chromium and
+disposable MySQL 8.4.10. The SQL gate passed 423 update checks, 994 legacy-upgrade
+checks across 53 archived and 101 current migrations, and 92 reconciliation
+checks. Focused suites passed 92 UI text/book checks, 282 expression/scaling
+checks, 533 spell/filter/unit/icon checks, 88 locale/SmartAI/mail/quest/search/
+profiler checks, 420 JavaScript locale/criterion checks and 41 PHP-generated
+browser scaling checks. The real taxi generator selects the nearest of two
+flightmasters; migration replay preserves queued tasks and unrelated custom
+fields. Composer metadata/platform checks, locked package versions,
+source-credit checks and `git diff --check` pass. Existing Composer license/version
+recommendations remain. Apache was not rerun because access policies are
+unchanged. The browser runner uses a temporary writable profile; no application
+configuration or deployment database is used by these fixtures.
+
+For existing installations, deliver the complete PHP and static-asset changes,
+then use the normal verified `php aowow --update` workflow. New migration
+`1792413928_01.sql` queues `taxi` regeneration and retains other pending work;
+fresh metadata advances to `1792413928 / 1` while retaining `globaljs`.
+Taxi regeneration needs compatible existing world/DBC inputs. No additional
+client extraction or map rebuild is introduced. Source publication, maintained-
+branch merging, deployed migrations, deployed regeneration and deployment were
+not performed by this local integration. Synthetic fixtures do not establish
+production schema/grants, historical content or gameplay acceptance.
+
 ## 2026-10-15 — Scaling fixture assertions and CodeQL review
 
 Reviewed [PR #29](https://github.com/peycho/aowow/pull/29) at
