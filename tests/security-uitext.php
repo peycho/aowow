@@ -7,6 +7,8 @@ namespace Aowow {
     }
     class Lang {
         public const int FMT_RAW = 0, FMT_HTML = 1, FMT_MARKUP = 2;
+        public static function game(string $key, mixed ...$args) : string|array { return $key === 'pvpRank' ? ['Rank'] : 'Fixture'; }
+        public static function main(string $key) : string { return 'Fixture'; }
     }
 }
 
@@ -93,8 +95,19 @@ namespace {
     check(simpleHtml($heading, Lang::FMT_RAW) === 'HeadingText', 'Raw headings retain text');
     check(UIText::format('Hello <hic> & friends', Lang::FMT_HTML) === 'Hello &lt;hic&gt; &amp; friends', 'Upstream plain-text escaping is retained');
     check(UIText::format('|cffff0000Red|r', Lang::FMT_HTML) === '<span style="color: #ff0000ff;">Red</span>', 'UI colors retain generated HTML');
-    check(UIText::format('|cffff0000Red|r', Lang::FMT_MARKUP) === '[span color=#ff0000]Red[/span]', 'UI colors retain generated markup');
+    check(UIText::format('|cffff0000Red|r', Lang::FMT_MARKUP) === '[color=#ff0000]Red[/color]', 'UI colors retain generated markup');
     check(UIText::format("First\nSecond", Lang::FMT_HTML) === 'First<br />Second', 'Line breaks remain supported');
+
+    check(UIText::format('|TInterface\\Icons\\Spell_Fire_Fire:16|t', Lang::FMT_MARKUP) === '[icon name=spell_fire_fire][/icon]', 'Game icons close their markup tag');
+    check(UIText::format('$123w', Lang::FMT_MARKUP) === '[span class=q0]WorldState #123[/span]', 'Worldstate markup has a complete opening tag');
+    foreach ([
+        Lang::FMT_HTML => '<a href="?spell=133">Fireball</a>',
+        Lang::FMT_MARKUP => '[spell=133]',
+        Lang::FMT_RAW => '(spell #133) Fireball'
+    ] as $format => $expected)
+        check(UIText::unescapeUISequences('|Hspell:133|hFireball|h', $format) === $expected, 'Hyperlink argument arrays render without an exception in format '.$format);
+    check(UIText::format('|Hspell:133|h<unsafe>|h', Lang::FMT_HTML) === '<a href="?spell=133">&lt;unsafe&gt;</a>', 'Hyperlink labels retain HTML escaping');
+    check(UIText::unescapeUISequences('|Hplayer:Name|hName|h', Lang::FMT_HTML) === '', 'Unsupported hyperlinks remain omitted');
 
     $book = new Book(['<HTML><BODY>'.$image.'</BODY></HTML>']);
     check($book->jsonSerialize()['pages'] === [$expectedImage], 'Real book pages retain image HTML');

@@ -44,8 +44,8 @@ $app->query('CREATE TEMPORARY TABLE dbc_factiontemplate (id int, enemyFactionId1
 $app->query('INSERT INTO dbc_factiontemplate VALUES (1,0,0,0,0,0)');
 $world->query('CREATE TEMPORARY TABLE creature_template (entry int, faction int, npcflag int)');
 $world->query('CREATE TEMPORARY TABLE creature (id int, map int, position_x float, position_y float, npcflag int)');
-$world->query('INSERT INTO creature_template VALUES (9001,1,%i)', NPC_FLAG_FLIGHT_MASTER);
-$world->query('INSERT INTO creature VALUES (9001,0,10,10,0)');
+$world->query('INSERT INTO creature_template VALUES (9001,1,%i),(9002,1,%i)', NPC_FLAG_FLIGHT_MASTER, NPC_FLAG_FLIGHT_MASTER);
+$world->query('INSERT INTO creature VALUES (9001,0,10,10,0),(9002,0,20,20,0)');
 require $root.'/setup/tools/sqlgen/taxi.ss.php';
 if (!CLISetup::$generator->generate() || DB::errorCount() !== 0) throw new \RuntimeException('Taxi generator failed.');
 $app->query('DROP TABLE dbc_taxinodes'); $app->query('DROP TABLE dbc_worldmaparea');

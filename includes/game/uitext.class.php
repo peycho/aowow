@@ -149,7 +149,7 @@ final class UIText
         $to[Lang::FMT_MARKUP] = array(
             '<\1/\2>',
             '<'.implode('/', Lang::game('pvpRank', 1)).'>',
-            '[span class=q0>WorldState #\1[/span]',
+            '[span class=q0]WorldState #\1[/span]',
             '<'.Lang::game('class').'>',
             '<'.Lang::game('race').'>',
             '<'.Lang::main('name').'>',
@@ -228,7 +228,7 @@ final class UIText
                     case Lang::FMT_HTML:
                         return sprintf('<span style="color: #%1$s%2$s;">%3$s</span>', $rgb, $a, $text);
                     case Lang::FMT_MARKUP:
-                        return sprintf('[span color=#%1$s]%3$s[/span]', $rgb, $a, $text); // doesn't support alpha
+                        return sprintf('[color=#%1$s]%3$s[/color]', $rgb, $a, $text); // doesn't support alpha
                     case Lang::FMT_RAW:
                     default:
                         return $text;
@@ -254,7 +254,7 @@ final class UIText
                     case Lang::FMT_HTML:
                         return '<span class="icontiny" style="background-image: url('.Cfg::get('STATIC_URL').'/images/wow/icons/tiny/'.Util::lower($iconName).'.gif)">';
                     case Lang::FMT_MARKUP:
-                        return '[icon name='.Util::lower($iconName).']';
+                        return '[icon name='.Util::lower($iconName).'][/icon]';
                     case Lang::FMT_RAW:
                     default:
                         return '';
@@ -310,12 +310,12 @@ final class UIText
                 switch ($fmt)
                 {
                     case Lang::FMT_HTML:
-                        return sprintf('<a href="?%s=%d">%s</a>', $spfVars);
+                        return vsprintf('<a href="?%s=%d">%s</a>', $spfVars);
                     case Lang::FMT_MARKUP:
-                        return sprintf('[%s=%d]', $spfVars);
+                        return vsprintf('[%s=%d]', $spfVars);
                     case Lang::FMT_RAW:
                     default:
-                        return sprintf('(%s #%d) %s', $spfVars);
+                        return vsprintf('(%s #%d) %s', $spfVars);
                 }
             }, $text);
 

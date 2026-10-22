@@ -1,5 +1,19 @@
 # Security regressions
 
+`php tests/security-upstream-october.php` exercises the October 22 imports with
+real locale formatting, SmartAI actions, mail headers, quest tooltips, fulltext
+condition construction and both collectible-filter backends. Synthetic data
+covers all six locales, missing Talk text, specific/all aura removal, progress
+text precedence, multi-column fulltext and malformed collectible IDs. It runs in
+the PHP gate without application credentials.
+
+Spell-effect fixtures also cover signed time units, regeneration labels,
+knockback speed scaling and aura-only icon counts in all six locales. Generated
+PHP-to-JavaScript scaling checks preserve display precision across repeated level
+updates while formula operands retain their original precision. Existing scaling
+markers remain compatible; new display markers append `:f:0` or `:f:1` for integer
+or one-decimal output. Deliver PHP and `static/js/basic.js` together.
+
 `php tests/security-spell-sync.php` exercises the actual spell, item, quest and
 achievement filters, spell effect/model helpers, spell/enchantment templates and
 custom-data trait with synthetic identities, database responses and game rows.
@@ -56,9 +70,9 @@ mapping, long captions/text and community/upload preservation. Data preflight
 rejection, strict-mode restoration, concurrency, maintenance handling and refusal
 to replay partial SQL are covered. Its guarded `fixtures/taxi-generator.php`
 helper runs the real generator with synthetic DBC/world inputs under strict SQL
-mode, verifying scripted nodes, flightmasters and map filtering.
+mode, verifying scripted nodes, nearest-flightmaster selection and map filtering.
 SQL data production is synthetic in the reconciliation fixture; its real updater
-still dispatches and acknowledges the newly requested `items`, `stats` and `spell`
+still dispatches and acknowledges the newly requested `items`, `stats`, `spell` and `taxi`
 tasks. Actual client extraction and deployed regeneration require acceptance
 separately. See [schema reconciliation](../docs/schema-reconciliation.md).
 

@@ -1,6 +1,9 @@
 // Shared assertions run against the real parser in Node and in the browser bundle.
 function checkRetirementMarkup(check) {
     const html = text => Markup.toHtml(text, {mode: Markup.MODE_ARTICLE, allow: Markup.CLASS_STAFF});
+    const gameText = html('[span][color=#ff0000]Red[/color][icon name=spell_fire_fire][/icon][span class=q0]WorldState #123[/span][/span]');
+    check(gameText.includes('color: #ff0000') && gameText.includes('spell_fire_fire') && gameText.includes('WorldState #123'), 'Converted game colors, icons and worldstates render inside enclosing markup');
+    check(!gameText.includes('[color=') && !gameText.includes('[icon ') && !gameText.includes('[span'), 'Converted game markup leaves no literal unparsed tags');
     for (const tag of ['model', 'modelviewer']) {
         const fallback = html(`[${tag} npc=1 img=https://wowimg.zamimg.com/ignored.jpg label=Example]Old label[/${tag}]`);
         check(fallback.includes('Example') && fallback.includes(LANG.modelviewer_retired), `${tag}: localized fallback`);

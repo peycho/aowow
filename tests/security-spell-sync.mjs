@@ -11,6 +11,11 @@ for (const locale of ['enus', 'dede', 'eses', 'frfr', 'ruru', 'zhcn']) {
     for (const [id, icon] of [[411,'Ability_Hunter_CombatExperience'],[410,'Ability_Druid_Swipe'],[409,'Ability_Hunter_Pet_Bear']]) {
         assert.equal(petMenu.find(row => row[0] === id)[4].tinyIcon, icon, `${locale}: pet talent category matches its type`); ++checks;
     }
+    for (const [id,name] of [[80,'ownsmount'],[81,'ownspet']]) {
+        const filter = context.fi_filters.profiles.find(filter => filter.id === id);
+        assert.equal(filter.name,name); assert.equal(filter.type,'str-small');
+        assert.ok(context.LANG.fiprofiles[name]); checks += 3;
+    }
     const filters = context.fi_filters.spells;
     const ids = filters.filter(filter => filter.type).map(filter => filter.id);
     assert.equal(new Set(ids).size, ids.length, 'Criteria IDs remain unique'); ++checks;
