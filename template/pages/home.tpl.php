@@ -7,7 +7,7 @@
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="<?=$this->locale->hreflang('-'); ?>">
 <head>
 
 <?php $this->brick('head'); ?>

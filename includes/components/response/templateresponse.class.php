@@ -168,7 +168,7 @@ class TemplateResponse extends BaseResponse
     public ?string $extraHTML   = null;
     public  array  $redButtons  = [];                       // see template/redButtons.tpl.php
     public  array  $metaTags    = array(
-        ['name' => "viewport", 'content' => "initial-scale=0.85"]
+        ['name' => "viewport", 'content' => "width=device-width, initial-scale=1"]
      // ['name' => "google-site-verification", 'content' => "<ownership-code>"]
     );
 

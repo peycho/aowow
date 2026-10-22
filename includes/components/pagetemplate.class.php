@@ -755,6 +755,8 @@ class PageTemplate
                 $tag['content'] = $url;
             else if (($tag['property'] ?? '') === 'og:locale')
                 $tag['content'] = $locale->hreflang();
+            else if (($tag['name'] ?? '') === 'viewport')
+                $tag['content'] = 'width=device-width, initial-scale=1';
             else if (($tag['name'] ?? '') === 'language')
                 $tag['content'] = $locale->domain();
         }

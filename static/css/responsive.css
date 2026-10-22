@@ -1,0 +1,116 @@
+/* Keep the established desktop layout; narrow screens reflow text and controls.
+ * Tables, maps and calculators retain their coordinate systems in local scroll areas. */
+@media (max-width: 979px) {
+    .layout { min-width: 0; width: auto; }
+    .layout-inner { padding: 0 8px; }
+    .wrapper { margin-right: 0; min-width: 0; }
+    .header { height: auto; min-height: 90px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    #header-logo { position: relative; width: 160px; height: 90px; flex-shrink: 0; }
+    .header a.header-logo { top: 10px; }
+    .header a.header-image { position: static; width: min(468px, 100%); height: auto; aspect-ratio: 468 / 60; margin-bottom: 8px; }
+    .toplinks { position: static; height: auto; overflow: visible; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 0 6px; line-height: 32px; }
+    .toplinks a, .footer-links a { display: inline-flex; align-items: center; min-height: 32px; }
+    .toptabs { height: auto; }
+    .toptabs dl { display: flex; flex-wrap: wrap; gap: 4px; }
+    .toptabs dt { float: none; margin: 0; }
+    .toptabs a, .toptabs a.active { top: 0; line-height: 40px; min-height: 40px; padding: 0 10px; background: #303030 !important; border-radius: 3px 3px 0 0; }
+    .toptabs a.active { background: #484848 !important; }
+    .toptabs a span { display: none; }
+    .topbar { height: auto; overflow: visible; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px; }
+    .topbar-search { float: none; flex: 1 1 100%; order: -1; right: auto; top: auto; margin: 0; }
+    .topbar-search form { display: block; }
+    .topbar-search input { width: 100% !important; height: 42px; box-sizing: border-box; padding: 6px 44px 6px 8px; font-size: 16px; }
+    .topbar-search a { right: 0; top: 0; width: 42px; height: 42px; background: none; }
+    .topbar-search a::after { content: ''; position: absolute; width: 22px; height: 22px; left: 10px; top: 10px; background: url(../images/header/search.gif) left top no-repeat; }
+    .topbar-browse { float: none; padding: 0; }
+    .topbar-buttons { padding: 0; line-height: normal; }
+    span.menu-buttons { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    span.menu-buttons a, span.menu-buttons a.open { display: inline-flex; align-items: center; min-height: 40px; box-sizing: border-box; padding: 7px 9px; }
+    span.menu-buttons a.open { padding: 6px 8px; }
+    a.button-red { min-height: 36px; padding: 0 10px; margin-bottom: 8px; border: 1px solid #854040; border-radius: 4px; background: #581010; }
+    a.button-red em { display: flex; align-items: center; min-height: 34px; padding: 0; background: none; }
+    a.button-red b, a.button-red i { display: none; }
+    a.button-red-disabled { background: #303030; border-color: #505050; }
+    .breadcrumb, .server-breadcrumb { line-height: 1.8; overflow-wrap: anywhere; }
+    .main-contents { padding: 10px; min-width: 0; }
+    .main-contents > .text { font-size: 15px; line-height: 1.55; overflow-wrap: anywhere; }
+    .text h1 { line-height: 1.3; clear: both; }
+    .inputbox { max-width: 100%; box-sizing: border-box; }
+    .text > [id^="sl"], .text > [id^="ks"] { margin-left: 0 !important; max-width: calc(100% - 6px); }
+    #tc-classes, #pc-classes, #tc-itself, #pc-itself { max-width: 100%; overflow: auto; box-sizing: border-box; }
+    #tc-classes, #pc-classes { overflow: visible; }
+    #tc-classes-outer, #pc-classes-outer { width: 100% !important; }
+    #tc-classes-inner, #pc-classes-inner { position: static !important; width: auto !important; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+    #tc-classes-inner p, #pc-classes-inner p { flex-basis: 100%; font-size: 24px; }
+    #tc-classes .iconmedium, #pc-classes .iconmedium { float: none; margin: 2px; }
+    #pc-classes .pc-classes-inner-family { display: flex; flex-wrap: wrap; justify-content: center; }
+    #tc-itself.choose, #pc-itself.choose { display: none; }
+    .text img { max-width: 100%; height: auto; }
+    .text pre.code { max-width: 100%; overflow: auto; box-sizing: border-box; }
+    .text .minibox, .text .minibox-left { max-width: 100%; box-sizing: border-box; }
+    .text input, .text select, .text textarea, .inputbox input, .inputbox select, .inputbox textarea { max-width: 100%; box-sizing: border-box; }
+    input[type="text"], input[type="search"], input[type="email"], input[type="password"], textarea, select { font-size: 16px; }
+    select, button, input[type="submit"], input[type="button"], .btn { min-height: 36px; }
+    .server-navigation a, .server-pagination a { display: inline-flex; align-items: center; min-height: 40px; }
+    .server-pagination { align-items: center; }
+    .tabs-container { overflow-x: auto; }
+    .tabs-levels { min-width: 100%; }
+    .tabs li, .tabs a { min-height: 36px; }
+    .tabs a div { line-height: 36px; }
+    .tabbed-contents { padding: 6px; min-width: 0; }
+    .listview { min-width: 0; }
+    .listview-band-top, .listview-band-bottom { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; }
+    .listview-quicksearch, .listview-nav { float: none; margin: 0; max-width: 100%; }
+    .listview-quicksearch input { min-height: 36px; font-size: 16px; box-sizing: border-box; max-width: 100%; }
+    .listview-nav { display: flex; flex-wrap: wrap; align-items: center; }
+    .listview-nav a { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; min-height: 36px; }
+    .listview-withselected, .listview-withselected2 { flex-basis: 100%; }
+    .responsive-scroll { max-width: 100%; overflow: auto; clear: both; box-sizing: border-box; }
+    .text table.grid { display: block; max-width: 100%; overflow: auto; }
+    .responsive-scroll > .mapper { max-width: none !important; }
+    .responsive-scroll > table.grid { display: table; max-width: none; overflow: visible; }
+    .responsive-scroll > table.listview-mode-default { min-width: 640px; }
+    .responsive-scroll:focus-visible, [data-responsive-scroll]:focus-visible { outline: 2px solid #ffd100; outline-offset: 2px; }
+    #mapper, #mapper-generic, #talent-itself, #petcalc-itself { max-width: 100%; overflow: auto; box-sizing: border-box; }
+    .text > .wowhead-tooltip { float: none !important; clear: both; max-width: 100%; overflow: auto !important; padding-top: 8px !important; }
+    .zone-picker { max-width: 100%; margin: 4px 0; }
+    #fi { max-width: 100%; overflow-x: auto; }
+    .footer { overflow-wrap: anywhere; }
+    .menu { max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); overflow: auto; }
+    .menu a { min-height: 36px; box-sizing: border-box; display: flex; align-items: center; white-space: normal; }
+    .menu a span { overflow-wrap: anywhere; }
+    .menu .menu-outer { max-width: calc(100vw - 16px); }
+    .menu .menu-inner { max-height: 65vh; overflow-y: auto; }
+    .live-search { max-width: calc(100vw - 16px); box-sizing: border-box; white-space: normal; max-height: 60vh; overflow: auto; }
+    .lightbox-inner { left: 0 !important; top: 0 !important; transform: translate(-50%, -50%); max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow: auto; box-sizing: border-box; }
+    div.dialog { box-sizing: border-box; }
+    div.dialog input, div.dialog select, div.dialog textarea { max-width: 100%; box-sizing: border-box; }
+
+    body.home .home-wrapper { padding: 80px 12px 0; }
+    .home-search form { width: min(425px, 100%); }
+    .home-search input { box-sizing: border-box; height: 44px; padding-right: 44px; font-size: 20px; }
+    .home-search a { width: 44px; height: 44px; top: 0; right: 0; background-position: center; }
+    .home-menu { padding-top: 12px; }
+    .home-menu .menu-buttons { justify-content: center; }
+    body.home .toplinks { position: absolute; top: 0; left: 0; right: 0; padding: 6px 12px; justify-content: center; box-sizing: border-box; }
+    .home-footer, .home-oneliner { max-width: 100%; box-sizing: border-box; }
+    .home-featuredbox { max-width: 100%; height: auto; min-height: 191px; background-size: 100% auto; }
+    .home-featuredbox-inner { position: relative; padding: 25px 16px 16px; overflow-wrap: anywhere; }
+    /* Background links use authored pixel coordinates; text is a separate,
+       readable flow on phones. Keep those links accessible below the artwork. */
+    .home-featuredbox-links { display: flex; flex-wrap: wrap; gap: 8px; padding: 18px 16px 0; }
+    .home-featuredbox-links a { position: static; width: auto !important; height: auto !important; min-height: 36px; }
+    .home-featuredbox-links a::after { content: attr(title); }
+    .home-featuredbox-links var { display: none; }
+}
+
+@media (max-width: 600px) {
+    .infobox { float: none; width: 100%; margin: 12px 0; box-sizing: border-box; }
+    .infobox-spacer { width: auto; }
+    .text .minibox, .text .minibox-left { float: none; margin: 10px 0; }
+    .text .h1-links { float: none; margin-bottom: 8px; }
+    div.dialog th, div.dialog td { display: block; text-align: left; }
+    div.dialog input[type="text"], div.dialog input[type="email"], div.dialog input[type="password"] { width: 100%; min-height: 36px; }
+    .text ul, .text ol { margin-left: 1.5em; padding-left: 0; }
+    .text [style*="float: right"], .text [style*="float:right"], .text [style*="float: left"], .text [style*="float:left"] { max-width: 100%; }
+}

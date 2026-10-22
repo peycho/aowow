@@ -8,6 +8,26 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-22 — Responsive mobile layout
+
+Added a zoomable device-width viewport and dedicated mobile CSS/enhancement below
+980 pixels. Navigation, search, account controls, headings, quick facts, forms
+and homepage news now fit narrow screens. Tables/maps use bounded scroll areas;
+map coordinates and talent trees retain their native geometry. Class/pet pickers
+reflow, touch menus open before following a link, and long menus/dialogs remain
+within the viewport. Keyboard scroll labels follow the document language.
+Script-blocked content remains usable and desktop parents/styles are restored
+when resizing back to a wide window.
+
+The complete development suite passed, followed by the final responsive browser
+gate with 65 responsive checks. Populated local acceptance covered 44 page/width samples and real touch
+interaction with both talent calculators, homepage navigation and the item Links
+dialog. See [Batch 2B](seo-plan.md#batch-2b--responsive-presentation-and-touch-controls)
+for validation limits. Deploy PHP/templates and both new responsive assets
+together, then invalidate application page caches. No generated bundle rebuild
+or database migration is required. Production/mobile-device acceptance and
+field performance remain separate.
+
 ## 2026-10-22 — Remove duplicate homepage fallback after menu initialization
 
 The homepage now removes its server-rendered navigation fallback immediately

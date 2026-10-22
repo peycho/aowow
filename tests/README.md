@@ -24,10 +24,10 @@ establish deployed URL acceptance or search-engine canonical selection.
 
 `php tests/seo-metadata.php` exercises the real metadata builder, article markup,
 head template and serialized page-cache path across all six supported locales.
-Its 115 checks cover descriptive titles, validated page labels, matching Open
+Its 133 checks cover descriptive titles, validated page labels, matching Open
 Graph/RSS titles, server-rendered manual homepage titles, manual-description
 priority and length, article/factual fallback, Unicode summaries, preserved
-literal text and escaping against title/attribute breakout. It runs in the PHP
+literal text, cached viewport refresh and escaping against title/attribute breakout. It runs in the PHP
 gate with synthetic database values and no application credentials.
 
 Batch 1B extends that suite with English canonical consolidation, reciprocal
@@ -57,6 +57,17 @@ uses its generated fixture with real Markup, Listview and Tabs code; checks cove
 replacement without duplicate content, lazy tab loading, failed enhancement and
 navigation fallback. A second Chromium run blocks all page scripts through CSP
 and verifies the initial headings and crawlable links remain available.
+
+`node tests/seo-responsive.mjs` runs in the browser gate with the real responsive
+CSS/JavaScript, jQuery and Menu code. Its 65 native Chrome DevTools checks cover 360,
+390, 768 and 1440-pixel viewports, text reflow, bounded table/map scrolling, native
+pin coordinates, mobile facts ordering, class pickers, lazy content, restoration
+on desktop resize, keyboard scroll regions, actual touch-menu opening/navigation,
+long menus, dialogs and script-blocked content. Homepage news/banner links and
+localized navigation/scroll labels are also exercised. `tests/browser-cdp.mjs`
+provides the small Node 24 WebSocket client; no additional browser package or
+application database is needed. These synthetic checks supplement populated-site
+screenshots and physical-device acceptance; they do not measure field performance.
 
 The browser gate also runs `tests/seo-home-navigation.php` with the real jQuery,
 Menu and homepage script. It holds jQuery readiness until after the native load

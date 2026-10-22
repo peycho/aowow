@@ -70,13 +70,14 @@ namespace {
     foreach ([0 => 'Page', 2 => 'Page', 3 => 'Seite', 4 => '页', 6 => 'Página', 8 => 'Страница'] as $value => $pageWord) {
         $locale = Locale::from($value); Lang::load($locale);
         $parts = ['Épée & armure', 'Armes', 'Objets', 'Fixture & Co'];
-        $data = ['title' => $parts, 'metaTags' => [['property' => 'og:title', 'content' => 'OLD']],
+        $data = ['title' => $parts, 'metaTags' => [['property' => 'og:title', 'content' => 'OLD'], ['name' => 'viewport', 'content' => 'initial-scale=0.85']],
             'pagination' => ['page' => 2], 'rss' => '/?rss'];
         foreach ([false, true] as $cache) {
             [$xp, $html] = head('items&page=2&locale='.$value, $data, $cache);
             $expected = 'Épée & armure — Objets — '.$pageWord.' 2 | WotLK 3.3.5 | Fixture & Co';
             check($xp->query('//title')->length === 1 && $xp->query('//title')->item(0)->textContent === $expected, 'localized title uses topic, broad type, validated page and brand: '.($xp->query('//title')->item(0)?->textContent ?? 'missing'));
             check($xp->query('//meta[@property="og:title"]')->item(0)->getAttribute('content') === $expected, 'Open Graph and browser titles agree, including cache hits');
+            check($xp->query('//meta[@name="viewport"]')->item(0)->getAttribute('content') === 'width=device-width, initial-scale=1', 'cached viewport follows the current responsive policy');
             check($xp->query('//link[@type="application/rss+xml"]')->item(0)->getAttribute('title') === $expected, 'RSS title attribute uses the same escaped title');
         }
         // Validated response state, not the raw page query, controls the label.
@@ -84,6 +85,7 @@ namespace {
         [$first] = head('items&page=2&locale='.$value, $data);
         check(!str_contains($first->query('//title')->item(0)->textContent, $pageWord.' 2'), 'unvalidated page input never creates a title suffix');
         $generated = (new MetadataFixture('items', 2))->metadata('<p>Facts&nbsp; about <b>items</b>.</p><script>SECRET_SCRIPT</script><style>SECRET_STYLE</style>');
+        check($generated['viewport'] === 'width=device-width, initial-scale=1', 'real response uses a zoomable device-width viewport');
         check($generated['description'] === $pageWord.' 2. Facts about items.', 'generated descriptions are plain text with localized page identity');
         check($generated['og:description'] === $generated['description'], 'social and search descriptions agree');
         $article = new Markup('[h2]Approved heading[/h2]This [b]published[/b] body is readable.', ['allow' => Markup::CLASS_STAFF]);

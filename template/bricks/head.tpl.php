@@ -34,6 +34,8 @@ if ($this->headIcons):
     echo '    <link rel="image_src" href="'.$this->gStaticUrl.'/images/wow/icons/large/'.$this->escJS($this->headIcons[0]).'.jpg">'.PHP_EOL;
 endif;
 echo $this->renderArray('css', 4);
+echo '    <link rel="stylesheet" href="'.$this->gStaticUrl.'/css/responsive.css?v='.filemtime(__DIR__.'/../../static/css/responsive.css').'">'.PHP_EOL;
+echo '    <script defer src="'.$this->gStaticUrl.'/js/responsive.js?v='.filemtime(__DIR__.'/../../static/js/responsive.js').'"></script>'.PHP_EOL;
 ?>
     <script type="text/javascript">
         var g_serverTime = <?=$this->gServerTime; ?>;
