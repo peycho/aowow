@@ -8,6 +8,28 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-22 — Canonical sitemaps and public guide discovery
+
+Sitemaps now use the shared canonical URL policy across enabled languages and
+include approved guide bodies, populated database browse roots and guide category
+hubs. Pending guide edits retain the previously approved revision. Archived or
+missing guide bodies, staff-only area triggers, disabled sounds and
+hidden/unavailable records are excluded.
+
+Removed the invented 2015 update date and unreliable community submission dates,
+including the incorrect screenshot/video flag joins. Only known, non-future guide
+approval dates supply `lastmod`. Stable 10,000-entry chunks, UTF-8 XML escaping and
+strict page validation bound sitemap output. Publication changes bypass
+application page caching. See the [SEO roadmap](seo-plan.md) for validation and
+deployment acceptance and the [test guide](../tests/README.md) for the disposable
+sitemap SQL fixtures.
+
+Validated lint, PHP/HTTP, JavaScript, Chromium, disposable SQL and all eight Apache
+policy combinations. The new sitemap fixture passed 20,134 checks. Populated
+local acceptance covered 34 child sitemaps, 154,199 unique entries, 93 public
+page/canonical checks and nine invalid-request checks. Production deployment and
+search-engine acceptance remain separate.
+
 ## 2026-10-22 — Development setup skips audio by default
 
 Added `make dev-setup`. Development CLI setup commands (`--setup` and `-s`)

@@ -6,15 +6,12 @@ if (!defined('AOWOW_REVISION'))
     die('illegal access');
 
 
-class SitemapBaseResponse extends TextResponse implements ICache
+class SitemapBaseResponse extends TextResponse
 {
-    use TrCache;
-
     protected string $contentType = MIME_TYPE_XML;
-    protected int    $cacheType   = CACHE_TYPE_XML;
 
     protected array $expectedGET = array(
-        'page' => ['filter' => FILTER_VALIDATE_INT, 'options' => ['min_value' => 1]]
+        'page' => ['filter' => FILTER_VALIDATE_INT, 'options' => ['min_range' => 1]]
     );
 
     private string $page;
@@ -28,24 +25,18 @@ class SitemapBaseResponse extends TextResponse implements ICache
 
     protected function generate() : void
     {
-        if ($xml = Sitemap::generate($this->page, $this->_get['page'] ?? 1))
+        // Publication changes must take effect immediately, including cached
+        // indexes that could otherwise advertise withdrawn guide identities.
+        if (array_key_exists('page', $_GET) && !is_int($this->_get['page']))
+            (new TemplateResponse($this->page))->generateNotFound(Sitemap::ERR_TITLE, Sitemap::ERR_PAGE);
+
+        $locale = Locale::tryFromRequest($_GET['locale'] ?? null) ?? Locale::getFallback();
+        if ($xml = Sitemap::generate($this->page, $this->_get['page'] ?? 1, $locale))
             $this->result = $xml;
         else if (Sitemap::$maxPage)
             (new TemplateResponse($this->page))->generateNotFound(Sitemap::ERR_TITLE, sprintf(Sitemap::ERR_OFFSET, Sitemap::$maxPage));
         else
             (new TemplateResponse($this->page))->generateNotFound(Sitemap::ERR_TITLE, Sitemap::ERR_PAGE);
-    }
-
-    public function getCacheKeyComponents() : array
-    {
-        $misc = $this->page . serialize($this->_get['page'] ?? 1);
-
-        return array(
-            -1,                                             // DBType
-            -1,                                             // DBTypeId/category
-            -1,                                             // staff mask (content does not diff)
-            md5($misc)                                      // misc
-        );
     }
 }
 

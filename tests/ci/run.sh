@@ -132,6 +132,7 @@ PY
     AOWOW_TEST_DATABASE=aowow_security_test_feedback php tests/security-feedback.php
     AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/seo-guides-sql.php
     AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/seo-pagination-sql.php
+    AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/seo-sitemaps-sql.php
     ;;
   apache)
     # Exercise both hosting permission sets, with and without inherited negotiation.

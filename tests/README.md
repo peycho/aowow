@@ -59,6 +59,16 @@ overflow and beyond-last pages return HTTP 404. No application credentials or
 retained database are used. These checks do not replace acceptance with a full
 extracted game dataset and deployed assets.
 
+`tests/seo-sitemaps-sql.php` uses the same disposable SEO database guard and
+stock table definitions. It runs the actual sitemap generator, shared canonical
+policy and sitemap endpoint with enabled/disabled locales and features, every
+guide status with and without a public revision, missing approved article rows,
+unknown/future dates, empty browse hubs and publication withdrawal. A real
+10,001-record fixture checks chunk boundaries and traverses every advertised
+child sitemap, including decoded XML URLs and canonical identity. Malformed,
+array-shaped and out-of-range page requests must fail. No application credentials
+or retained data are loaded. It runs in the SQL gate.
+
 For the existing Apache policy suite, set `AOWOW_TEST_APACHE_PORT` to an available
 port in 8010–8020 when running locally. If omitted, Docker assigns a host port.
 

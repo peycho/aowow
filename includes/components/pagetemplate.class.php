@@ -499,6 +499,13 @@ class PageTemplate
     public static function buildQuery(array $add = [], array $remove = [], ?string $host = null) : string
     {
         parse_str($_SERVER['QUERY_STRING'] ?? '', $queryVars);
+        return self::canonicalUrl($queryVars, $add, $remove, $host);
+    }
+
+    // Explicit identities share the request canonical policy without changing
+    // request globals. Sitemaps always supply a locale, independent of cookies.
+    public static function canonicalUrl(array $queryVars, array $add = [], array $remove = [], ?string $host = null) : string
+    {
         $route = array_key_first($queryVars) ?? 'home';
         $value = $queryVars[$route] ?? '';
 
