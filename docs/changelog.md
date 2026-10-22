@@ -10,6 +10,11 @@ remaining deployment acceptance work. Commands below run from the checkout root.
 
 ## 2026-10-22 — Optional Docker development environment
 
+Removed the newer Compose Watch `initial_sync` field, which prevented CI runners
+with older Compose schemas from running development commands. The startup source
+snapshot already provides those files. CI now logs its Compose version and
+validates the full development configuration before building images.
+
 Added a separate development image and Compose overlay with Composer dev
 dependencies, Node 24/npm, Python, Git and Chromium. `make dev-watch` refreshes a
 cached source snapshot before starting live updates, including edits made while

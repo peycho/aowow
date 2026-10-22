@@ -18,11 +18,12 @@ services:
     # Only the dev image has a mutable source tree for one-way Watch updates.
     read_only: false
     develop:
+      # dev-watch snapshots/recreates web first; avoid newer initial_sync syntax
+      # so all commands remain compatible with Docker Compose 2.32+.
       watch:
         - action: sync
           path: .
           target: /opt/aowow
-          initial_sync: true
           ignore:
             - .git/
             - .env*
@@ -43,11 +44,9 @@ services:
         - action: sync
           path: .htaccess
           target: /var/www/html/.htaccess
-          initial_sync: true
         - action: sync
           path: crossdomain.xml
           target: /var/www/html/crossdomain.xml
-          initial_sync: true
         - action: rebuild
           path: composer.json
         - action: rebuild

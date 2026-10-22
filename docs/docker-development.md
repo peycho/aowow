@@ -61,6 +61,8 @@ can be edited without rebuilding the image. Root access rules and `crossdomain.x
 also update their public copies. Composer manifest/lock changes rebuild the web
 image with the new locked dependencies. This uses
 [Compose Watch](https://docs.docker.com/compose/how-tos/file-watch/).
+The startup snapshot supplies the initial files without requiring the newer
+`initial_sync` Compose field, preserving compatibility with Compose 2.32+.
 
 Private config, database storage, cache, extracted inputs, uploads, generated
 assets and host Composer dependencies are excluded. Containers do not recursively
