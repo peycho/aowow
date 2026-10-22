@@ -8,6 +8,28 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-22 — Mobile contribution and article panel corrections
+
+Removed the desktop sidebar reservation from mobile contribution panels and
+expanded their tabs, screenshot uploads and video fields to the available width.
+Tabs now wrap labels using their actual content height. Password-recovery links
+wrap inside the sign-in box, random-enchantment and article icon-list columns
+stack on phones, and readable books fit the screen while retaining pagination.
+Quest status annotations now flow below their names instead of overlapping them.
+Desktop layout rules remain unchanged.
+
+Browser coverage now renders the real localized contribution and account bricks
+for guests and members, exercises Tabs, comment editors, article lists and Book,
+and checks usable panel widths and visible link bounds across six languages and
+seven viewport widths. The earlier overflow-only checks missed the squeezed
+contribution panel. Deploy `static/css/responsive.css` with the updated
+`template/bricks/contribute.tpl.php` and `inputbox-form-signin.tpl.php`; invalidate
+affected application page caches and cached CSS. No JavaScript bundle rebuild or
+database migration is required.
+
+Validated development lint, PHP/HTTP and the complete Chromium gate, including
+1,061 responsive assertions across six languages and seven viewport widths.
+
 ## 2026-10-22 — Responsive mobile layout
 
 Added a zoomable device-width viewport and dedicated mobile CSS/enhancement below

@@ -15,7 +15,7 @@ if ($this->contribute):
 <h2><?=Lang::main('contribute'); ?></h2>
 </div>
 <div id="tabs-contribute-generic" style="width: 50%"></div>
-<div class="text" style="margin-right: 310px">
+<div class="text contribute-contents" style="margin-right: 310px">
     <div class="tabbed-contents" style="clear: none">
 
 <?php

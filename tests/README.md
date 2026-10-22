@@ -59,12 +59,21 @@ navigation fallback. A second Chromium run blocks all page scripts through CSP
 and verifies the initial headings and crawlable links remain available.
 
 `node tests/seo-responsive.mjs` runs in the browser gate with the real responsive
-CSS/JavaScript, jQuery and Menu code. Its 65 native Chrome DevTools checks cover 360,
-390, 768 and 1440-pixel viewports, text reflow, bounded table/map scrolling, native
+CSS/JavaScript, jQuery and Menu code. Its 1,061 native Chrome DevTools checks cover 360,
+390, 470, 600, 768, 979 and 1440-pixel viewports, text reflow, bounded table/map
+scrolling, native
 pin coordinates, mobile facts ordering, class pickers, lazy content, restoration
 on desktop resize, keyboard scroll regions, actual touch-menu opening/navigation,
 long menus, dialogs and script-blocked content. Homepage news/banner links and
-localized navigation/scroll labels are also exercised. `tests/browser-cdp.mjs`
+localized navigation/scroll labels are also exercised. A database-free PHP fixture
+renders the real contribution and sign-in/sign-up bricks in six languages for
+guest and member states. Real Tabs and comment editors exercise panel width,
+translated tab wrapping, screenshot/video fields and recovery-link bounds;
+Markup icon lists and Book cover stacked article columns and readable pagination.
+The real Listview quest name renderer checks that status annotations fit below
+the name without overlapping it.
+These checks detect squeezed panels and off-screen links even when the document
+reports no horizontal overflow. `tests/browser-cdp.mjs`
 provides the small Node 24 WebSocket client; no additional browser package or
 application database is needed. These synthetic checks supplement populated-site
 screenshots and physical-device acceptance; they do not measure field performance.
