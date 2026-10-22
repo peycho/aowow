@@ -4549,6 +4549,8 @@ var LANG = {
         wearingitem:          "Trägt Gegenstand #...",
         wearingpermenchant:   "Trägt Verzauberung #...",
         completedachievement: "Errang Erfolg #...",
+        ownsmount:            "Besitzt Reittier #...",
+        ownspet:              "Besitzt Haustier #...",
 
         sepprofession:        "Berufe",
         alchemy:              "Alchemiefertigkeit",

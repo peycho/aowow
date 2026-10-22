@@ -2,7 +2,7 @@
 
 namespace Aowow;
 
-define('AOWOW_REVISION', 74);
+define('AOWOW_REVISION', 75);
 require_once __DIR__.'/components/errorlog.class.php';
 ErrorLog::configurePhp();                                   // enforce native-output settings in PHP-FPM too
 

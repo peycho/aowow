@@ -35,6 +35,10 @@ class SpellList extends DBTypeList
         SPELL_AURA_MOD_DAMAGE_FROM_CASTER, SPELL_AURA_ADD_TARGET_TRIGGER,               SPELL_AURA_IGNORE_COMBAT_RESULT,     /* SPELL_AURA_DUMMY ? */
     );
 
+    public const array SPELLMOD_MSEC            = array( // a flat modifier of these is a number of milliseconds
+        SPELLMOD_DURATION,                  SPELLMOD_CASTING_TIME,                          SPELLMOD_COOLDOWN,                              SPELLMOD_ACTIVATION_TIME,
+        SPELLMOD_GLOBAL_COOLDOWN
+    );
     public const array EFFECTS_SCALING_HEAL     = array( // as per Unit::SpellHealingBonusDone() calls in TC
         SPELL_EFFECT_HEAL,                  SPELL_EFFECT_HEAL_PCT,                          SPELL_EFFECT_HEAL_MECHANICAL,                   SPELL_EFFECT_HEALTH_LEECH
     );
@@ -1270,7 +1274,7 @@ class SpellList extends DBTypeList
         return [$op, $oparg, $lookup, $var, $effIdx, $switch];
     }
 
-    private function resolveVariableString(?string $op, ?string $oparg, ?int $lookup, ?string $var, ?int $effIdx, ?array $switch) : array
+    private function resolveVariableString(?string $op, ?string $oparg, ?int $lookup, ?string $var, ?int $effIdx, ?array $switch, bool $forFormula = false) : array
     {
         $signs  = ['+', '-', '/', '*', '%', '^'];
 
@@ -1284,7 +1288,9 @@ class SpellList extends DBTypeList
         if (!$var)
             return [null, null, null, null, null];
 
-        $effIdx ??= 1;                                      // if EffectIdx is omitted, assume EffectIdx: 1
+        $effIdx     ??= 1;                                  // if EffectIdx is omitted, assume EffectIdx: 1
+        $outputFmtMin =
+        $outputFmtMax = '%d';
 
         // cache at least some lookups.. should be moved to single spellList :/
         if ($lookup && $lookup != $this->id && !isset($this->refSpells[$lookup]))
@@ -1309,6 +1315,14 @@ class SpellList extends DBTypeList
                 $fmtStringMin = '$l'.$switch[0].':'.$switch[1].';';
                 break;
             // simple cases
+            case 'e':                                       // EffectValueMultiplier
+            case 'E':
+                $base ??= $srcSpell->getField('effect'.$effIdx.'ValueMultiplier');
+                $outputFmtMin = '%.1f';
+            case 'f':                                       // EffectDamageMultiplier
+            case 'F':
+                $base ??= $srcSpell->getField('effect'.$effIdx.'DamageMultiplier');
+                $outputFmtMin = '%.1f';
             case 'a':                                       // EffectRadiusMin
             case 'A':                                       // EffectRadiusMax
                 $base ??= $srcSpell->getField('effect'.$effIdx.'RadiusMax');
@@ -1318,12 +1332,6 @@ class SpellList extends DBTypeList
             case 'c':                                       // powerCost
             case 'C':
                 $base ??= $srcSpell->getField('powerCost');
-            case 'e':                                       // EffectValueMultiplier
-            case 'E':
-                $base ??= $srcSpell->getField('effect'.$effIdx.'ValueMultiplier');
-            case 'f':                                       // EffectDamageMultiplier
-            case 'F':
-                $base ??= $srcSpell->getField('effect'.$effIdx.'DamageMultiplier');
             case 'h':                                       // ProcChance
             case 'H':
                 $base ??= $srcSpell->getField('procChance');
@@ -1344,7 +1352,9 @@ class SpellList extends DBTypeList
                 $base ??= $srcSpell->getField('rangeMaxHostile');
             case 't':                                       // Periode
             case 'T':
+                // note: periode = (procFlags & 0x1) ? 5000 : getField('effectXPeriode');
                 $base ??= $srcSpell->getField('effect'.$effIdx.'Periode') / 1000;
+                // if ($base fraction < 0.01f) ? %d : %.2f
             case 'u':                                       // StackCount
             case 'U':
                 $base ??= $srcSpell->getField('stackAmount');
@@ -1411,14 +1421,12 @@ class SpellList extends DBTypeList
                 $periode  = $srcSpell->getField('effect'.$effIdx.'Periode');
                 $duration = $srcSpell->getField('duration');
 
+                // Keep the established fallback for missing periodic data. Only
+                // regeneration amounts are defined per five seconds.
                 if (!$periode)
                 {
-                    // Mod Power Regeneration & Mod Health Regeneration have an implicit periode of 5sec
                     $aura = $srcSpell->getField('effect'.$effIdx.'AuraId');
-                    if ($aura == SPELL_AURA_MOD_REGEN || $aura == SPELL_AURA_MOD_POWER_REGEN)
-                        $periode = 5000;
-                    else
-                        $periode = 3000;
+                    $periode = in_array($aura, [SPELL_AURA_MOD_REGEN, SPELL_AURA_MOD_POWER_REGEN]) ? 5000 : 3000;
                 }
 
                 if (!in_array($op, $signs) || !is_numeric($oparg))
@@ -1466,16 +1474,31 @@ class SpellList extends DBTypeList
                     $fmtStringMax = $modStrMax.'%s';
                 }
 
+                if (ctype_upper($var))
+                    $outputFmtMax = $outputFmtMin = '%.1f';
+
                 $minPoints = $min;
                 $maxPoints = $max;
                 break;
         }
 
-        // handle excessively precise floats
-        if (is_float($minPoints))
-            $minPoints = round($minPoints, 2);
-        if (is_float($maxPoints))
-            $maxPoints = round($maxPoints, 2);
+        // Display precision must not round operands inside a larger formula.
+        // Keep numeric values separate from their templates and scaling inputs.
+        if (!$forFormula && $statId === null)
+        {
+            $setFormat = static function(mixed &$points, ?string &$format, string $output) : void
+            {
+                if ($points === null)
+                    return;
+                if ($output === '%.1f')
+                    $points = round($points, 1, PHP_ROUND_HALF_UP);
+                $format = str_replace('%s', $output, $format ?? '%s');
+                if (str_contains($format, '<!--ppl') || str_contains($format, '<!--pts'))
+                    $format = str_replace('-->', ':f:'.($output === '%.1f' ? '1' : '0').'-->', $format);
+            };
+            $setFormat($minPoints, $fmtStringMin, $outputFmtMin);
+            $setFormat($maxPoints, $fmtStringMax, $outputFmtMax);
+        }
 
         return [$minPoints, $maxPoints, $fmtStringMin, $fmtStringMax, $statId];
     }
@@ -1553,7 +1576,7 @@ class SpellList extends DBTypeList
             $pos += $len;
 
             // we are resolving a formula -> omit ranges
-            [$minPoints, , $fmtStringMin, , $statId] = $this->resolveVariableString(...$varParts);
+            [$minPoints, , $fmtStringMin, , $statId] = $this->resolveVariableString(...$varParts, forFormula: true);
 
             // time within formula -> rebase to seconds and omit timeUnit
             if (strtolower($varParts[3]) == 'd')            // old $varParts['var']

@@ -21,6 +21,7 @@ namespace Aowow {
         public static function main(mixed ...$args) : mixed { return self::text('main', $args); }
         public static function game(mixed ...$args) : mixed { return self::text('game', $args); }
         public static function enchantment(mixed ...$args) : mixed { return self::text('enchantment', $args); }
+        public static function timeUnits(mixed ...$args) : mixed { return self::text('timeUnits', $args); }
     }
     class DB {
         public const string AND = '%and', OR = '%or';
@@ -197,6 +198,40 @@ namespace {
             $spell->fields = ['effect1Id' => SPELL_EFFECT_APPLY_AURA, 'effect1AuraId' => $aura, 'effect1BasePoints' => 59, 'effect1DieSides' => 1];
             $effectMethod->invoke($page);
             check(str_contains($page->effects[1]['footer']['value'], '60%'), 'Speed aura details display a percentage');
+        }
+        foreach ([[6,1],[7,0]] as [$base,$sides]) {
+            $spell->fields=['effect1Id'=>SPELL_EFFECT_APPLY_AURA,'effect1AuraId'=>SPELL_AURA_USE_NORMAL_MOVEMENT_SPEED,'effect1BasePoints'=>$base,'effect1DieSides'=>$sides];
+            $effectMethod->invoke($page);
+            check(str_contains($page->effects[1]['footer']['value'],'100%'),'Normal movement percentage respects the zero-DieSides convention');
+        }
+        foreach ([SPELLMOD_DURATION,SPELLMOD_CASTING_TIME,SPELLMOD_COOLDOWN,SPELLMOD_ACTIVATION_TIME,SPELLMOD_GLOBAL_COOLDOWN] as $modifier) {
+            $spell->fields=['effect1Id'=>SPELL_EFFECT_APPLY_AURA,'effect1AuraId'=>SPELL_AURA_ADD_FLAT_MODIFIER,'effect1MiscValue'=>$modifier,'effect1BasePoints'=>-1500,'effect1DieSides'=>0,'effect1RealPointsPerLevel'=>500,'effect1PointsPerComboPoint'=>250];
+            $effectMethod->invoke($page);
+            $text=$page->effects[1]['footer']['value'];
+            check(str_contains($text,'-1.5 ') && str_contains($text,'0.5 ') && str_contains($text,'0.25 '),'Flat time modifiers use signed seconds for value, level and combo points');
+        }
+        foreach ([SPELL_AURA_MOD_REGEN=>POWER_HEALTH,SPELL_AURA_MOD_POWER_REGEN=>POWER_MANA] as $aura=>$power) {
+            $spell->fields=['effect1Id'=>SPELL_EFFECT_APPLY_AURA,'effect1AuraId'=>$aura,'effect1MiscValue'=>$power,'effect1BasePoints'=>49,'effect1DieSides'=>1];
+            $effectMethod->invoke($page);
+            check(str_contains($page->effects[1]['footer']['value'],sprintf(Lang::spell('_regenPer5Sec',$power),50)),'Regeneration value uses the active locale and power type');
+        }
+        foreach ([SPELL_EFFECT_KNOCK_BACK,SPELL_EFFECT_KNOCK_BACK_DEST,SPELL_EFFECT_LEAP_BACK] as $effect) {
+            $spell->fields=['effect1Id'=>$effect,'effect1BasePoints'=>29,'effect1DieSides'=>1,'effect1MiscValue'=>40,'effect1RealPointsPerLevel'=>10,'effect1PointsPerComboPoint'=>20];
+            $effectMethod->invoke($page);
+            $footer=$page->effects[1]['footer'];
+            check(str_contains($footer['speedXY'],'4'.Lang::spell('_speedUnit')) && str_contains($footer['value'],'3'.Lang::spell('_speedUnit')),'Knockback speed values use horizontal and vertical units');
+            check(str_contains($footer['value'],Lang::spell('costPerLevel',['1'.Lang::spell('_speedUnit')])) && str_contains($footer['value'],Lang::spell('pointsPerCP',['2'.Lang::spell('_speedUnit')])),'Speed level/combo values use the same scale');
+        }
+        $icon = new ReflectionMethod(SpellBaseResponse::class,'getIconNo');
+        $spell->fields=['stackAmount'=>5,'procCharges'=>3];
+        check($icon->invoke($page)===0,'A spell without an aura has no stack/proc icon count');
+        foreach ([SPELL_EFFECT_APPLY_AURA,SPELL_EFFECT_PERSISTENT_AREA_AURA,SPELL_EFFECT_APPLY_AREA_AURA_PARTY,SPELL_EFFECT_APPLY_AREA_AURA_RAID,SPELL_EFFECT_APPLY_AREA_AURA_PET,SPELL_EFFECT_APPLY_AREA_AURA_FRIEND,SPELL_EFFECT_APPLY_AREA_AURA_ENEMY,SPELL_EFFECT_APPLY_AREA_AURA_OWNER] as $effect) {
+            $spell->fields=['stackAmount'=>5,'procCharges'=>3,'effect1Id'=>$effect,'effect1AuraId'=>1];
+            check($icon->invoke($page)===5,'Aura effects preserve stack priority on the icon');
+            $spell->fields['stackAmount']=0;
+            check($icon->invoke($page)===3,'Aura effects preserve multiple proc charges');
+            $spell->fields['procCharges']=1;
+            check($icon->invoke($page)===0,'A single proc charge is hidden');
         }
         $spell->fields = ['effect1Id' => SPELL_EFFECT_DUEL, 'effect1MiscValue' => 21680];
         $effectMethod->invoke($page);
