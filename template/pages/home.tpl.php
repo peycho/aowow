@@ -17,10 +17,6 @@
     <div id="layers"></div>
 
 <?php
-if ($this->homeTitle):
-    echo "    <script>document.title = '".$this->escJS('homeTitle', varRef: true)."';</script>".PHP_EOL;
-endif;
-
 if ($this->altHomeLogo):
 ?>
 

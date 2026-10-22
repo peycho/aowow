@@ -5,7 +5,7 @@
 
     /** @var PageTemplate $this */
 ?>
-    <title><?=$this->concat('title', ' - '); ?></title>
+    <title><?=$this->escHTML($this->documentTitle()); ?></title>
     <meta charset="UTF-8">
     <meta name="csrf-token" content="<?=\Aowow\Csrf::token();?>">
     <script>var g_csrfRoutes = <?=json_encode(\Aowow\Csrf::POST_ROUTES, JSON_HEX_TAG);?>;
@@ -88,7 +88,7 @@ endif;
 if ($this->rss):
 ?>
 
-    <link rel="alternate" type="application/rss+xml" title="<?=$this->concat('title', ' - '); ?>" href="<?=$this->rss; ?>"/>
+    <link rel="alternate" type="application/rss+xml" title="<?=$this->escHTML($this->documentTitle()); ?>" href="<?=$this->rss; ?>"/>
 
 <?php
 endif;

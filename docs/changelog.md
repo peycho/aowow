@@ -8,6 +8,28 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-22 — Descriptive SEO titles and generated summaries
+
+Public database details, browse categories and guides now identify the topic,
+content type, WotLK 3.3.5 and configured site in document and Open Graph titles.
+Validated list pages add localized page numbers to titles and automatic
+summaries. Title text and RSS title attributes are escaped. Manually configured
+homepage titles render in the initial HTML instead of replacing the title after
+JavaScript loads.
+
+Manual description overrides keep their priority and length. Generated
+summaries normalize markup and whitespace, fall back to page facts when the
+selected article is empty, and use a Unicode-safe 240-character editorial budget.
+Selected guide revisions and existing indexing rules remain authoritative.
+Deploy PHP and templates together and invalidate affected application page
+caches. See [Batch 2A in the SEO roadmap](seo-plan.md#batch-2a--metadata-defaults-and-editorial-overrides)
+and the [metadata test guide](../tests/README.md).
+
+Validated the complete development suite and 115 focused metadata checks across
+six locales. Populated local acceptance passed for nine routes and repeat
+requests; Chromium confirmed titles and social metadata on three page types.
+External deployment and search-result acceptance remain separate.
+
 ## 2026-10-22 — Canonical sitemaps and public guide discovery
 
 Sitemaps now use the shared canonical URL policy across enabled languages and

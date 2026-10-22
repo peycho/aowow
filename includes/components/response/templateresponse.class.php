@@ -415,22 +415,19 @@ class TemplateResponse extends BaseResponse
     {
         $this->metaTags[] = ['property' => 'og:site_name', 'content' => Cfg::get('NAME')];
 
-        // use manual db definition over article snippet over auto generated
-        if ($dbDesc = DB::Aowow()->selectCell('SELECT `description` FROM ::seo_descriptions WHERE `page` = %s AND `locale` IN %in ORDER BY `locale` DESC', $this->fullParams, [Lang::getLocale()->value, Locale::EN]))
+        // Manual descriptions remain authoritative, including their length.
+        // Otherwise use only the selected public article or resolved page facts.
+        require_once __DIR__.'/../seometadata.class.php';
+        if ($dbDesc = DB::Aowow()->selectCell('SELECT `description` FROM ::seo_descriptions WHERE `page` = %s AND `locale` IN %in ORDER BY `locale` DESC', $this->fullParams, [Lang::getLocale()->value, Locale::EN->value]))
             $desc = $dbDesc;
-        else if ($this->article && $useArticle)
-        {
-            $desc = $this->article->fillJSGlobals($this->jsGlobals);
-
-            $desc = preg_replace(['/^\s+|\s+$/', '/\s+/'], ['', ' '], str_replace('\\', '', $desc));
-
-            // finish sentence past 300 chars.
-            $eolChr = Lang::getLocale()->isLogographic() ? '。' : '.';
-            if (mb_strlen($desc) > 300 && ($pos = mb_strpos($desc, $eolChr, 300)))
-                $desc = mb_substr($desc, 0, ++$pos);
-        }
         else
-            $desc = $genDesc;
+        {
+            $locale = $this->seo['locale'] ?? Lang::getLocale();
+            $page = Template\PageTemplate::supportsPagination($this->pageName) ? ($this->pagination['page'] ?? 1) : 1;
+            $desc = $this->article && $useArticle ? SeoMetadata::description($this->article->fillJSGlobals($this->jsGlobals), $locale, $page) : '';
+            if ($desc === '')
+                $desc = SeoMetadata::description($genDesc, $locale, $page);
+        }
 
         if ($desc)
         {

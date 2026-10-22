@@ -293,6 +293,19 @@ class PageTemplate
     /* render helper */
     /*****************/
 
+    private function documentTitle() : string
+    {
+        parse_str($_SERVER['QUERY_STRING'] ?? '', $query);
+        $route = array_key_first($query) ?? 'home';
+        if (!$this->isIndexable() || !in_array($route, [...self::SEO_DATABASE_ROUTES, 'home', 'guide', 'guides'], true))
+            return implode(' - ', $this->title ?? []);
+
+        require_once __DIR__.'/seometadata.class.php';
+        return \Aowow\SeoMetadata::title($this->title ?? [], (string)Cfg::get('NAME'),
+            $this->seo['locale'] ?? $this->locale, $route === 'home', $this->homeTitle ?? '',
+            self::supportsPagination($route) ? ($this->pagination['page'] ?? 1) : 1);
+    }
+
     private function concat(string $arrVar, string $separator = '') : string
     {
         if (!is_array($this->$arrVar))
@@ -736,7 +749,9 @@ class PageTemplate
         }
         foreach ($metaTags as &$tag)
         {
-            if (($tag['property'] ?? '') === 'og:url')
+            if (($tag['property'] ?? '') === 'og:title')
+                $tag['content'] = $this->documentTitle();
+            else if (($tag['property'] ?? '') === 'og:url')
                 $tag['content'] = $url;
             else if (($tag['property'] ?? '') === 'og:locale')
                 $tag['content'] = $locale->hreflang();

@@ -22,6 +22,14 @@ Open Graph and JSON-LD identity after a serialized page-cache hit. It runs in
 the PHP gate without application credentials or an external website. It does not
 establish deployed URL acceptance or search-engine canonical selection.
 
+`php tests/seo-metadata.php` exercises the real metadata builder, article markup,
+head template and serialized page-cache path across all six supported locales.
+Its 115 checks cover descriptive titles, validated page labels, matching Open
+Graph/RSS titles, server-rendered manual homepage titles, manual-description
+priority and length, article/factual fallback, Unicode summaries, preserved
+literal text and escaping against title/attribute breakout. It runs in the PHP
+gate with synthetic database values and no application credentials.
+
 Batch 1B extends that suite with English canonical consolidation, reciprocal
 enabled-locale alternates, reviewed filters, noindex pages, guide alias identity,
 empty categories and cache isolation. `php tests/seo-locale.php` checks the real

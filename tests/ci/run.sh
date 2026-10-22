@@ -46,6 +46,7 @@ PY
     php tests/schema-validator.php
     php tests/maintenance-response.php
     php tests/seo-urls.php
+    php tests/seo-metadata.php
     php tests/seo-guides.php
     php tests/seo-locale.php
     php tests/seo-rendering.php
