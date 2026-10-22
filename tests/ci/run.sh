@@ -146,7 +146,7 @@ PY
           fi
           echo "Apache overrides: $override; MultiViews: $negotiation; entrypoint: $entrypoint"
           python3 tests/security-private-uploads-apache.py --prepare "$fixture_root" "${fixture_args[@]}"
-          docker run --detach --rm --name "$container" --publish 127.0.0.1::8080 \
+          docker run --detach --rm --name "$container" --publish "127.0.0.1:${AOWOW_TEST_APACHE_PORT:-}:8080" \
             --read-only --cap-drop ALL --security-opt no-new-privileges --user 65534:65534 \
             --tmpfs /tmp:rw,nosuid,nodev --volume "$fixture_root:/fixture:ro" \
             --entrypoint httpd httpd:2.4 -f /fixture/httpd.conf -DFOREGROUND

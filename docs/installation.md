@@ -4,6 +4,9 @@ This guide covers prerequisites, first installation and upgrades for the
 maintained AoWoW fork. Run CLI commands from the checkout root using the PHP
 binary that matches the site's extensions and configuration.
 
+For container deployments, use the [Docker guide](docker.md), including the
+default local URL `http://localhost:8010` and external database configuration.
+
 - [Requirements](#requirements)
 - [Apache access rules](#apache-access-rules)
 - [Installation steps](#install)

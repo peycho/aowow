@@ -1,0 +1,262 @@
+name: aowow
+
+x-image: &image
+  image: ${AOWOW_IMAGE:-aowow:local}
+  build:
+    context: .
+    args:
+      PHP_IMAGE: ${PHP_IMAGE:-php:8.5-apache-trixie}
+      COMPOSER_IMAGE: ${COMPOSER_IMAGE:-composer:2}
+
+x-settings: &settings
+  TZ: ${TZ:-UTC}
+  PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT:-1536M}
+  PHP_MAX_EXECUTION_TIME: ${PHP_MAX_EXECUTION_TIME:-120}
+  APACHE_MAX_REQUEST_WORKERS: ${APACHE_MAX_REQUEST_WORKERS:-4}
+
+x-databases: &databases
+  AOWOW_DB_HOST: ${AOWOW_DB_HOST:-db}
+  AOWOW_DB_PORT: ${AOWOW_DB_PORT:-3306}
+  AOWOW_DB_NAME: ${AOWOW_DB_NAME:-aowow}
+  AOWOW_DB_USER: ${AOWOW_DB_USER:-aowow}
+  AOWOW_DB_PASSWORD: ${AOWOW_DB_PASSWORD:-}
+  AOWOW_DB_PASSWORD_FILE: ${AOWOW_DB_PASSWORD_FILE:-}
+  WORLD_DB_HOST: ${WORLD_DB_HOST:-trinity-db}
+  WORLD_DB_PORT: ${WORLD_DB_PORT:-3306}
+  WORLD_DB_NAME: ${WORLD_DB_NAME:-world}
+  WORLD_DB_USER: ${WORLD_DB_USER:-aowow_reader}
+  WORLD_DB_PASSWORD: ${WORLD_DB_PASSWORD:-}
+  WORLD_DB_PASSWORD_FILE: ${WORLD_DB_PASSWORD_FILE:-}
+  AUTH_DB_HOST: ${AUTH_DB_HOST:-trinity-db}
+  AUTH_DB_PORT: ${AUTH_DB_PORT:-3306}
+  AUTH_DB_NAME: ${AUTH_DB_NAME:-}
+  AUTH_DB_USER: ${AUTH_DB_USER:-aowow_reader}
+  AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:-}
+  AUTH_DB_PASSWORD_FILE: ${AUTH_DB_PASSWORD_FILE:-}
+  CHARACTERS_DB_HOST: ${CHARACTERS_DB_HOST:-trinity-db}
+  CHARACTERS_DB_PORT: ${CHARACTERS_DB_PORT:-3306}
+  CHARACTERS_DB_NAME: ${CHARACTERS_DB_NAME:-}
+  CHARACTERS_DB_USER: ${CHARACTERS_DB_USER:-aowow_reader}
+  CHARACTERS_DB_PASSWORD: ${CHARACTERS_DB_PASSWORD:-}
+  CHARACTERS_DB_PASSWORD_FILE: ${CHARACTERS_DB_PASSWORD_FILE:-}
+  CHARACTERS_REALM_ID: ${CHARACTERS_REALM_ID:-1}
+
+x-volumes: &volumes
+  - type: volume
+    source: config
+    target: /opt/aowow/config
+    volume:
+      nocopy: true
+  - type: volume
+    source: cache
+    target: /opt/aowow/cache
+    volume:
+      nocopy: true
+  - type: volume
+    source: datasets
+    target: /opt/aowow/datasets
+    volume:
+      nocopy: true
+  - type: volume
+    source: downloads
+    target: /opt/aowow/static/download
+    volume:
+      nocopy: true
+  - type: volume
+    source: widgets
+    target: /opt/aowow/static/widgets
+    volume:
+      nocopy: true
+  - type: volume
+    source: javascript
+    target: /opt/aowow/static/js
+    volume:
+      nocopy: true
+  - type: volume
+    source: uploads
+    target: /opt/aowow/static/uploads
+    volume:
+      nocopy: true
+  - type: volume
+    source: wow-images
+    target: /opt/aowow/static/images/wow
+    volume:
+      nocopy: true
+  - type: volume
+    source: sounds
+    target: /opt/aowow/static/wowsounds
+    volume:
+      nocopy: true
+  - type: volume
+    source: modelviewer
+    target: /opt/aowow/static/modelviewer
+    volume:
+      nocopy: true
+  - type: volume
+    source: mpqdata
+    target: /opt/aowow/setup/mpqdata
+    volume:
+      nocopy: true
+
+services:
+  init:
+    <<: *image
+    user: '0:0'
+    command: [init]
+    restart: 'no'
+    read_only: true
+    security_opt: [no-new-privileges:true]
+    environment:
+      <<: [*settings, *databases]
+    volumes: *volumes
+    tmpfs: [/tmp]
+    networks: [database]
+    healthcheck:
+      disable: true
+
+  web:
+    <<: *image
+    restart: unless-stopped
+    stop_signal: SIGWINCH
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    environment: *settings
+    ports:
+      - '${HTTP_BIND_ADDRESS:-127.0.0.1}:${HTTP_PORT:-8010}:8080'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: [/tmp]
+    volumes:
+      - type: volume
+        source: config
+        target: /opt/aowow/config
+        read_only: true
+        volume:
+          nocopy: true
+      - type: volume
+        source: cache
+        target: /opt/aowow/cache
+        volume:
+          nocopy: true
+      - type: volume
+        source: datasets
+        target: /opt/aowow/datasets
+        volume:
+          nocopy: true
+      - type: volume
+        source: downloads
+        target: /opt/aowow/static/download
+        volume:
+          nocopy: true
+      - type: volume
+        source: widgets
+        target: /opt/aowow/static/widgets
+        volume:
+          nocopy: true
+      - type: volume
+        source: javascript
+        target: /opt/aowow/static/js
+        volume:
+          nocopy: true
+      - type: volume
+        source: uploads
+        target: /opt/aowow/static/uploads
+        volume:
+          nocopy: true
+      - type: volume
+        source: wow-images
+        target: /opt/aowow/static/images/wow
+        volume:
+          nocopy: true
+      - type: volume
+        source: sounds
+        target: /opt/aowow/static/wowsounds
+        volume:
+          nocopy: true
+      - type: volume
+        source: modelviewer
+        target: /opt/aowow/static/modelviewer
+        volume:
+          nocopy: true
+      - type: volume
+        source: mpqdata
+        target: /opt/aowow/setup/mpqdata
+        read_only: true
+        volume:
+          nocopy: true
+    networks: [database]
+
+  cli:
+    <<: *image
+    profiles: [tools]
+    user: '0:0'
+    entrypoint: [/usr/local/lib/aowow/entrypoint.sh, cli]
+    command: [php, aowow, --help]
+    restart: 'no'
+    read_only: true
+    security_opt: [no-new-privileges:true]
+    environment:
+      <<: [*settings, *databases]
+      PHP_MAX_EXECUTION_TIME: '0'
+    volumes: *volumes
+    tmpfs: [/tmp]
+    networks: [database]
+    healthcheck:
+      disable: true
+
+  db:
+    image: ${MYSQL_IMAGE:-mysql:8.4}
+    profiles: [local-db]
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${AOWOW_DB_NAME:-aowow}
+      MYSQL_USER: ${AOWOW_DB_USER:-aowow}
+      MYSQL_PASSWORD: ${AOWOW_DB_PASSWORD:-}
+      MYSQL_PASSWORD_FILE: ${AOWOW_DB_PASSWORD_FILE:-}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-}
+      MYSQL_ROOT_PASSWORD_FILE: ${MYSQL_ROOT_PASSWORD_FILE:-}
+    volumes:
+      - database:/var/lib/mysql
+      - ./docker/mysql/initialize.sh:/docker-entrypoint-initdb.d/10-aowow.sh:ro
+      - ./docker/mysql/healthcheck.sh:/usr/local/bin/aowow-db-healthcheck:ro
+      - ./setup/sql:/opt/aowow-sql:ro
+    healthcheck: &mysql-health
+      test: [CMD, sh, /usr/local/bin/aowow-db-healthcheck]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks: [database]
+
+  trinity-db:
+    image: ${MYSQL_IMAGE:-mysql:8.4}
+    profiles: [trinity-db]
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${TRINITY_MYSQL_ROOT_PASSWORD:-}
+      MYSQL_ROOT_PASSWORD_FILE: ${TRINITY_MYSQL_ROOT_PASSWORD_FILE:-}
+    volumes:
+      - trinity-database:/var/lib/mysql
+      - ./docker/mysql/healthcheck.sh:/usr/local/bin/aowow-db-healthcheck:ro
+    healthcheck: *mysql-health
+    networks: [database]
+
+networks:
+  database:
+
+volumes:
+  database:
+  trinity-database:
+  config:
+  cache:
+  datasets:
+  downloads:
+  widgets:
+  javascript:
+  uploads:
+  wow-images:
+  sounds:
+  modelviewer:
+  mpqdata:

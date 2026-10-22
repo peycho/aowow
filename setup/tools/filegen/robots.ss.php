@@ -19,6 +19,13 @@ CLISetup::registerSetup("build", new class extends SetupScript
 
     protected array $fileTemplateSrc  = ['robots.txt.in'];
     protected array $fileTemplateDest = ['robots.txt'];     // aowow root
+
+    public function __construct()
+    {
+        // Containers keep the code root immutable and alias this generated file.
+        if ($path = getenv('AOWOW_ROBOTS_FILE'))
+            $this->fileTemplateDest = [$path];
+    }
 });
 
 ?>

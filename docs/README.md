@@ -9,6 +9,7 @@ these guides run from the checkout root unless stated otherwise.
 | Guide | Purpose |
 | --- | --- |
 | [Installation and updates](installation.md) | Requirements, database and client assets, Apache rules, CLI setup, upgrades and cleanup |
+| [Docker](docker.md) | Container installation, local/external databases, persistent volumes and maintenance |
 | [Configuration](configuration.md) | Private settings, mail, Turnstile, feature switches and external navigation |
 | [Troubleshooting](troubleshooting.md) | Common setup and site problems, diagnostics and support preparation |
 | [Historical schema reconciliation](schema-reconciliation.md) | Retained-data migration preflight, compatibility and recovery |
@@ -19,6 +20,7 @@ these guides run from the checkout root unless stated otherwise.
 | --- | --- |
 | [Contributing](../CONTRIBUTING.md) | Branch target, development prerequisites, validation and review expectations |
 | [Tests](../tests/README.md) | Focused suites, full regression gates and fixture limitations |
+| [Docker development](docker-development.md) | Live source updates, development tools and disposable test databases |
 | [Upstream integration](upstream-sync.md) | Review and integrate Sarjuuk changes with source attribution |
 | [Maintenance illustration](artwork/maintenance.md) | Artwork provenance and presentation details |
 

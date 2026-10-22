@@ -1,5 +1,22 @@
 # Security regressions
 
+`make dev-test` runs the existing gates using the optional
+[Docker development environment](../docs/docker-development.md), with Node 24,
+Python, Chromium and a separate disposable SQL database. Select one gate with
+`make dev-test ARGS=php` (or `lint`, `javascript`, `browser`, `sql`, `apache`).
+
+`make docker-test` checks the built production image in a uniquely named,
+disposable Compose stack. See [Docker installation](../docs/docker.md) for the
+image build and database requirements. It chooses an available host HTTP port
+within 8010–8020 and removes only its own containers and volumes. The fixture
+world/auth/characters databases exercise connections and grants; they do not
+establish full setup acceptance with extracted client data.
+The smoke runner needs Bash, Python 3, curl and GNU `timeout`; it also exercises
+the interactive database editor through a terminal and checks saved ports.
+
+For the existing Apache policy suite, set `AOWOW_TEST_APACHE_PORT` to an available
+port in 8010–8020 when running locally. If omitted, Docker assigns a host port.
+
 `php tests/security-upstream-october.php` exercises the October 22 imports with
 real locale formatting, SmartAI actions, mail headers, quest tooltips, fulltext
 condition construction and both collectible-filter backends. Synthetic data
