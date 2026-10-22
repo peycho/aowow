@@ -8,6 +8,23 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-22 — Browser fixture navigation synchronization
+
+The Chrome DevTools helper now creates its own blank test tab and matches load
+events to the requested frame and document loader. A late load event from the
+previous page can no longer complete a navigation before the destination is
+ready. Same-document navigation completes without waiting for a new load event;
+navigation failures still fail and include the requested URL in diagnostics.
+
+The browser gate adds a real Chromium regression covering delayed previous-page
+loads, redirects, viewport changes, fragment navigation, download aborts,
+connection failures and subsequent recovery. This changes test infrastructure;
+there are no website deployment assets.
+
+Validated lint and the complete browser gate, including 12 navigation checks
+and 1,061 responsive checks. Three additional fresh-browser navigation runs
+passed. The delayed-navigation regression fails against the previous helper.
+
 ## 2026-10-22 — Mobile contribution and article panel corrections
 
 Removed the desktop sidebar reservation from mobile contribution panels and

@@ -5,10 +5,10 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 export async function browser(binary = process.env.AOWOW_TEST_CHROME || 'google-chrome') {
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'aowow-browser-'));
-    const chrome = spawn(binary, ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--disable-background-networking', '--remote-debugging-port=0', '--user-data-dir=' + profile], { stdio: 'ignore' });
+    const chrome = spawn(binary, ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--disable-background-networking', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', '--user-data-dir=' + profile, 'about:blank'], { stdio: 'ignore' });
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-    let socket, sequence = 0, loaded = false;
-    const pending = new Map(), errors = [];
+    let socket, sequence = 0;
+    const pending = new Map(), errors = [], loads = new Set();
     async function close() {
         socket?.close(); chrome.kill('SIGTERM');
         for (let i = 0; i < 50 && chrome.exitCode === null && chrome.signalCode === null; ++i) await sleep(20);
@@ -21,12 +21,16 @@ export async function browser(binary = process.env.AOWOW_TEST_CHROME || 'google-
             await sleep(50);
         }
         const port = fs.readFileSync(profile + '/DevToolsActivePort', 'utf8').split('\n')[0];
-        const targets = await (await fetch('http://127.0.0.1:' + port + '/json/list')).json();
-        socket = new WebSocket(targets[0].webSocketDebuggerUrl);
+        // Own the test page instead of racing Chrome's first startup target.
+        const response = await fetch('http://127.0.0.1:' + port + '/json/new?about:blank', { method: 'PUT' });
+        if (!response.ok) throw new Error('Cannot create browser test page: HTTP ' + response.status);
+        const target = await response.json();
+        socket = new WebSocket(target.webSocketDebuggerUrl);
         await new Promise((resolve, reject) => { socket.onopen = resolve; socket.onerror = reject; });
         socket.onmessage = event => {
             const message = JSON.parse(event.data);
-            if (message.method === 'Page.loadEventFired') loaded = true;
+            if (message.method === 'Page.lifecycleEvent' && message.params.name === 'load')
+                loads.add(message.params.frameId + ':' + message.params.loaderId);
             if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails.exception?.description || message.params.exceptionDetails.text);
             if (!message.id) return;
             const task = pending.get(message.id);
@@ -43,16 +47,24 @@ export async function browser(binary = process.env.AOWOW_TEST_CHROME || 'google-
             });
         }
         await call('Page.enable'); await call('Runtime.enable');
+        await call('Page.setLifecycleEventsEnabled', { enabled: true });
         return {
             call, errors, close, sleep,
             async goto(url) {
-                loaded = false; errors.length = 0;
+                loads.clear(); errors.length = 0;
                 const result = await call('Page.navigate', { url });
-                if (result.errorText) throw new Error(result.errorText);
+                if (result.errorText) throw new Error('Navigation failed: ' + url + ': ' + result.errorText);
                 // Wait outside Runtime.evaluate: this application uses synchronous
-                // dataset requests while parsing its head scripts.
-                for (let i = 0; i < 300 && !loaded; ++i) await sleep(100);
-                if (!loaded) throw new Error('Page load timeout: ' + url);
+                // dataset requests while parsing its head scripts. A previous
+                // document can finish loading while this request awaits headers;
+                // only this frame/loader pair establishes completion. The event
+                // may arrive before the navigate response, so retain early loads.
+                // Same-document navigation has no new loader or load event.
+                if (result.loaderId) {
+                    const key = result.frameId + ':' + result.loaderId;
+                    for (let i = 0; i < 300 && !loads.has(key); ++i) await sleep(100);
+                    if (!loads.has(key)) throw new Error('Page load timeout: ' + url + ' (loader ' + result.loaderId + ')');
+                }
                 await sleep(100);
             },
             async evaluate(expression) {

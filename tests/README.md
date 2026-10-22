@@ -78,6 +78,15 @@ provides the small Node 24 WebSocket client; no additional browser package or
 application database is needed. These synthetic checks supplement populated-site
 screenshots and physical-device acceptance; they do not measure field performance.
 
+`node tests/browser-cdp-navigation.mjs` runs before the responsive suite. Its
+12 real-browser checks cover a previous document finishing while the next
+request waits for headers, delayed destination scripts, redirects, same-document
+fragments, viewport changes and genuine navigation failures. The helper owns a
+blank test tab and matches load events to the navigation's frame/loader IDs
+instead of accepting an unrelated page-load event. Download aborts and dropped
+connections remain failures with the destination URL in the error; the tests
+also verify that subsequent navigation can succeed.
+
 The browser gate also runs `tests/seo-home-navigation.php` with the real jQuery,
 Menu and homepage script. It holds jQuery readiness until after the native load
 event, verifies the fallback remains during delayed initialization, then checks
