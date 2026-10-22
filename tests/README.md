@@ -14,6 +14,34 @@ establish full setup acceptance with extracted client data.
 The smoke runner needs Bash, Python 3, curl and GNU `timeout`; it also exercises
 the interactive database editor through a terminal and checks saved ports.
 
+`php tests/seo-urls.php` exercises the shared SEO URL policy and the actual head
+template across all six supported locales. It checks routing order, query
+encoding, tracking removal, malformed arrays, retained content modifiers,
+configured locale availability, HTML escaping and current-request canonical,
+Open Graph and JSON-LD identity after a serialized page-cache hit. It runs in
+the PHP gate without application credentials or an external website. It does not
+establish deployed URL acceptance or search-engine canonical selection.
+
+Batch 1B extends that suite with English canonical consolidation, reciprocal
+enabled-locale alternates, reviewed filters, noindex pages, guide alias identity,
+empty categories and cache isolation. `php tests/seo-locale.php` checks the real
+anonymous/saved-preference initializer without application credentials.
+
+`php tests/seo-guides.php` runs the actual guide response lifecycle, request
+filters, exact article selection, markup, metadata, head renderer and cache trait
+over a disposable loopback HTTP server. Fixtures cover all six supported locales,
+owners, staff, unrelated users and guests; approved, pending, draft, rejected,
+archived, missing and historical revisions; missing-approved-row fallback and
+tooltip disclosure. Database responses and identities are synthetic. These
+suites run in the PHP gate.
+
+`tests/seo-guides-sql.php` is guarded by
+`AOWOW_TEST_DATABASE=aowow_security_test_seo` and runs in the SQL gate against its
+own disposable database. It checks actual GuideList publication/access predicates,
+SQL name lookups, normalized list links and pending-metadata visibility using the
+real guides schema. Never substitute a retained database. None of these tests
+establishes deployed publication acceptance or indexing outcomes.
+
 For the existing Apache policy suite, set `AOWOW_TEST_APACHE_PORT` to an available
 port in 8010–8020 when running locally. If omitted, Docker assigns a host port.
 

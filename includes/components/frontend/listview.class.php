@@ -102,6 +102,11 @@ class Listview implements \JsonSerializable
 
     private string $__addIn = '';
 
+    public function hasData() : bool
+    {
+        return (bool)$this->data;
+    }
+
     public function __construct(array $opts, string $template = '', string $addIn = '')
     {
         if ($template && isset(self::TEMPLATES[$template]))

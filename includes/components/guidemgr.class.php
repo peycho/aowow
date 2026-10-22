@@ -33,6 +33,16 @@ class GuideMgr
 
     private static  array $ratingsStore = [];
 
+    public static function publicUrlToken(string $url, int $id) : string
+    {
+        $url = strtolower($url);
+        // Numeric tokens dispatch as IDs; these words dispatch as guide actions.
+        if (!preg_match(self::VALID_URL, $url) || ctype_digit($url) || in_array($url, ['edit', 'new', 'changelog', 'vote'], true))
+            return (string)$id;
+
+        return $url;
+    }
+
     public static function createDescription(string $text) : string
     {
         return Lang::trimTextClean(Markup::stripTags($text), 120);

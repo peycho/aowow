@@ -154,6 +154,7 @@ class TemplateResponse extends BaseResponse
     public  array  $pageTemplate = [];                      // js PageTemplate object
     public  array  $jsGlobals    = [];                      // ready to be used in template
     public  array  $ldIntangible = [];                      // seo shit
+    public  array  $seo          = [];                      // resolved publication identity; request rules are applied when rendering
 
     public function __construct(string $rawParam = '')
     {
@@ -535,6 +536,10 @@ class TemplateResponse extends BaseResponse
         if (isset($this->guideRevision))
             $article = DB::Aowow()->selectRow('SELECT `article`, `locale`, `editAccess` FROM ::articles WHERE `type` = %i AND `typeId` = %i AND `rev` = %i',
                 Type::GUIDE, $this->typeId, $this->guideRevision);
+        // A guide's selected revision is an authorization boundary. Never fall
+        // back to the newest article when the approved/requested row is missing.
+        if ($this instanceof GuideBaseResponse && !$article)
+            $this->generateNotFound(Lang::game('guide'), Lang::guide('notFound'));
         if (!$article && !empty($this->gPageInfo['articleUrl']))
             $article = DB::Aowow()->selectRow('SELECT `article`, `locale`, `editAccess` FROM ::articles WHERE `url` = %s AND `locale` IN %in ORDER BY `locale` DESC, `rev` DESC LIMIT 1',
                 $this->gPageInfo['articleUrl'], [Lang::getLocale()->value, Locale::EN->value]);
@@ -544,6 +549,9 @@ class TemplateResponse extends BaseResponse
 
         if (!$article)
             return;
+
+        if ($this instanceof GuideBaseResponse)
+            $this->seo['locale'] = Locale::tryFromRequest($article['locale']) ?? Locale::getFallback();
 
         $text = Util::defStatic($article['article']);
         $opts = [];
@@ -684,6 +692,7 @@ class TemplateResponse extends BaseResponse
     // we admit this page exists and an error occured on it
     public function generateError(?string $altPageName = null) : never
     {
+        $this->seo['index'] = false;
         $this->result = new Template\PageTemplate('text-page-generic', $this);
 
         // only use own script defs
@@ -727,6 +736,7 @@ class TemplateResponse extends BaseResponse
     // we do not have this page
     public function generateNotFound(string $title = '', string $msg = '') : never
     {
+        $this->seo['index'] = false;
         $this->result = new Template\PageTemplate('text-page-generic', $this);
 
         // only use own script defs
@@ -772,6 +782,7 @@ class TemplateResponse extends BaseResponse
     // Display the maintenance page, including the exception-handler fallback.
     public function generateMaintenance() : never
     {
+        $this->seo['index'] = false;
         $this->result = new Template\PageTemplate('maintenance', $this);
 
         $this->header[] = ['HTTP/1.0 503 Service Temporarily Unavailable', true, 503];

@@ -13,13 +13,12 @@
     <script src="<?=$this->gStaticUrl;?>/js/csrf.js?v=<?=AOWOW_REVISION;?>"></script>
     <script src="<?=$this->gStaticUrl;?>/js/password-policy.js?v=<?=AOWOW_REVISION;?>"></script>
 <?=$this->renderMetaTags(4);?>
-    <link rel="canonical" href="<?=PageTemplate::buildQuery(); ?>">
-    <link rel="alternate" hreflang="x-default" href="<?=PageTemplate::buildQuery(add: ['locale' => Lang::getLocale()->getFallback()->value]); ?>">
 <?php
-foreach ($this->locale::cases() as $l):
-    if ($l->validate()):
-        echo '    <link rel="alternate" hreflang="'.$l->hreflang('-').'" href="'.PageTemplate::buildQuery(add: ['locale' => $l->value]).'">'.PHP_EOL;
-    endif;
+if ($this->isIndexable()):
+    echo '    <link rel="canonical" href="'.$this->escHTML($this->seoUrl()).'">'.PHP_EOL;
+endif;
+foreach ($this->seoAlternates() as $language => $url):
+    echo '    <link rel="alternate" hreflang="'.$language.'" href="'.$this->escHTML($url).'">'.PHP_EOL;
 endforeach;
 ?>
     <link rel="SHORTCUT ICON" href="<?=$this->gStaticUrl; ?>/images/logos/favicon.ico" />

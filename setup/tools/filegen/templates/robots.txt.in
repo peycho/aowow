@@ -1,28 +1,6 @@
 User-Agent: *
-Disallow: /?account
-Disallow: /account/
-Disallow: /?account=*
-Disallow: /?profile
-Disallow: /profile/
-Disallow: /?profile=*
-Disallow: /?profiles
-Disallow: /profiles/
-Disallow: /?profiles=*
-Disallow: /?guild
-Disallow: /guild/
-Disallow: /?guild=*
-Disallow: /?guilds
-Disallow: /guilds/
-Disallow: /?guilds=*
-Disallow: /?arena-team
-Disallow: /arena-team/
-Disallow: /?arena-team=*
-Disallow: /?arena-teams
-Disallow: /arena-teams/
-Disallow: /?arena-teams=*
+# Search, account and profiler HTML emit noindex. Crawling must remain allowed
+# so search engines can read that directive; authentication still controls access.
 Disallow: /?random
 Disallow: /random/
-Disallow: /?search
-Disallow: /search/
-Disallow: /?search=*
 Sitemap: CFG_HOST_URL/?sitemap

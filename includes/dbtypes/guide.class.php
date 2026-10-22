@@ -42,7 +42,7 @@ class GuideList extends DBTypeList
 
     public static function getName(int $id) : ?LocString
     {
-        if ($n = DB::Aowow()->SelectRow('SELECT `title` AS "name_loc0" FROM %n WHERE `id` = %i', self::$dataTable, $id))
+        if ($n = DB::Aowow()->SelectRow('SELECT IF(`status` = %i, `title`, CONCAT("Guide #", `id`)) AS "name_loc0" FROM %n WHERE `id` = %i AND (`status` = %i OR `rev` > 0)', GuideMgr::STATUS_APPROVED, self::$dataTable, $id, GuideMgr::STATUS_APPROVED))
             return new LocString($n);
         return null;
     }
@@ -90,7 +90,7 @@ class GuideList extends DBTypeList
                 'description' => $this->getField('description'),
                 'sticky'      => !!($this->getField('cuFlags') & CC_FLAG_STICKY),
                 'nvotes'      => $this->getField('nvotes'),
-                'url'         => '?guide=' . ($this->getField('url') ?: $this->id),
+                'url'         => '?guide=' . GuideMgr::publicUrlToken($this->getField('url') ?: '', $this->id),
                 'status'      => $this->getField('status'),
                 'author'      => $this->getField('author'),
                 'authorroles' => $this->getField('roles'),
@@ -101,6 +101,12 @@ class GuideList extends DBTypeList
                 'date'        => $this->getField('date'),   // ok
                 'when'        => date(Util::$dateFormatInternal, $this->getField('date'))
             );
+
+            if ($this->getField('rev') > 0 && $this->getField('status') != GuideMgr::STATUS_APPROVED && !$this->userCanView())
+            {
+                $data[$this->id]['title'] = Lang::game('guide').' #'.$this->id;
+                $data[$this->id]['description'] = '';
+            }
 
             if ($this->getField('category') == 1)
             {

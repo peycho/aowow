@@ -18,7 +18,9 @@ namespace Aowow {
     class DB {
         public static array $logs = [];
         public static function Aowow() : self { return new self; }
-        public function selectRow(string $query, mixed ...$args) : array { return []; }
+        public function selectRow(string $query, mixed ...$args) : array {
+            return str_contains($query, 'FROM ::articles') ? ['article' => 'Approved fixture body', 'locale' => 0, 'editAccess' => 0] : [];
+        }
         public function selectAssoc(string $query, mixed ...$args) : array { return self::$logs; }
     }
     class GuideList {
@@ -49,6 +51,7 @@ namespace {
     require __DIR__.'/../localization/datetime.class.php';
     require __DIR__.'/../includes/components/jsexpression.class.php';
     require __DIR__.'/../includes/components/frontend/tabs.class.php';
+    require __DIR__.'/../includes/components/frontend/markup.class.php';
     require __DIR__.'/../includes/components/guidemgr.class.php';
     // The locale bundle includes SmartAI constant keys even for unrelated pages.
     foreach (['SmartAI', 'SmartEvent', 'SmartAction', 'SmartTarget'] as $class)
@@ -130,7 +133,7 @@ namespace {
             Aowow\GuideList::$fields = [
                 'title' => $sample['title'], 'name' => $sample['name'], 'description' => $sample['description'],
                 'category' => 2, 'author' => $sample['name'], 'date' => time() - 60,
-                'status' => Aowow\GuideMgr::STATUS_APPROVED, 'rev' => 1,
+                'status' => Aowow\GuideMgr::STATUS_APPROVED, 'rev' => 1, 'url' => '',
                 'cuFlags' => GUIDE_CU_NO_QUICKFACTS | GUIDE_CU_NO_RATING
             ];
             Aowow\DB::$logs = [

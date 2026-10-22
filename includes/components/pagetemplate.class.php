@@ -11,6 +11,37 @@ if (!defined('AOWOW_REVISION'))
 class PageTemplate
 {
 
+    private const array SEO_DATABASE_ROUTES = [
+        'achievement', 'achievements', 'areatrigger', 'areatriggers', 'class', 'classes',
+        'currency', 'currencies', 'emote', 'emotes', 'enchantment', 'enchantments',
+        'event', 'events', 'faction', 'factions', 'icon', 'icons', 'item', 'items',
+        'itemset', 'itemsets', 'mail', 'mails', 'npc', 'npcs', 'object', 'objects',
+        'pet', 'pets', 'quest', 'quests', 'race', 'races', 'skill', 'skills',
+        'sound', 'sounds', 'spell', 'spells', 'title', 'titles', 'zone', 'zones'
+    ];
+
+    private const array SEO_LIST_ROUTES = [
+        'achievements', 'areatriggers', 'classes', 'currencies', 'emotes', 'enchantments',
+        'events', 'factions', 'icons', 'items', 'itemsets', 'mails', 'npcs', 'objects',
+        'pets', 'quests', 'races', 'skills', 'sounds', 'spells', 'titles', 'zones', 'guides'
+    ];
+
+    private const array SEO_FILTER_ROUTES = [
+        'items', 'itemsets', 'npcs', 'objects', 'quests', 'spells', 'achievements',
+        'enchantments', 'areatriggers', 'sounds', 'icons', 'guilds', 'arena-teams', 'profiles'
+    ];
+
+    // Existing useful landing pages retained while category hubs are developed.
+    // New arbitrary combinations require review rather than expanding crawl space.
+    private const array SEO_REVIEWED_FILTERS = [
+        'itemsets' => ['cl=1', 'cl=2', 'cl=3', 'cl=4', 'cl=5', 'cl=6', 'cl=7', 'cl=9', 'cl=11', 'ta=2'],
+        'items=4.4' => ['sl=9', 'sl=10', 'cr=18;crs=1;crv=0;sl=3'],
+        'items=4.3' => ['sl=5'],
+        'items=4.2' => ['sl=10'],
+        'items=4.-4' => ['na=Darkmoon Card'],
+        'sounds' => ['ty=17']
+    ];
+
     private const string GUIDE_RATING_TPL = "$(document).ready(function() { $('#guiderating').append(GetStars(%.10F, %s, %u, %u)); });\n";
 
     private readonly \Aowow\Locale $locale;
@@ -463,9 +494,17 @@ class PageTemplate
         return $options;
     }
 
+    // SEO identity only. Keep the routing pair first: index.php dispatches on it.
+    // Return a URL, not HTML; callers must escape it for their output context.
     public static function buildQuery(array $add = [], array $remove = [], ?string $host = null) : string
     {
         parse_str($_SERVER['QUERY_STRING'] ?? '', $queryVars);
+        $route = array_key_first($queryVars) ?? 'home';
+        $value = $queryVars[$route] ?? '';
+
+        // Do not let array-shaped input reach strlen() or become URL syntax.
+        if (!is_string($value))
+            $value = '';
 
         foreach ($remove as $r)
             unset($queryVars[$r]);
@@ -473,14 +512,132 @@ class PageTemplate
         foreach ($add as $k => $v)
             $queryVars[$k] = $v;
 
+        $value = $queryVars[$route] ?? $value;
+
         $host ??= Cfg::get('HOST_URL');
 
-        if (!$queryVars)
+        $params = [];
+        // These modifiers change content in the current endpoints. Pagination
+        // belongs here only once the corresponding HTML endpoint implements it.
+        $allowed = match ($route)
+        {
+            'profiles'            => ['filter', 'roster'],
+            'guide'               => match ($value)
+            {
+                'edit'      => ['id', 'rev'],
+                'changelog' => ['id'],
+                default     => ['rev']
+            },
+            'sitemap'             => ['page'],
+            default               => in_array($route, self::SEO_FILTER_ROUTES, true) ? ['filter'] : []
+        };
+        foreach ($allowed as $key)
+            if (isset($queryVars[$key]) && is_scalar($queryVars[$key]) && (string)$queryVars[$key] !== '')
+                $params[$key] = (string)$queryVars[$key];
+
+        // A saved language preference can render a bare URL in another locale.
+        // Make that identity explicit, and retain explicit supported locales.
+        $locale = $queryVars['locale'] ?? null;
+        $loc = \Aowow\Locale::tryFromRequest($locale) ?? Lang::getLocale();
+        if ($loc != \Aowow\Locale::EN)
+            $params['locale'] = (string)$loc->value;
+
+        ksort($params, SORT_STRING);
+
+        if (!in_array($route, $remove, true))
+        {
+            $value = $queryVars[$route] ?? $value;
+            $routePair = rawurlencode((string)$route);
+            if (is_scalar($value) && (string)$value !== '')
+                $routePair .= '='.rawurlencode((string)$value);
+        }
+        else
+            $routePair = 'home';
+
+        if ($routePair === 'home' && !$params)
             return $host;
 
-        // http_build_query uses unset values e.g.: "/?items="
-        array_walk($queryVars, fn(&$v, $k) => $v = $k . (strlen($v) ? '=' . $v : ''));
-        return $host.'/?'.implode('&', $queryVars);
+        $suffix = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+        return rtrim($host, '/').'/?'.$routePair.($suffix !== '' ? '&'.$suffix : '');
+    }
+
+    private function seoUrl(?\Aowow\Locale $locale = null) : string
+    {
+        $add = [];
+        $seo = $this->seo ?? [];
+        if (isset($seo['guide']))
+            $add['guide'] = $seo['guide'];
+        if ($loc = $locale ?? ($seo['locale'] ?? null))
+            $add['locale'] = $loc->value;
+
+        return self::buildQuery(add: $add, remove: isset($seo['guide']) ? ['rev'] : []);
+    }
+
+    private function isIndexable() : bool
+    {
+        if (($this->seo['index'] ?? null) === false)
+            return false;
+
+        parse_str($_SERVER['QUERY_STRING'] ?? '', $query);
+        $route = array_key_first($query) ?? 'home';
+        $value = $query[$route] ?? '';
+        if (!is_string($value))
+            return false;
+
+        $public = [...self::SEO_DATABASE_ROUTES, 'home', 'aboutus', 'contactus', 'faq',
+            'help', 'whats-new', 'talent', 'petcalc', 'compare', 'maps', 'profiler',
+            'searchplugins', 'searchbox', 'tooltips', 'guides', 'guide'];
+        if (!in_array($route, $public, true))
+            return false;
+
+        // Guides need a resolved public revision; a raw guide route proves nothing.
+        if ($route === 'guide' && (($this->seo['index'] ?? false) !== true || array_key_exists('rev', $query)))
+            return false;
+
+        if (in_array($route, self::SEO_FILTER_ROUTES, true) && array_key_exists('filter', $query) && $query['filter'] !== '')
+        {
+            $key = $route.($value !== '' ? '='.$value : '');
+            if (!is_string($query['filter']) || !in_array($query['filter'], self::SEO_REVIEWED_FILTERS[$key] ?? [], true))
+                return false;
+        }
+
+        // Empty database/guide lists are navigable but provide no indexable result.
+        if (in_array($route, self::SEO_LIST_ROUTES, true) && $this->lvTabs instanceof \Aowow\Tabs)
+        {
+            $hasList = false;
+            foreach ($this->lvTabs->iterate() as $tab)
+                if ($tab instanceof \Aowow\Listview)
+                {
+                    if ($tab->hasData())
+                        return true;
+                    $hasList = true;
+                }
+            if ($hasList)
+                return false;
+        }
+
+        return true;
+    }
+
+    private function seoAlternates() : array
+    {
+        if (!$this->isIndexable())
+            return [];
+
+        parse_str($_SERVER['QUERY_STRING'] ?? '', $query);
+        $route = array_key_first($query) ?? 'home';
+        // Individual guides have one authored language and no translation mapping;
+        // guide lists contain different records in each locale, not translations.
+        if ((in_array($route, self::SEO_FILTER_ROUTES, true) && isset($query['filter']) && $query['filter'] !== '') ||
+            ($route !== 'home' && !in_array($route, self::SEO_DATABASE_ROUTES, true)))
+            return [];
+
+        $result = ['x-default' => $this->seoUrl(\Aowow\Locale::getFallback())];
+        foreach (\Aowow\Locale::cases() as $locale)
+            if ($locale->validate())
+                $result[$locale->hreflang('-')] = $this->seoUrl($locale);
+
+        return $result;
     }
 
     // unordered stuff
@@ -538,6 +695,42 @@ class PageTemplate
     // refresh vars that shouldn't be cached
     private function update() : void
     {
+        // These values depend on the current request, not the request that
+        // populated a shared page cache. Keep all SEO consumers in agreement.
+        $url = $this->seoUrl();
+        $metaTags = $this->metaTags ?? [];
+        $locale = $this->seo['locale'] ?? $this->locale;
+        $alternates = $this->seoAlternates();
+        $metaTags = array_values(array_filter($metaTags, fn($tag) => ($tag['property'] ?? '') !== 'og:locale:alternate'));
+        foreach (\Aowow\Locale::cases() as $other)
+            if ($other !== $locale && isset($alternates[$other->hreflang('-')]))
+                $metaTags[] = ['property' => 'og:locale:alternate', 'content' => $other->hreflang()];
+        if (!$this->isIndexable())
+        {
+            $metaTags = array_values(array_filter($metaTags, fn($tag) => ($tag['name'] ?? '') !== 'robots'));
+            $metaTags[] = ['name' => 'robots', 'content' => 'noindex, follow'];
+            $this->ldIntangible = [];
+        }
+        foreach ($metaTags as &$tag)
+        {
+            if (($tag['property'] ?? '') === 'og:url')
+                $tag['content'] = $url;
+            else if (($tag['property'] ?? '') === 'og:locale')
+                $tag['content'] = $locale->hreflang();
+            else if (($tag['name'] ?? '') === 'language')
+                $tag['content'] = $locale->domain();
+        }
+        unset($tag);
+        $this->metaTags = $metaTags;
+
+        if ($ld = $this->ldIntangible)
+        {
+            $ld['url'] = $url;
+            if (isset($ld['mainEntityOfPage']['@id']))
+                $ld['mainEntityOfPage']['@id'] = $url;
+            $this->ldIntangible = $ld;
+        }
+
         // not set, but should be
         if (!isset($_COOKIE['consent']) && $this->hasAnalytics)
         {

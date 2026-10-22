@@ -8,6 +8,60 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-22 — SEO indexing, locale and guide visibility
+
+New anonymous sessions use the configured English/fallback default while explicit
+saved preferences remain available. Locale overrides accept only supported,
+enabled values, and English SEO URLs consolidate `locale=0` into bare routes.
+Homepage language-menu state follows the rendered language.
+
+Shared rendering now applies noindex rules to search, private/editorial routes,
+previews, archived guides, empty lists and unreviewed filters. Seventeen reviewed
+filtered landing pages retain indexing eligibility. Language alternates represent
+equivalent enabled database locales; guide aliases use their authored-language
+canonical without claiming nonexistent translations. Cached metadata follows
+the current policy.
+
+Guide pages/tooltips recheck publication and permissions on every request rather
+than using shared caches. Public views select the exact approved article;
+historical/preview access remains restricted to owner/staff. Missing revisions
+return 404 without falling back to drafts. Pending guide titles/descriptions are
+hidden from public metadata because the existing schema stores body revisions
+only; the public page temporarily uses `Guide #ID` and approved-body description.
+
+Deploy PHP/templates together, regenerate robots with `php aowow --build=robots`
+using the normal output destination, and invalidate affected page/tooltip caches.
+The robots template permits crawlers to read noindex directives and retains the
+random-route restriction. See the [SEO roadmap](seo-plan.md) for checkpoint
+scope, validation and outstanding deployment acceptance. No production operation
+is performed by this change.
+
+All `make dev-test` gates passed, including disposable SQL and eight Apache
+policy combinations. The final metadata adjustment also passed the complete
+PHP/HTTP gate. SEO suites total 1,493 checks, and a local report-derived check
+confirmed all 17 reviewed filter URLs retain indexing eligibility.
+
+## 2026-10-22 — SEO canonical URL foundation
+
+SEO URLs now discard tracking and irrelevant query parameters, retain the
+routing pair first, encode values and sort content modifiers. Existing filters,
+guide revisions and supported explicit locales remain represented. Canonical
+and language-alternate attributes escape URLs; Open Graph and JSON-LD identity
+refresh for each request, including page-cache hits. Manual descriptions remain
+intact.
+
+Added the [SEO roadmap](seo-plan.md) to the documentation index with incremental
+implementation checkpoints. Deployment-specific Search Console exports and
+baseline reports belong in the ignored `reports/` directory. Indexing policy,
+anonymous locale defaults, guide aliases and translation equivalence are the
+next checkpoint; rendering, pagination and sitemap work follow separately.
+
+`make dev-test` passed all gates: lint, PHP/HTTP, JavaScript, Chromium,
+disposable SQL and eight Apache policy combinations. This includes 148 new
+SEO URL and cached-head checks. Deploy PHP and the head template together and
+invalidate affected page caches through the normal deployment workflow.
+Deployed acceptance and search-engine canonical selection remain unverified.
+
 ## 2026-10-22 — Optional Docker development environment
 
 Removed the newer Compose Watch `initial_sync` field, which prevented CI runners

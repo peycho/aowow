@@ -27,9 +27,7 @@ if ($this->gPageInfo):
 endif;
 
 if ($this->pageTemplate):
-    if ($this->locale->value && $this->pageTemplate['pageName'] != 'home'):
-        echo '                Locale.set('.$this->locale->value.');'.PHP_EOL;
-    endif;
+    echo '                Locale.set('.$this->locale->value.');'.PHP_EOL;
     echo '                PageTemplate.set('.$this->json('pageTemplate', varRef: true).');'.PHP_EOL;
 endif;
     echo '                PageTemplate.init();'.PHP_EOL;

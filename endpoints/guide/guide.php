@@ -10,7 +10,9 @@ class GuideBaseResponse extends TemplateResponse implements ICache
 {
     use TrDetailPage, TrCache;
 
-    protected  int    $cacheType   = CACHE_TYPE_DETAIL_PAGE;
+    // Publication state and revision access must be checked on every request.
+    // A staff/group cache key cannot isolate owner previews or status changes.
+    protected  int    $cacheType   = CACHE_TYPE_NONE;
 
     protected  string $template    = 'detail-page-generic';
     protected  string $pageName    = 'guide';
@@ -68,14 +70,34 @@ class GuideBaseResponse extends TemplateResponse implements ICache
             $this->contribute = CONTRIBUTE_NONE;
         }
 
-        // owner or staff and manual rev passed
-        if ($this->subject->userCanView() && $this->_get['rev'])
-            $this->guideRevision = $this->_get['rev'];
-        // has publicly viewable version
+        $publicRevision = (int)$this->subject->getField('rev');
+        $requestedRevision = $this->_get['rev'];
+        if (array_key_exists('rev', $_GET) && (!is_int($requestedRevision) || $requestedRevision < 1))
+            $this->generateNotFound(Lang::game('guide'), Lang::guide('notFound'));
+        if ($requestedRevision && !$this->subject->userCanView() && $requestedRevision !== $publicRevision)
+            $this->generateNotFound(Lang::game('guide'), Lang::guide('notFound'));
+
+        if ($requestedRevision)
+            $this->guideRevision = $requestedRevision;
         else if ($this->subject->canBeViewed())
-            $this->guideRevision = $this->subject->getField('rev');
+            $this->guideRevision = $publicRevision;
+        else
+            $this->guideRevision = (int)DB::Aowow()->selectCell('SELECT MAX(`rev`) FROM ::articles WHERE `type` = %i AND `typeId` = %i', Type::GUIDE, $this->typeId);
+
+        if (!$this->guideRevision)
+            $this->generateNotFound(Lang::game('guide'), Lang::guide('notFound'));
+
+        $this->seo = [
+            'guide' => GuideMgr::publicUrlToken($this->subject->getField('url') ?: '', $this->typeId),
+            'index' => $this->subject->canBeViewed() && $this->guideStatus !== GuideMgr::STATUS_ARCHIVED && !$requestedRevision
+        ];
 
         $this->h1 = $this->subject->getField('name');
+        $documentTitle = $this->subject->getField('title');
+        // Guide metadata is not revisioned in this schema. Do not advertise
+        // newly edited titles/descriptions alongside an older approved body.
+        if ($this->guideStatus !== GuideMgr::STATUS_APPROVED && $this->subject->canBeViewed() && !$requestedRevision)
+            $documentTitle = $this->h1 = Lang::game('guide').' #'.$this->typeId;
 
         $this->gPageInfo += array(
             'name'   => $this->h1,
@@ -98,7 +120,7 @@ class GuideBaseResponse extends TemplateResponse implements ICache
         /* Page Title */
         /**************/
 
-        array_unshift($this->title, $this->subject->getField('title'), Lang::game('guides'));
+        array_unshift($this->title, $documentTitle, Lang::game('guides'));
 
 
         /***********/
@@ -214,7 +236,8 @@ class GuideBaseResponse extends TemplateResponse implements ICache
 
     protected function generateMetadata(bool $useArticle = true) : void
     {
-        $this->metaTags[] = ['property' => 'og:title', 'content' => $this->subject->getField('name')];
+        $name = $this->gPageInfo['name'];
+        $this->metaTags[] = ['property' => 'og:title', 'content' => $name];
         $this->metaTags[] = ['property' => 'og:type',  'content' => 'article'];
 
         $keywords = array(
@@ -232,10 +255,18 @@ class GuideBaseResponse extends TemplateResponse implements ICache
 
         array_unshift($this->metaTags, ['name' => 'keywords', 'content' => $keywords]);
 
-        $this->buildBasicMetadata($this->subject->getField('description'), useArticle: false);
+        if ($this->guideStatus === GuideMgr::STATUS_APPROVED)
+            $this->buildBasicMetadata($this->subject->getField('description'), useArticle: false);
+        else if ($this->seo['index'])
+            $this->buildBasicMetadata('', useArticle: true); // selected approved body only
+        else
+            $this->buildBasicMetadata('', useArticle: false);
 
-        $this->buildLdJson();
-        $this->ldIntangible['name'] = $this->subject->getField('name');
+        if ($this->seo['index'])
+        {
+            $this->buildLdJson();
+            $this->ldIntangible['name'] = $name;
+        }
     }
 
     public static function infoboxHook(Template\PageTemplate &$pt, ?InfoboxMarkup &$infobox) : void

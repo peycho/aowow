@@ -45,6 +45,9 @@ PY
     php tests/security-upstream-october.php
     php tests/schema-validator.php
     php tests/maintenance-response.php
+    php tests/seo-urls.php
+    php tests/seo-guides.php
+    php tests/seo-locale.php
     php tests/security-smtp.php
     php tests/setup-maps.php
     php tests/maps-picker.php
@@ -104,7 +107,7 @@ PY
     # shellcheck disable=SC2016 # PHP variables must be passed literally.
     php -r '
       $db = new mysqli(getenv("AOWOW_TEST_DB_HOST"), "root", "", "", (int)getenv("AOWOW_TEST_DB_PORT"));
-      foreach (["passwords", "screenshots", "updates", "resources", "legacy", "schema", "reconciliation", "reports", "turnstile", "feedback"] as $suffix) {
+      foreach (["passwords", "screenshots", "updates", "resources", "legacy", "schema", "reconciliation", "reports", "turnstile", "feedback", "seo"] as $suffix) {
           $name = "aowow_security_test_".$suffix;
           $db->query("CREATE DATABASE IF NOT EXISTS ".$name." CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
           // The historical fixture has this collation; normalize reused fixture databases too.
@@ -124,6 +127,7 @@ PY
     AOWOW_TEST_DATABASE=aowow_security_test_reports php tests/security-reports.php
     AOWOW_TEST_DATABASE=aowow_security_test_turnstile php tests/security-turnstile-budget.php
     AOWOW_TEST_DATABASE=aowow_security_test_feedback php tests/security-feedback.php
+    AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/seo-guides-sql.php
     ;;
   apache)
     # Exercise both hosting permission sets, with and without inherited negotiation.

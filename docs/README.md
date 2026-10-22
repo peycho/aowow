@@ -30,6 +30,7 @@ these guides run from the checkout root unless stated otherwise.
 | --- | --- |
 | [Changelog](changelog.md) | Dated changes, migration/build details and historical validation |
 | [Security review](aowow-security-review.md) | Findings, remediation PRs/commits and remaining deployment acceptance |
+| [SEO roadmap](seo-plan.md) | Ordered improvements, implementation checkpoints and acceptance boundaries |
 | [Security policy](../SECURITY.md) | Private vulnerability reporting |
 | [Support](../SUPPORT.md) | Bugs, feature requests and ordinary support questions |
 | [Third-party notices](../THIRD_PARTY_NOTICES.md) | Component notices and attribution |
