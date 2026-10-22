@@ -1,5 +1,8 @@
 $(document).ready(function () {
     Menu.addButtons($('#home-menu'), mn_path);
+    // jQuery readiness can run after native load handlers. Remove the initial
+    // links only after the interactive homepage navigation actually exists.
+    if (typeof AowowServerContent !== 'undefined') AowowServerContent.navigation();
 
     var form = $('#home-search form');
     form.submit(g_preventEmptyFormSubmission);

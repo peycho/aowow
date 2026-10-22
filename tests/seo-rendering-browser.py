@@ -10,6 +10,7 @@ from urllib.parse import parse_qs, urlsplit
 
 fixture = Path(sys.argv[1]).read_bytes()
 browser = sys.argv[2]
+home = len(sys.argv) > 3 and sys.argv[3] == "home"
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -65,6 +66,11 @@ try:
             else:
                 initial = InitialContent()
                 initial.feed(result.stdout.decode())
+                if home:
+                    assert 'server-navigation' in initial.ids and 'home-menu' in initial.ids
+                    assert all(link in initial.links for link in ('?items', '?spells'))
+                    print('PASS: 2 script-blocked homepage navigation checks')
+                    continue
                 assert initial.heading and 'article-generic' in initial.ids, (initial.ids, result.stdout[:500], result.stderr[-1000:])
                 assert 'server-lists-generic' in initial.ids and 'server-navigation' in initial.ids
                 assert all(link in initial.links for link in ('?npc=1', '?npc=2', '?items', '?item=1'))

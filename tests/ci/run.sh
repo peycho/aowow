@@ -89,6 +89,7 @@ PY
     php tests/header-image.php --browser > "$fixture_root/header-image.html"
     php tests/maintenance-response.php --browser > "$fixture_root/maintenance.html"
     php tests/seo-rendering.php --browser > "$fixture_root/seo-rendering.html"
+    php tests/seo-home-navigation.php > "$fixture_root/seo-home-navigation.html"
     for fixture in json guide-editor csrf turnstile header-image maintenance; do
       timeout 45s "$browser" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage \
         --disable-background-networking \
@@ -96,6 +97,7 @@ PY
       python3 tests/ci/check-browser.py "$fixture_root/$fixture.dom"
     done
     python3 tests/seo-rendering-browser.py "$fixture_root/seo-rendering.html" "$browser"
+    python3 tests/seo-rendering-browser.py "$fixture_root/seo-home-navigation.html" "$browser" home
     php tests/retirement.php --fixtures > "$fixture_root/retirement-assets.json"
     node tests/retirement.mjs --browser < "$fixture_root/retirement-assets.json" > "$fixture_root/retirement.html"
     python3 tests/retirement-browser.py "$fixture_root/retirement.html" "$fixture_root/retirement-assets.json" "$browser"

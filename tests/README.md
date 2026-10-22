@@ -58,6 +58,13 @@ replacement without duplicate content, lazy tab loading, failed enhancement and
 navigation fallback. A second Chromium run blocks all page scripts through CSP
 and verifies the initial headings and crawlable links remain available.
 
+The browser gate also runs `tests/seo-home-navigation.php` with the real jQuery,
+Menu and homepage script. It holds jQuery readiness until after the native load
+event, verifies the fallback remains during delayed initialization, then checks
+that successful menu creation removes it. A script-blocked run verifies the
+crawlable links remain usable. This covers the cached/fast-load homepage timing
+that native DOMContentLoaded/load cleanup alone could miss.
+
 `tests/seo-pagination-sql.php` uses the same exact disposable SEO database guard.
 It exercises the actual DBTypeList query builder, pagination response trait,
 canonical/head renderer and list/pagination templates over SQL and loopback HTTP.

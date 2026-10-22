@@ -8,6 +8,15 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-22 — Remove duplicate homepage fallback after menu initialization
+
+The homepage now removes its server-rendered navigation fallback immediately
+after building the interactive menu. jQuery readiness can run after native load
+handlers, leaving both navigation rows visible under the previous cleanup timing.
+Fallback links remain available when scripting is blocked or menu creation fails.
+Deploy `static/js/home.js`; no generated JavaScript bundle rebuild is required.
+Browser regression coverage deliberately delays menu initialization beyond load.
+
 ## 2026-10-22 — Descriptive SEO titles and generated summaries
 
 Public database details, browse categories and guides now identify the topic,
