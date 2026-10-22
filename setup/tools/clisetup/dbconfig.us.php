@@ -32,6 +32,7 @@ CLISetup::registerUtility(new class extends UtilityScript
         'user'   => ['User',          false],
         'pass'   => ['Password',      true ],
         'db'     => ['Database Name', false],
+        'port'   => ['Port (blank: default or legacy host:port)', false, false, '/[0-9]/'],
         'prefix' => ['Table prefix',  false]
     );
 
@@ -53,7 +54,7 @@ CLISetup::registerUtility(new class extends UtilityScript
 
         foreach ($this->databases as $idx => $name)
             if (empty($this->config[$name]) && $name != 'characters' )
-                $this->config[$name] = array_combine(array_keys($this->dbFields), ['', '', '', '', '']);
+                $this->config[$name] = array_fill_keys(array_keys($this->dbFields), '');
 
         while (true)
         {
@@ -122,13 +123,22 @@ CLISetup::registerUtility(new class extends UtilityScript
                     }
                     else if (($uiIndex['idx'] >= DB_AOWOW && $uiIndex['idx'] < (DB_CHARACTERS + $nCharDBs)) || strtoupper($uiIndex['idx']) == 'N')
                     {
-                        $curFields = $uiIndex['idx'] ? $this->dbFields : array_slice($this->dbFields, 0, 4);
+                        $curFields = $uiIndex['idx'] ? $this->dbFields : array_diff_key($this->dbFields, ['prefix' => true]);
 
                         if (strtoupper($uiIndex['idx']) == 'N')    // add new characters DB
                             $curFields['realmId'] = ['Realm Id', false, false, '/\d{1,3}/'];
 
                         if (CLI::read($curFields, $uiRealm))
                         {
+                            if ($uiRealm && ($uiRealm['port'] ?? '') !== '')
+                            {
+                                if (!ctype_digit($uiRealm['port']) || (int)$uiRealm['port'] < 1 || (int)$uiRealm['port'] > 65535)
+                                {
+                                    CLI::write('[db] port must be between 1 and 65535.', CLI::LOG_ERROR);
+                                    continue 2;
+                                }
+                                $uiRealm['port'] = (int)$uiRealm['port'];
+                            }
                             if ($uiIndex['idx'] == DB_AOWOW && $uiRealm)
                                 $uiRealm['prefix'] = 'aowow_';
 
@@ -142,7 +152,7 @@ CLISetup::registerUtility(new class extends UtilityScript
                                 }
                             }
                             else if ($uiIndex['idx'] < DB_CHARACTERS)    // auth, world or aowow
-                                $this->config[$this->databases[$uiIndex['idx']]] = $uiRealm ?: array_combine(array_keys($this->dbFields), ['', '', '', '', '']);
+                                $this->config[$this->databases[$uiIndex['idx']]] = $uiRealm ?: array_fill_keys(array_keys($this->dbFields), '');
                             else                            // existing char DB
                             {
                                 $i = 0;
@@ -308,7 +318,7 @@ CLISetup::registerUtility(new class extends UtilityScript
                 $result = CLI::red('ERR');
 
             $buff[] = $result;
-            $buff[] = 'mysqli://'.$dbInfo['user'].':'.($dbInfo['pass'] ? '**********' : '').'@'.$dbInfo['host'].'/'.$dbInfo['db'];
+            $buff[] = 'mysqli://'.$dbInfo['user'].':'.($dbInfo['pass'] ? '**********' : '').'@'.$dbInfo['host'].(!empty($dbInfo['port']) ? ':'.$dbInfo['port'] : '').'/'.$dbInfo['db'];
             $buff[] = $dbInfo['prefix'] ? 'pre.: '.$dbInfo['prefix'] : '';
             $buff[] = $note;
         }

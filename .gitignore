@@ -47,3 +47,11 @@
 # composer
 /includes/libs/*
 composer.phar
+
+# Private Docker configuration and secrets
+/.env
+/.env.*
+!/.env.example
+!/.env.dev.example
+/docker/secrets/
+/docker-compose.override.yml

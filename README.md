@@ -19,6 +19,8 @@ third-party assets belong to their respective owners.
 ## Documentation
 
 - [Installation and updates](docs/installation.md): requirements, assets, setup and upgrades.
+- [Docker](docs/docker.md): container installation, database layouts and persistent volumes.
+- [Docker development](docs/docker-development.md): live source updates and isolated regression suites.
 - [Configuration](docs/configuration.md): mail, Turnstile and optional site features.
 - [Troubleshooting](docs/troubleshooting.md): common problems and support preparation.
 - [Documentation index](docs/README.md): maintenance guides, audit records and changelog.

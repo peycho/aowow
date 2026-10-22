@@ -8,6 +8,49 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-22 — Optional Docker development environment
+
+Removed the newer Compose Watch `initial_sync` field, which prevented CI runners
+with older Compose schemas from running development commands. The startup source
+snapshot already provides those files. CI now logs its Compose version and
+validates the full development configuration before building images.
+
+Added a separate development image and Compose overlay with Composer dev
+dependencies, Node 24/npm, Python, Git and Chromium. `make dev-watch` refreshes a
+cached source snapshot before starting live updates, including edits made while
+the watcher was stopped. Development HTTP defaults to `127.0.0.1:8011`.
+
+`make dev-test` snapshots working application source and tests and runs the
+existing regression gates. Each invocation gets its own disposable SQL fixture
+project; application configuration and database credentials are excluded. Apache
+fixtures run through the host Docker CLI on port 8012, with no Docker socket in
+PHP. The repository agent instructions document these commands for future work.
+See the [development guide](docker-development.md).
+
+Local development image build, all regression gates and live-update/restart
+checks passed. Full site setup still requires compatible TrinityCore data and
+extracted client assets.
+
+## 2026-10-22 — Docker installation and maintenance
+
+Added a PHP 8.5 Apache image, optional MySQL 8.4 services for the application and
+TrinityCore databases, persistent named volumes, guarded first-install imports,
+private configuration generation, healthchecks, maintenance targets and CI smoke
+validation. Local HTTP defaults to `127.0.0.1:8010`; database ports are unpublished.
+See the [Docker guide](docker.md) for installation, secrets, external databases,
+updates and recovery.
+
+The web root excludes private configuration and application sources. Web code is
+read-only; maintenance uses the web UID for generated files and restores private
+configuration ownership after exit. Setup now preserves explicit database ports,
+and the robots generator accepts `AOWOW_ROBOTS_FILE` for persistent output outside
+an immutable application root. Existing non-container paths remain supported.
+
+Local image build, PHP/HTTP and SQL regression gates, all eight Apache policy
+configurations, and isolated Docker smoke checks passed. Disposable TrinityCore
+fixtures verify connections and read-only grants; full setup with compatible
+world data and extracted client assets remains deployment acceptance work.
+
 ## 2026-10-22 — Sarjuuk integration and display compatibility (revision 75)
 
 Reviewed [Sarjuuk/aowow](https://github.com/Sarjuuk/aowow) `master` at

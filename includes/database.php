@@ -161,7 +161,7 @@ class DB
             self::$interfaceCache[$idx] = null;
         }
 
-        $config = self::$optionsCache[$idx] + array(
+        $config = self::connectionOptions(self::$optionsCache[$idx]) + array(
             'charset'     => 'utf8mb4',                     // executes: SET NAMES $charset
             'substitutes' => array(
                 '' => self::$optionsCache[$idx]['prefix']   // old: ?_ - new: ::
@@ -198,12 +198,9 @@ class DB
 
     public static function test(array $options, ?string &$err = '') : bool
     {
-        $defPort = ini_get('mysqli.default_port');
-        $port = 0;
-        if (strstr($options['host'], ':'))
-            [$options['host'], $port] = explode(':', $options['host']);
+        $options = self::connectionOptions($options);
 
-        if ($link = mysqli_connect($options['host'], $options['user'], $options['pass'], $options['db'], $port ?: $defPort))
+        if ($link = mysqli_connect($options['host'], $options['user'], $options['pass'], $options['db'], $options['port'] ?: (int)ini_get('mysqli.default_port')))
         {
             mysqli_close($link);
             return true;
@@ -211,6 +208,21 @@ class DB
 
         $err = '['.mysqli_connect_errno().'] '.mysqli_connect_error();
         return false;
+    }
+
+    private static function connectionOptions(array $options) : array
+    {
+        $port = (int)($options['port'] ?? 0);
+        // Preserve legacy host:port inputs; an explicit port takes precedence.
+        // Raw IPv6 addresses contain multiple colons and must not be split.
+        if (preg_match('/^([^:]+):([0-9]+)$/D', $options['host'], $match) ||
+            preg_match('/^\[([^\]]+)\](?::([0-9]+))?$/D', $options['host'], $match))
+        {
+            $options['host'] = $match[1];
+            $port = $port ?: (int)($match[2] ?? 0);
+        }
+        $options['port'] = $port;
+        return $options;
     }
 
     public static function errorLogger(\Dibi\Event $evt/* string $message, array $data */) : void

@@ -1,0 +1,41 @@
+# syntax=docker/dockerfile:1
+ARG NODE_IMAGE=node:24-trixie-slim
+ARG RUNTIME_IMAGE=aowow:local
+FROM ${NODE_IMAGE} AS node
+FROM ${RUNTIME_IMAGE}
+
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 chromium git socat \
+    && rm -rf /var/lib/apt/lists/* \
+    && chown -R www-data:www-data /opt/aowow /var/www/html
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+
+COPY --chown=www-data:www-data composer.json composer.lock ./
+RUN COMPOSER_CACHE_DIR=/tmp/composer-cache gosu www-data composer install --prefer-dist --no-interaction --no-progress --no-plugins --no-scripts \
+    && gosu www-data composer check-platform-reqs \
+    && rm -rf /tmp/composer-cache
+# Snapshots must reflect deleted source files as well as additions/edits.
+RUN mv includes/libs /tmp/aowow-vendor \
+    && rm -rf includes endpoints localization template setup static tests /usr/local/lib/aowow \
+    && mkdir includes \
+    && mv /tmp/aowow-vendor includes/libs \
+    && rm -f includes/libs/qqFileUploader.class.php
+COPY --chown=www-data:www-data . .
+COPY docker/scripts/ /usr/local/lib/aowow/
+COPY docker/development/test.sh /usr/local/bin/aowow-dev-test
+RUN chmod 0755 /usr/local/lib/aowow/entrypoint.sh /usr/local/bin/aowow-dev-test \
+    && gosu www-data git init --quiet /opt/aowow \
+    && for path in cache config datasets static/download static/widgets static/js static/uploads static/images/wow static/wowsounds static/modelviewer setup/mpqdata; do \
+         mkdir -p "$path"; \
+         rm -rf "/usr/local/share/aowow-seed/$path"; \
+         mkdir -p "/usr/local/share/aowow-seed/$path"; \
+         cp -a "$path/." "/usr/local/share/aowow-seed/$path/"; \
+       done \
+    && chown -R www-data:www-data /opt/aowow /var/www/html
+
+ENV AOWOW_TEST_CHROME=chromium PYTHONDONTWRITEBYTECODE=1
+USER www-data

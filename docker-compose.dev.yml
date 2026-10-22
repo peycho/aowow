@@ -1,0 +1,99 @@
+# Explicitly opt in with --env-file .env.dev -f docker-compose.yml -f this file.
+x-development: &development
+  image: ${AOWOW_DEV_IMAGE:-aowow:dev}
+  build:
+    context: .
+    dockerfile: Dockerfile.dev
+    args:
+      RUNTIME_IMAGE: ${AOWOW_IMAGE:-aowow:local}
+      NODE_IMAGE: ${NODE_IMAGE:-node:24-trixie-slim}
+
+services:
+  init:
+    <<: *development
+  cli:
+    <<: *development
+  web:
+    <<: *development
+    # Only the dev image has a mutable source tree for one-way Watch updates.
+    read_only: false
+    develop:
+      # dev-watch snapshots/recreates web first; avoid newer initial_sync syntax
+      # so all commands remain compatible with Docker Compose 2.32+.
+      watch:
+        - action: sync
+          path: .
+          target: /opt/aowow
+          ignore:
+            - .git/
+            - .env*
+            - config/
+            - cache/
+            - datasets/
+            - includes/libs/
+            - setup/mpqdata/
+            - static/uploads/
+            - static/download/
+            - static/wowsounds/
+            - static/modelviewer/
+            - static/js/global.js
+            - static/js/profile_all.js
+            - composer.json
+            - composer.lock
+            - docker/secrets/
+        - action: sync
+          path: .htaccess
+          target: /var/www/html/.htaccess
+        - action: sync
+          path: crossdomain.xml
+          target: /var/www/html/crossdomain.xml
+        - action: rebuild
+          path: composer.json
+        - action: rebuild
+          path: composer.lock
+
+  tests:
+    <<: *development
+    profiles: [dev-tools]
+    entrypoint: [/usr/local/bin/aowow-dev-test]
+    command: [all]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    shm_size: 256mb
+    tmpfs:
+      - /tmp
+      - /opt/aowow/cache:uid=33,gid=33,mode=0700
+    environment:
+      TZ: UTC
+      PHP_MEMORY_LIMIT: 512M
+      PHP_MAX_EXECUTION_TIME: '0'
+      AOWOW_TEST_DB_HOST: 127.0.0.1
+      AOWOW_TEST_DB_PORT: '3307'
+    depends_on:
+      test-db:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+    networks: [testing]
+
+  test-db:
+    image: ${MYSQL_IMAGE:-mysql:8.4}
+    profiles: [dev-tools]
+    # Empty-password root belongs only to these isolated, disposable fixtures.
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      MYSQL_ROOT_HOST: '%'
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: [CMD, mysql, --protocol=TCP, --host=127.0.0.1, --user=root, --execute=SELECT 1]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    networks: [testing]
+
+networks:
+  testing:
+    internal: true
