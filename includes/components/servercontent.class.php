@@ -15,7 +15,7 @@ final class ServerContent
         'currency' => 17, 'sound' => 19, 'icondb' => 29, 'icon' => 29,
         'emote' => 501, 'enchantment' => 502, 'areatrigger' => 503, 'mail' => 504, 'guide' => 300
     ];
-    private const array BLOCKS = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'table', 'tr', 'td', 'th', 'quote', 'pre', 'code'];
+    private const array BLOCKS = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'table', 'tr', 'td', 'th', 'quote', 'pre', 'code', 'map', 'pin'];
     private const array INLINE = ['b', 'i', 'u', 's', 'del', 'small', 'sub', 'sup', 'span', 'color', 'url', 'tooltip', 'acronym', 'center'];
 
     public static function text(string $value) : string
@@ -261,6 +261,29 @@ final class ServerContent
             }
             $tag = $node['tag'];
             $attrs = $node['attrs'];
+            if ($tag === 'map' || $tag === 'pin')
+            {
+                if ($allow < 30)
+                    continue;
+                $location = [];
+                preg_match_all('/(?:^|\s)(zone|floor|x|y|url)\s*=\s*(?:"([^"]*)"|\x27([^\x27]*)\x27|([^\s]+))/i', $attrs, $parts, PREG_SET_ORDER);
+                foreach ($parts as $part)
+                    $location[strtolower($part[1])] = ($part[2] ?? '') !== '' ? $part[2] : (($part[3] ?? '') !== '' ? $part[3] : ($part[4] ?? ''));
+                if ($tag === 'map')
+                {
+                    if (preg_match('/^-?[0-9a-z_-]+$/iD', $location['zone'] ?? '')
+                        && (!isset($location['floor']) || preg_match('/^[0-9]{1,2}$/D', $location['floor'])))
+                        $out .= '<div class="server-map-pins">'.self::markupChildren($node['children'], $globals, $allow, 'map').'</div>';
+                    continue;
+                }
+                if ($parent !== 'map' || !preg_match('/^[0-9]{1,2}(?:\.[0-9])?$/D', $location['x'] ?? '')
+                    || !preg_match('/^[0-9]{1,2}(?:\.[0-9])?$/D', $location['y'] ?? ''))
+                    continue;
+                $label = self::markupChildren($node['children'], $globals, $allow, 'pin');
+                $url = self::safeUrl($location['url'] ?? '');
+                $out .= '<div>'.($url ? '<a href="'.self::text($url).'">'.$label.'</a>' : $label).' ('.$location['x'].', '.$location['y'].')</div>';
+                continue;
+            }
             $body = self::markupChildren($node['children'], $globals, $allow, $tag);
             // Match the interactive parser's author permission levels. Unsupported
             // decoration remains readable; staff-only images and money are omitted.
@@ -311,7 +334,14 @@ final class ServerContent
                 continue;
             }
             $htmlTag = match ($tag) { 'quote' => 'blockquote', 'del' => 's', 'color', 'tooltip', 'acronym', 'center' => 'span', default => $tag };
-            $out .= '<'.$htmlTag.'>'.$body.(in_array($tag, ['br', 'hr'], true) ? '' : '</'.$htmlTag.'>');
+            $attributes = '';
+            // Preserve the native table grid and header syntax used by the editor.
+            // Forward only this known class, never arbitrary author attributes.
+            if ($tag === 'table' && preg_match('/(?:^|\s)class\s*=\s*(?:"grid"|\x27grid\x27|grid)(?=\s|$)/i', $attrs))
+                $attributes = ' class="grid"';
+            if ($tag === 'td' && preg_match('/^=header(?:\s|$)/i', $attrs))
+                $htmlTag = 'th';
+            $out .= '<'.$htmlTag.$attributes.'>'.$body.(in_array($tag, ['br', 'hr'], true) ? '' : '</'.$htmlTag.'>');
         }
         return $out;
     }

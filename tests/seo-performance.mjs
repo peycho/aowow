@@ -80,5 +80,12 @@ try {
     check(await page.evaluate('madeMaps.length===1&&Markup.pendingMaps.size===1'), 'removed deferred maps are discarded without constructing stale widgets');
     await page.goto(origin + '/?noscript');
     check(await page.evaluate(`(()=>{const i=document.querySelector('#near-image img');return i.getAttribute('data-server-image')!==null&&i.width===261&&i.height===119;})()`), 'script-blocked initial images retain inferred geometry');
+    await page.goto(origin);
+    for (const floor of [1, 5]) {
+        await page.evaluate(`Markup.printHtml('[map zone=4812 floor=${floor}][pin x=8.9 y=53.8 url=?npc=36678]Boss[/pin][/map]','near-map')`);
+        check(await page.evaluate(`(()=>{const m=madeMaps.at(-1);return m.zone==='4812'&&!Array.isArray(m.coords)&&m.coords[${floor}][0][0]===8.9&&m.coords[${floor}][0][2].url==='?npc=36678';})()`), 'authored client floor reaches Mapper with coordinates and URL intact');
+    }
+    await page.evaluate(`window.beforeInvalid=madeMaps.length;Markup.printHtml('[map zone=4812 floor=-1][pin x=1 y=2]Pin[/pin][/map]','near-map')`);
+    check(await page.evaluate('madeMaps.length===beforeInvalid'), 'invalid floor rejects the map instead of becoming a coordinate-object key');
     console.log(`PASS: ${checks} image loading, geometry, deferred map and fallback checks`);
 } finally { await page?.close(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }

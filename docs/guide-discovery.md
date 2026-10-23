@@ -42,7 +42,8 @@ Migration `1792742400_01.sql` creates `aowow_guide_references` and schedules the
 `guidereferences` build to backfill existing public revisions. Fresh installations
 include the same table and build task. Invalidate application page caches using
 the normal deployment procedure so cached templates acquire the live lookup.
-No generated JavaScript rebuild is required for this change.
+The discovery index alone needs no generated JavaScript rebuild; native map
+changes have the separate deployment requirements below.
 
 After direct SQL imports or edits to approved article bodies, rebuild the index:
 
@@ -66,3 +67,25 @@ tablet and desktop widths. See the [test guide](../tests/README.md).
 Repository checks and local acceptance do not establish deployed discovery or
 search-engine indexing. Verify representative guide categories, database detail
 pages and public guides after deployment, including scripts-disabled views.
+
+## Native guide maps
+
+Guides support staff-level `[map]` / `[pin]` markup.
+An optional `floor` attribute selects the client floor number, for example:
+
+```text
+[map zone=4812 floor=5]
+[pin x=8.9 y=53.8 url=?npc=36678]Professor Putricide[/pin]
+[/map]
+```
+
+This selects The Upper Reaches, not the fifth position in a zero-based array.
+Omit `floor` for an outdoor map. Pin coordinates are percentages on that exact
+map image; world coordinates and percentages from another floor cannot be
+substituted. Article pages and guide editor previews load the generated zone
+metadata. Without scripts, authorized pins retain labels, database links and
+coordinates. These links also participate in related-guide discovery.
+
+Deploy the updated PHP and markup template together, rebuild with
+`php aowow --build=globaljs`, and invalidate page and JavaScript caches.
+The destination also needs the corresponding generated game maps and zone dataset.

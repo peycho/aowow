@@ -8,6 +8,30 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-23 — Guide tables and floor-specific maps
+
+The safe initial article renderer preserves native `[table class=grid]` styling
+and `[td=header]` semantic headers while rejecting arbitrary author attributes.
+Responsive grid cells align at the top and preserve whole words inside locally
+scrollable tables.
+
+Native `[map]` markup accepts an optional client `floor` number. Article pages
+and guide editor previews load generated zone metadata so map images and pins
+use the selected floor. Maps without `floor` retain their existing behavior.
+Without scripts, authorized pins retain safe links, labels and coordinates;
+these links also participate in related-guide discovery. See
+[guide maps](guide-discovery.md#native-guide-maps) for markup examples.
+
+Deploy the renderer, article/editor PHP, markup template and stylesheet together,
+rebuild with `php aowow --build=globaljs`, and invalidate page and asset caches.
+Corresponding generated game maps and zone metadata must be installed. No SQL
+migration is needed for these rendering changes.
+
+The full `make dev-test` gate passed, including 395 initial-HTML/safety checks,
+1,061 responsive checks, 42 image/map-loading checks, disposable SQL and all
+eight Apache policy configurations. Coverage includes safe map fallback,
+quoted attributes, coordinate bounds, floor forwarding and legacy map behavior.
+
 ## 2026-10-23 — Browser menu readiness regression
 
 The responsive touch test now waits for the destination document and its menu

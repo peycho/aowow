@@ -603,6 +603,10 @@ class TemplateResponse extends BaseResponse
 
         $this->article = new Markup($text, $opts);
 
+        // Native article maps need generated floor names and image keys too.
+        if (in_array($opts['allow'], [Markup::CLASS_STAFF, Markup::CLASS_ADMIN], true) && preg_match('/(?<!\\\\)\[map\s/i', $text))
+            $this->addDataLoader('zones');
+
         if ($jsg = $this->article->getJSGlobals())
             $this->extendGlobalData($jsg);
 

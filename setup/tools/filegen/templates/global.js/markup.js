@@ -1549,6 +1549,7 @@ var Markup = {
             attr:
             {
                 zone:   { req: true,  valid: /^-?[0-9a-z\-_]+$/i },
+                floor:  { req: false, valid: /^[0-9]{1,2}$/ },
                 source: { req: false, valid: /\S+/ }
             },
             allowedClass: MARKUP_CLASS_STAFF,
@@ -1560,7 +1561,7 @@ var Markup = {
                 attr.id = 'markup-map-' + mapId;
                 var str = '<div' + Markup._addGlobalAttributes(attr) + '></div><div style="clear: left"></div>';
 
-                Markup.maps.push([attr.id, attr.zone, coords, mapId]);
+                Markup.maps.push([attr.id, attr.zone, coords, mapId, attr.floor]);
 
                 return [ str ];
             }
@@ -4188,7 +4189,15 @@ var Markup = {
             var load = (function(parent, map, index) {
                 return function() {
                     parent.removeAttribute('aria-busy');
-                    new Mapper({parent: parent, zone: map[1], coords: map[2], unique: map[3] == null ? index : map[3]});
+                    // Mapper accepts client floor numbers as coordinate-object keys.
+                    // Keep legacy array behavior when no floor was authored.
+                    var coords = map[2];
+                    if (map[4] != null)
+                    {
+                        coords = {};
+                        coords[map[4]] = map[2];
+                    }
+                    new Mapper({parent: parent, zone: map[1], coords: coords, unique: map[3] == null ? index : map[3]});
                 };
             })(parent, m, i);
             var bounds = parent.getBoundingClientRect();

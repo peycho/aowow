@@ -68,6 +68,16 @@ namespace {
         check($xpath->query('//li/a')->item(0)->getAttribute('href') === $href, 'database reference keeps locale and existing route');
         check(str_contains($html, '&lt;script&gt;') && str_contains((string)$markup, 'Markup.printHtml('), 'database names remain data and JS enhancement remains available');
         safeContent($html);
+        foreach (['grid', '"grid"', "'grid'"] as $class)
+        {
+            $grid = (new Markup('[table class='.$class.' onclick=attack()][tr][td=header]Requirement[/td][td=header]Location[/td][/tr][tr][td]Level 80[/td][td]Raid[/td][/tr][/table]', ['allow' => Markup::CLASS_STAFF]))->renderHtml();
+            $gridXPath = domFor($grid);
+            check($gridXPath->query('//table[@class="grid"]')->length === 1 && $gridXPath->query('//tr/th')->length === 2, 'native grid/header markup retains style and semantics in initial HTML');
+            safeContent($grid);
+        }
+        $unsafeGrid = (new Markup('[table class="grid other" style="color:red" onmouseover=attack()][tr][td=header]Header[/td][/tr][/table]', ['allow' => Markup::CLASS_STAFF]))->renderHtml();
+        check(domFor($unsafeGrid)->query('//table/@*')->length === 0, 'table class allowlist excludes arbitrary author attributes');
+        safeContent($unsafeGrid);
         $box = new InfoboxMarkup(['Level: 80', '[url=?quest=5]Quest chain[/url]'], []);
         check(str_contains($box->renderHtml(), 'Quest chain'), 'quick facts are in initial HTML');
         check((new ReflectionProperty(Markup::class, '__text'))->getValue($box) === '', 'server quick facts do not mutate deferred JS/completion preparation');
@@ -108,6 +118,18 @@ namespace {
             check(str_contains($anchor->getAttribute('href'), 'locale=') === ($locale !== Locale::EN), 'initial navigation retains non-English locale');
     }
     Lang::load(Locale::EN);
+    $map = '[map zone=4812 floor=5][pin x=8.9 y=53.8 url=?npc=36678]Professor Putricide[/pin][/map]';
+    $html = (new Markup($map, ['allow' => Markup::CLASS_STAFF]))->renderHtml();
+    check(domFor($html)->query('//div[@class="server-map-pins"]//a[@href="?npc=36678"]')->length === 1
+        && str_contains($html, '(8.9, 53.8)'), 'staff map fallback preserves clickable NPC and coordinates without scripts');
+    safeContent($html);
+    $quotedMap = (new Markup('[map zone="4812" floor="5"][pin x="0" y="99.9" url="?npc=36678"]Boss[/pin][/map]', []))->renderHtml();
+    check(domFor($quotedMap)->query('//a[@href="?npc=36678"]')->length === 1 && str_contains($quotedMap, '(0, 99.9)'), 'quoted map attributes and coordinate limits retain native syntax');
+    check(!str_contains((new Markup($map, ['allow' => Markup::CLASS_USER]))->renderHtml(), 'Professor Putricide'), 'restricted map contents match interactive permission boundary');
+    foreach (['[pin x=1 y=2 url=?npc=1]Orphan[/pin]', '[map zone=1][pin x=100 y=2]Out of bounds[/pin][/map]',
+        '[map zone=1][pin x=1 y=-2]Negative[/pin][/map]', '[map zone=1 floor=-1][pin x=1 y=2]Invalid floor[/pin][/map]'] as $invalid)
+        check(!str_contains((new Markup($invalid, []))->renderHtml(), '('), 'invalid or orphan pins do not produce location claims');
+    safeContent((new Markup('[map zone=1][pin x=1 y=2 url=javascript:attack()]Safe text[/pin][/map]', []))->renderHtml());
     $restricted = (new Markup('[h2]Readable[/h2][img src="https://static.fixture.example/uploads/guide/images/1.jpg"][money=10000]', ['allow' => Markup::CLASS_USER]))->renderHtml();
     check(!str_contains($restricted, '<h2>') && !str_contains($restricted, '<img') && !str_contains($restricted, '1g'), 'user markup keeps staff-only tags disabled');
     check(str_contains($restricted, 'Readable'), 'restricted wrappers retain readable text');

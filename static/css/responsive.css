@@ -1,5 +1,6 @@
 /* Keep the established desktop layout; narrow screens reflow text and controls.
  * Tables, maps and calculators retain their coordinate systems in local scroll areas. */
+.text table.grid td { vertical-align: top; }
 @media (max-width: 979px) {
     .layout { min-width: 0; width: auto; }
     .layout-inner { padding: 0 8px; }
@@ -77,6 +78,8 @@
     .listview-withselected, .listview-withselected2 { flex-basis: 100%; }
     .responsive-scroll { max-width: 100%; overflow: auto; clear: both; box-sizing: border-box; }
     .text table.grid { display: block; max-width: 100%; overflow: auto; }
+    .text table.grid { overflow-wrap: normal; }
+    .text table.grid td, .text table.grid th { font-size: inherit; }
     .responsive-scroll > .mapper { max-width: none !important; }
     .responsive-scroll > table.grid { display: table; max-width: none; overflow: visible; }
     .responsive-scroll > table.listview-mode-default { min-width: 640px; }

@@ -14,6 +14,8 @@ class GuideNewResponse extends TemplateResponse
 
     protected ?string $articleUrl    = 'new';
 
+    protected  array  $dataLoader = ['zones'];              // native map previews, including dungeon floors
+
     protected  string $template      = 'guide-edit';
     protected  string $pageName      = 'guide=new';
     protected ?int    $activeTab     = parent::TAB_GUIDES;
