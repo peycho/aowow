@@ -259,6 +259,7 @@ class Markup implements \JsonSerializable
 
             foreach ($matches as [, $tag, $id, $attrString])
             {
+                $tag = strtolower($tag);
                 if (strcasecmp($tag, 'sound') === 0 && !Cfg::get('SOUNDS_ENABLE'))
                     continue;
 
@@ -284,6 +285,7 @@ class Markup implements \JsonSerializable
         $text = preg_replace_callback($pattern, function ($match) use ($jsgData)
         {
             [, $tag, $id, $attrString] = $match;
+            $tag = strtolower($tag);
 
             $stripOrFn  = self::TAGS[$tag][self::IDX_CONTENT_POLICY];
             $type       = self::TAGS[$tag][self::IDX_DBTYPE];
