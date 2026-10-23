@@ -179,7 +179,7 @@ class TemplateResponse extends BaseResponse
     public ?Tabs   $lvTabs       = null;
     public  array  $pageTemplate = [];                      // js PageTemplate object
     public  array  $jsGlobals    = [];                      // ready to be used in template
-    public  array  $ldIntangible = [];                      // seo shit
+    public  array  $ldIntangible = [];                      // legacy metadata input and display-hook compatibility
     public  array  $seo          = [];                      // resolved publication identity; request rules are applied when rendering
 
     public function __construct(string $rawParam = '')
@@ -461,8 +461,8 @@ class TemplateResponse extends BaseResponse
     protected function buildLdJson() : void
     {
         $this->ldIntangible = array(
-            '@context' => 'http://schema.org',
-            '@type'    => 'Intangible',
+            '@context' => 'https://schema.org',
+            '@type'    => 'WebPage',
             'mainEntityOfPage' => array(
                 '@type' => 'WebPage',
                 '@id'   => Template\PageTemplate::buildQuery()
@@ -472,7 +472,7 @@ class TemplateResponse extends BaseResponse
             'logo'      => Cfg::get('STATIC_URL').'/images/logos/home.png',
             'publisher' => array(
                 '@type' => 'Organization',
-                'name'  => 'Site Logo',
+                'name'  => Cfg::get('NAME'),
                 'logo'  => array(
                     '@type'  => 'ImageObject',
                     'url'    => Cfg::Get('STATIC_URL').'/images/logos/header.png',
@@ -484,7 +484,7 @@ class TemplateResponse extends BaseResponse
 
         // transfer properties
         if ($_ = array_find($this->metaTags, fn($x) => ($x['name'] ?? '') == 'keywords'))
-            $this->ldIntangible['keywords'] = implode(', ', (array)$_['content']);
+            $this->ldIntangible['keywords'] = (array)$_['content'];
 
         if ($_ = array_find($this->metaTags, fn($x) => ($x['name'] ?? '') == 'description'))
             $this->ldIntangible['description'] = $_['content'];

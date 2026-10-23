@@ -22,6 +22,18 @@ Open Graph and JSON-LD identity after a serialized page-cache hit. It runs in
 the PHP gate without application credentials or an external website. It does not
 establish deployed URL acceptance or search-engine canonical selection.
 
+`php tests/seo-structured-data.php` checks the real head and visible breadcrumb
+renderer across six locales, including site/publisher identity, page types,
+canonical URLs, graph references, pagination, selected guide language, hidden
+authors, excluded routes, serialized-cache identity refresh, numeric-looking
+names and script-delimiter escaping. The real guide HTTP fixture also checks
+that Article authors match visible quick facts and that creation dates are not
+misreported as publication dates. These run in the PHP gate without application
+credentials. Deployed rich-result validation remains a separate acceptance step.
+`node tests/seo-structured-data.mjs` exercises the real head output and legacy
+JavaScript hook in Chromium with scripts enabled and blocked. It rejects duplicate
+schema on public pages and any schema on excluded search, draft and revision pages.
+
 `php tests/seo-metadata.php` exercises the real metadata builder, article markup,
 head template and serialized page-cache path across all six supported locales.
 Its 133 checks cover descriptive titles, validated page labels, matching Open

@@ -47,6 +47,7 @@ PY
     php tests/maintenance-response.php
     php tests/seo-urls.php
     php tests/seo-metadata.php
+    php tests/seo-structured-data.php
     php tests/seo-guides.php
     php tests/seo-locale.php
     php tests/seo-rendering.php
@@ -101,6 +102,7 @@ PY
     node tests/browser-cdp-navigation.mjs
     node tests/seo-responsive.mjs
     node tests/seo-performance.mjs
+    node tests/seo-structured-data.mjs
     php tests/retirement.php --fixtures > "$fixture_root/retirement-assets.json"
     node tests/retirement.mjs --browser < "$fixture_root/retirement-assets.json" > "$fixture_root/retirement.html"
     python3 tests/retirement-browser.py "$fixture_root/retirement.html" "$fixture_root/retirement-assets.json" "$browser"

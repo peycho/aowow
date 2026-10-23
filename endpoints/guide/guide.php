@@ -128,7 +128,10 @@ class GuideBaseResponse extends TemplateResponse implements ICache
         /***********/
 
         if (!($this->subject->getField('cuFlags') & GUIDE_CU_NO_QUICKFACTS))
+        {
             $this->generateInfobox();
+            $this->seo['author'] = (string)$this->subject->getField('author');
+        }
 
         // needs post-cache updating
         if (!($this->subject->getField('cuFlags') & GUIDE_CU_NO_RATING))

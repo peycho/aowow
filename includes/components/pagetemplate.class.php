@@ -56,6 +56,7 @@ class PageTemplate
     // generic data, that's just accessed from the template
     private array $rawData  = [];                           // copied from $context
     private array $pageData = [];                           // processed by display hooks
+    private array $structuredData = [];                    // rebuilt from the current public response
 
     // template data that needs further processing .. ! WARNING ! they will not get aut fetched from $context as they are already defined here
     private string $gStaticUrl;
@@ -597,6 +598,90 @@ class PageTemplate
         return \Aowow\ServerContent::safeHtml(is_string($data[$key] ?? null) ? $data[$key] : '');
     }
 
+    /** The visible trail and its structured data share the same labels and links. */
+    private function serverBreadcrumbs() : array
+    {
+        require_once __DIR__.'/servercontent.class.php';
+        $route = explode('=', $this->pageTemplate['pageName'] ?? '')[0];
+        $lists = ['item' => 'items', 'spell' => 'spells', 'quest' => 'quests', 'npc' => 'npcs',
+            'object' => 'objects', 'zone' => 'zones', 'guide' => 'guides', 'itemset' => 'itemsets',
+            'class' => 'classes', 'race' => 'races', 'skill' => 'skills', 'faction' => 'factions',
+            'achievement' => 'achievements', 'currency' => 'currencies', 'event' => 'events',
+            'pet' => 'pets', 'sound' => 'sounds', 'icon' => 'icons', 'title' => 'titles',
+            'emote' => 'emotes', 'enchantment' => 'enchantments', 'areatrigger' => 'areatriggers', 'mail' => 'mails'];
+        $parent = $lists[$route] ?? (self::supportsPagination($route) ? $route : null);
+        if (!$parent)
+            return [];
+
+        $label = is_callable([Lang::class, 'game']) ? Lang::game($parent) : ucfirst($parent);
+        $current = $this->gPageInfo['name'] ?? html_entity_decode(strip_tags($this->title[0] ?? $this->h1 ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return [
+            ['name' => \Aowow\ServerContent::label('home'), 'url' => \Aowow\ServerContent::url('home')],
+            ['name' => is_string($label) ? $label : ucfirst($parent), 'url' => \Aowow\ServerContent::url($parent)],
+            ['name' => (string)$current, 'url' => $this->seoUrl()]
+        ];
+    }
+
+    private function buildStructuredData() : array
+    {
+        if (!$this->isIndexable())
+            return [];
+
+        $url = $this->seoUrl();
+        $siteUrl = rtrim(Cfg::get('HOST_URL'), '/').'/';
+        $siteName = (string)Cfg::get('NAME');
+        $locale = $this->seo['locale'] ?? $this->locale;
+        parse_str(parse_url($url, PHP_URL_QUERY) ?? '', $query);
+        $route = array_key_first($query) ?? 'home';
+        $publisher = ['@type' => 'Organization', '@id' => $siteUrl.'#publisher', 'name' => $siteName, 'url' => $siteUrl];
+        $website = ['@type' => 'WebSite', '@id' => $siteUrl.'#website', 'name' => $siteName, 'url' => $siteUrl,
+            'publisher' => ['@id' => $publisher['@id']]];
+        $name = $this->gPageInfo['name'] ?? html_entity_decode(strip_tags($this->h1 ?: ($this->title[0] ?? $siteName)), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        if ($route === 'home')
+            $name = $siteName;
+        $page = ['@type' => in_array($route, self::SEO_LIST_ROUTES, true) ? 'CollectionPage' : 'WebPage',
+            '@id' => $url.'#webpage', 'url' => $url, 'name' => (string)$name, 'inLanguage' => $locale->hreflang('-'),
+            'isPartOf' => ['@id' => $website['@id']], 'publisher' => ['@id' => $publisher['@id']]];
+        if ($tag = array_find($this->metaTags ?? [], fn($tag) => ($tag['name'] ?? '') === 'description'))
+            if (is_string($tag['content']) && $tag['content'] !== '')
+                $page['description'] = $tag['content'];
+
+        $graph = [$publisher, $website];
+        $items = [];
+        foreach ($this->serverBreadcrumbs() as $crumb)
+        {
+            $itemUrl = str_starts_with($crumb['url'], '?') ? $siteUrl.$crumb['url'] : $crumb['url'];
+            // Normalize the English home alias and repeated list-root links.
+            if ($itemUrl === $siteUrl.'?home')
+                $itemUrl = $siteUrl;
+            if ($items && end($items)['item'] === $itemUrl)
+                continue;
+            $items[] = ['@type' => 'ListItem', 'position' => count($items) + 1, 'name' => $crumb['name'], 'item' => $itemUrl];
+        }
+        if (count($items) >= 2)
+        {
+            $page['breadcrumb'] = ['@id' => $url.'#breadcrumb'];
+            $graph[] = ['@type' => 'BreadcrumbList', '@id' => $url.'#breadcrumb', 'itemListElement' => $items];
+        }
+
+        // A selected, public guide body is the only article identity we claim.
+        if ($route === 'guide' && ($this->seo['index'] ?? false) === true && trim((string)$this->article) !== '')
+        {
+            $article = ['@type' => 'Article', '@id' => $url.'#article', 'url' => $url, 'headline' => $page['name'],
+                'inLanguage' => $page['inLanguage'], 'mainEntityOfPage' => ['@id' => $page['@id']],
+                'publisher' => ['@id' => $publisher['@id']]];
+            if (isset($page['description']))
+                $article['description'] = $page['description'];
+            if (is_string($this->seo['author'] ?? null) && $this->seo['author'] !== '')
+                $article['author'] = ['@type' => 'Person', 'name' => $this->seo['author'],
+                    'url' => $siteUrl.'?user='.rawurlencode($this->seo['author'])];
+            $page['mainEntity'] = ['@id' => $article['@id']];
+            $graph[] = $article;
+        }
+        $graph[] = $page;
+        return ['@context' => 'https://schema.org', '@graph' => $graph];
+    }
+
     private function seoUrl(?\Aowow\Locale $locale = null) : string
     {
         $add = [];
@@ -770,6 +855,8 @@ class PageTemplate
                 $ld['mainEntityOfPage']['@id'] = $url;
             $this->ldIntangible = $ld;
         }
+
+        $this->structuredData = $this->buildStructuredData();
 
         // not set, but should be
         if (!isset($_COOKIE['consent']) && $this->hasAnalytics)

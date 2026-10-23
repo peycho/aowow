@@ -27,8 +27,9 @@ endforeach;
     <link rel="search" type="application/opensearchdescription+xml" href="<?=$this->gStaticUrl; ?>/download/searchplugins/aowow.xml" title="<?=Lang::main('search');?>" />
 <?php endif; ?>
 <?php
-if ($this->ldIntangible):
-    echo '    <script type="application/ld+json">'.$this->json($this->ldIntangible).'</script>'.PHP_EOL;
+if ($this->structuredData):
+    // JSON-LD is plain JSON: preserve numeric-looking names and escape script delimiters.
+    echo '    <script type="application/ld+json">'.json_encode($this->structuredData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR).'</script>'.PHP_EOL;
 endif;
 if ($this->headIcons):
     echo '    <link rel="image_src" href="'.$this->gStaticUrl.'/images/wow/icons/large/'.$this->escJS($this->headIcons[0]).'.jpg">'.PHP_EOL;

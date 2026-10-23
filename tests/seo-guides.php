@@ -55,7 +55,8 @@ namespace Aowow {
                 'status' => $status, 'rev' => (int)($_GET['published'] ?? 2),
                 'url' => 'guide-slug', 'name', 'title', 'description' => $status === 3 ? 'Published name' : 'SECRET_EDIT_METADATA',
                 'category' => 2, 'author' => 'Fixture author', 'userId' => 1,
-                'cuFlags' => GUIDE_CU_NO_QUICKFACTS | GUIDE_CU_NO_RATING,
+                'cuFlags' => (isset($_GET['facts']) ? 0 : GUIDE_CU_NO_QUICKFACTS) | GUIDE_CU_NO_RATING,
+                'date' => 1600000000,
                 default => 0
             };
         }
@@ -75,7 +76,7 @@ namespace {
         'includes/components/SmartAI/SmartAI.class.php', 'includes/components/SmartAI/SmartEvent.class.php',
         'includes/components/SmartAI/SmartAction.class.php', 'includes/components/SmartAI/SmartTarget.class.php',
         'localization/lang.class.php', 'includes/components/csrf.class.php', 'includes/components/jsexpression.class.php',
-        'includes/components/frontend/markup.class.php', 'includes/components/frontend/tabs.class.php',
+        'includes/components/frontend/markup.class.php', 'includes/components/frontend/infoboxmarkup.class.php', 'includes/components/frontend/tabs.class.php',
         'includes/components/pagetemplate.class.php', 'includes/components/response/baseresponse.class.php',
         'includes/components/response/templateresponse.class.php', 'includes/components/response/textresponse.class.php',
         'includes/components/frontend/tooltip.class.php', 'endpoints/guide/guide.php', 'endpoints/guide/guide_power.php'] as $file)
@@ -94,7 +95,8 @@ namespace Aowow {
             (new \ReflectionMethod(Template\PageTemplate::class, 'brick'))->invoke($this->result, 'head');
             $head = ob_get_clean();
             echo json_encode(['head' => $head, 'article' => (string)($this->article ?? ''), 'revision' => $this->guideRevision,
-                'name' => $this->gPageInfo['name'] ?? '', 'seo' => $this->seo], JSON_THROW_ON_ERROR);
+                'name' => $this->gPageInfo['name'] ?? '', 'seo' => $this->seo,
+                'facts' => $this->infobox?->renderHtml($this->jsGlobals) ?? ''], JSON_THROW_ON_ERROR);
         }
     }
 }
@@ -171,6 +173,17 @@ namespace {
             }
             [$code, $body] = requestGuide(['guide' => 'guide-slug', 'actor' => $actor, 'missing' => 1]);
             check($code === 404 && !str_contains($body, 'SECRET_DRAFT_BODY'), 'missing approved article never falls back to latest');
+        }
+        foreach ([false, true] as $facts) {
+            [$code, $body] = requestGuide(['guide' => '1'] + ($facts ? ['facts' => 1] : []));
+            $data = json_decode($body, true, flags: JSON_THROW_ON_ERROR);
+            $dom = new DOMDocument(); $dom->loadHTML($data['head'], LIBXML_NOERROR | LIBXML_NOWARNING);
+            $ld = json_decode((new DOMXPath($dom))->query('//script[@type="application/ld+json"]')->item(0)->textContent, true, flags: JSON_THROW_ON_ERROR);
+            $article = array_find($ld['@graph'], fn($node) => $node['@type'] === 'Article');
+            check($code === 200 && $article['headline'] === $data['name'], 'real public guide has Article identity matching its heading');
+            check(isset($article['author']) === $facts && str_contains($data['facts'], 'Fixture author') === $facts, 'guide author schema follows visible quick facts');
+            if ($facts) check($article['author']['name'] === 'Fixture author', 'guide schema uses the actual public author');
+            check(!isset($article['datePublished']) && !isset($article['dateModified']), 'guide creation date is not presented as publication or revision time');
         }
         foreach ([GuideMgr::STATUS_DRAFT, GuideMgr::STATUS_REVIEW, GuideMgr::STATUS_APPROVED] as $status) {
             [$code, $body] = requestGuide(['guide' => '1', 'power' => '', 'status' => $status, 'published' => 0]);

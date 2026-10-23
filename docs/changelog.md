@@ -8,6 +8,29 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-23 — Page-specific structured data
+
+The initial HTML now describes the configured site and publisher, database pages,
+category collections, visible breadcrumbs and public guide articles in a single
+JSON-LD graph. Cached responses refresh canonical URLs, language and site identity.
+Guide author markup follows visible quick facts; unavailable publication dates,
+generic article illustrations and ratings are omitted. Existing noindex and
+guide publication/revision boundaries remain enforced.
+
+JSON-LD preserves literal and numeric-looking names and escapes script delimiters.
+The visible breadcrumb and schema use the same labels and destinations. Retire
+the JavaScript generator that added competing breadcrumbs, including on excluded
+pages; retain its callable compatibility hook. Deploy PHP/templates and generator
+sources with a rebuilt `globaljs` bundle, then invalidate application page caches
+and cached assets. No SQL migration is required.
+
+The complete development gate passed; the final JavaScript and Chromium gates
+also passed after the legacy generator was retired. Focused coverage includes
+833 schema checks, 1,016 guide HTTP checks and 48 schema browser checks.
+Populated local acceptance covers 13 HTTP samples and 12 phone/desktop Chromium
+samples with scripts enabled and disabled. Deployed rich-result and Search
+Console acceptance remain pending.
+
 ## 2026-10-23 — Measured media loading and development HTTP latency
 
 JavaScript article enhancement retains native image lazy loading and inferred

@@ -117,7 +117,8 @@ namespace {
         check($xpath->query('//link[@rel="canonical"]')->item(0)->getAttribute('href') === $canonical, 'head canonical matches policy');
         check($xpath->query('//meta[@property="og:url"]')->item(0)->getAttribute('content') === $canonical, 'cached Open Graph identity refreshes');
         $ld = json_decode($xpath->query('//script[@type="application/ld+json"]')->item(0)->textContent, true, flags: JSON_THROW_ON_ERROR);
-        check($ld['url'] === $canonical && $ld['mainEntityOfPage']['@id'] === $canonical, 'cached structured data identity refreshes');
+        $page = array_find($ld['@graph'], fn($node) => ($node['@type'] ?? '') === 'WebPage');
+        check($page['url'] === $canonical && $page['@id'] === $canonical.'#webpage', 'cached structured data identity refreshes');
         check($xpath->query('//meta[@name="description"]')->item(0)->getAttribute('content') === 'Manual description stays intact', 'manual metadata survives refresh');
         check(!str_contains($html, 'utm_source') && !str_contains($html, 'unknown'), 'tracking and array-shaped parameters never enter SEO output');
         check(str_contains($html, '&amp;locale=2'), 'HTML attributes escape URL separators');
