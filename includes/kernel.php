@@ -206,8 +206,8 @@ if (!CLI)
     if (User::init())
         User::save();                                       // save user-variables in session
 
-    // hard override locale for this call (should this be here..?)
-    if (isset($_GET['locale']) && ($loc = Locale::tryFrom((int)$_GET['locale'])))
+    // Explicit supported locales override saved preferences for this request.
+    if ($loc = Locale::tryFromRequest($_GET['locale'] ?? null))
         Lang::load($loc);
     else
         Lang::load(User::$preferedLoc);

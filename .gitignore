@@ -55,3 +55,6 @@ composer.phar
 !/.env.dev.example
 /docker/secrets/
 /docker-compose.override.yml
+
+# Local SEO evidence and development input data
+/reports/

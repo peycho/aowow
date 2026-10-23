@@ -69,6 +69,10 @@ abstract class DBTypeList
 
         $calcTotal  = false;
         $totalQuery = '';
+        $pagination = $miscData['pagination'] ?? null;
+        if ($pagination !== null && (!is_int($pagination['page'] ?? null) || $pagination['page'] < 1 ||
+            !is_int($pagination['size'] ?? null) || $pagination['size'] < 1 || $pagination['size'] > 300))
+            throw new \InvalidArgumentException('Invalid list pagination options');
 
         if (!$this->queryBase || $conditions === null)
             return;
@@ -81,7 +85,7 @@ abstract class DBTypeList
         if (!empty($miscData['extraOpts']))
             $this->extendQueryOpts($miscData['extraOpts']);
 
-        if (!empty($miscData['calcTotal']))
+        if (!empty($miscData['calcTotal']) || $pagination !== null)
             $calcTotal = true;
 
         foreach ($conditions as $i => $c)
@@ -154,9 +158,18 @@ abstract class DBTypeList
         // append ordering
         if ($o = array_filter(array_column($this->queryOpts, 'o')))
             $this->queryBase .= ' ORDER BY '.implode(', ', $o);
+        if ($pagination !== null)
+            $this->queryBase .= ($o ? ', ' : ' ORDER BY ').'ARRAY_KEY';
 
         // apply limit
-        if ($limit)
+        if ($pagination !== null)
+        {
+            if ($pagination['page'] - 1 > intdiv(PHP_INT_MAX, $pagination['size']))
+                return;
+            $offset = ($pagination['page'] - 1) * $pagination['size'];
+            $this->queryBase .= ' LIMIT '.$offset.', '.$pagination['size'];
+        }
+        else if ($limit)
             $this->queryBase .= ' LIMIT '.$limit;
 
         // execute query (finally)
@@ -166,9 +179,16 @@ abstract class DBTypeList
             try                                             // does not go through the compatibility layer as we need to be able to fetch individual rows here
             {
                 $query  = str_replace('DB_IDX', $dbIdx, $this->queryBase);
+                if ($pagination !== null)
+                {
+                    $countQuery = get_class($this) === ItemList::class ? str_replace([', `is`.*', ', i.`id` AS "id"'], '', $totalQuery) : $totalQuery;
+                    $this->matches += DB::{$n}($dbIdx)->selectCell('SELECT COUNT(*) FROM ('.$countQuery.') x', $where);
+                    if ($pagination['page'] > max(1, (int)ceil($this->matches / $pagination['size'])))
+                        continue;
+                }
                 $result = DB::{$n}($dbIdx)->query($query, $where);
 
-                if ($calcTotal && $result->getRowCount())
+                if ($calcTotal && $pagination === null && $result->getRowCount())
                 {
                     // hackfix the inner items query to not contain duplicate column names
                     // yes i know the real solution would be to not have items and item_stats share column names

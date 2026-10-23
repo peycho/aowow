@@ -9,7 +9,6 @@
             <ul>
             <li><div>你的评论必须是中文否则可能会被移除。</div></li>
             <li><div>不知道如何发表？看看我们的<a href="?help=commenting-and-you" target="_blank">指南</a>！</div></li>
-            <li><div>请发表你的疑问在我们的<a href="?forums">论坛</a> 以获得更快的答复。</div></li>
             <li><div>你在发表前最好先预览下你的评论。</div></li>
             </ul>
 

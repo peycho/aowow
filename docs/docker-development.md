@@ -32,15 +32,31 @@ to import a compatible world database, grant read-only access, copy extracted
 client files, and run setup. Use development commands throughout:
 
 ```sh
-make dev-cli ARGS='--setup --skip-sounds'
+make dev-setup
 make dev-cli ARGS='--configure'
 make dev-shell
 ```
+
+Development setup skips sound data and audio copying by default. `dev-setup`
+and `dev-cli` with `--setup` (or `-s`) automatically include `--skip-sounds`,
+including resumed runs. The production setup command is unchanged. Sound
+generation can still be requested explicitly later with `--sql=sounds` and
+`--build=soundfiles` after supplying the audio files.
 
 The local URL is **http://localhost:8011**. Set the application site/static URLs
 accordingly. The site healthcheck reports unavailable databases until they are
 provisioned. A full website requires the same TrinityCore/client inputs as normal
 installation; the automated regression suites can run without those inputs.
+
+The development image disables HTTP keep-alive for its small prefork worker
+pool. Otherwise idle browser connections can occupy every worker and delay new
+CSS, script and image requests until Apache's keep-alive timeout. Loopback HTTP
+requests use short-lived connections; production image settings are independent.
+
+The development CLI forwards its own loopback HTTP port to the running web
+service, so setup/configuration self-checks can use the same localhost URLs as
+the browser. This listener stays inside each maintenance container and publishes
+no additional host port. Start the web service before configuration checks.
 
 For direct Compose commands, always use the development environment and both files:
 

@@ -9,7 +9,6 @@
             <ul>
             <li><div>Your comment must be in English or it will be removed.</div></li>
             <li><div>Unsure how to post? Check out our <a href="?help=commenting-and-you" target="_blank">handy guide</a>!</div></li>
-            <li><div>Please post questions on our <a href="?forums">forums</a> for quicker reply.</div></li>
             <li><div>You might want to proof-read your comments before posting them.</div></li>
             </ul>
 

@@ -88,7 +88,8 @@ class ObjectsBaseResponse extends TemplateResponse implements ICache
         }
 
         $tabData = ['data' => []];
-        $objects = new GameObjectList($conditions, ['extraOpts' => $this->filter->extraOpts, 'calcTotal' => true]);
+        $objects = new GameObjectList($conditions, ['extraOpts' => $this->filter->extraOpts, 'calcTotal' => true, 'pagination' => $this->paginationOptions()]);
+        $this->setPagination($objects->getMatches());
         if (!$objects->error)
         {
             $tabData['data'] = $objects->getListviewData();

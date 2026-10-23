@@ -40,8 +40,6 @@ class User
 
         if (isset($_SESSION['locale']) && $_SESSION['locale'] instanceof Locale)
             self::$preferedLoc = $_SESSION['locale']->validate() ?? Locale::getFallback();
-        else if ($loc = Locale::tryFromHttpAcceptLanguage())
-            self::$preferedLoc = $loc;
         else
             self::$preferedLoc = Locale::getFallback();
 
@@ -116,7 +114,7 @@ class User
 
         DB::Aowow()->qry('UPDATE ::account_sessions SET `touched` = %i, `expires` = IF(`expires`, %i, 0) WHERE `sessionId` = %s', time(), time() + Cfg::get('SESSION_TIMEOUT_DELAY'), session_id());
 
-        if ($loc = Locale::tryFrom($userData['locale']))
+        if ($loc = Locale::tryFromRequest($userData['locale']))
             self::$preferedLoc = $loc;
 
         // reset expired account statuses

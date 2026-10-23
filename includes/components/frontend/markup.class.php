@@ -201,6 +201,35 @@ class Markup implements \JsonSerializable
         return $this->__parent;
     }
 
+    public function renderHtml(array $globals = []) : string
+    {
+        return $this->renderHtmlText($this->__text, $globals);
+    }
+
+    protected function renderHtmlText(string $text, array $globals) : string
+    {
+        require_once __DIR__.'/../servercontent.class.php';
+        $allow = $this->allow;
+        if ($allow === null && $this->roles !== null)
+            $allow = match (true) {
+                (bool)($this->roles & (U_GROUP_ADMIN | U_GROUP_VIP | U_GROUP_DEV)) => self::CLASS_ADMIN,
+                (bool)($this->roles & U_GROUP_STAFF) => self::CLASS_STAFF,
+                (bool)($this->roles & U_GROUP_PREMIUM) => self::CLASS_PREMIUM,
+                (bool)($this->roles & U_GROUP_PENDING) => self::CLASS_PENDING,
+                default => self::CLASS_USER
+            };
+        $level = match ($allow) {
+            self::CLASS_ADMIN => self::MARKUP_CLASS_ADMIN,
+            self::CLASS_PREMIUM => self::MARKUP_CLASS_PREMIUM,
+            self::CLASS_USER => self::MARKUP_CLASS_USER,
+            self::CLASS_PENDING => self::MARKUP_CLASS_PENDING,
+            default => self::MARKUP_CLASS_STAFF
+        };
+        if ($this->stopAtBreak)
+            $text = explode('[break]', $text, 2)[0];
+        return ServerContent::safeHtml($this->prepend ?? '').ServerContent::markup($text, $globals, $level).ServerContent::safeHtml($this->append ?? '');
+    }
+
 
     /***********************/
     /* Markup tag handling */

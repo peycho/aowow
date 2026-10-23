@@ -36,7 +36,8 @@ class ClassesBaseResponse extends TemplateResponse implements ICache
 
         $this->lvTabs = new Tabs(['parent' => new JsExpression("\$WH.ge('tabs-generic')")]);
 
-        $classes = new CharClassList();
+        $classes = new CharClassList([], ['pagination' => $this->paginationOptions()]);
+        $this->setPagination($classes->getMatches());
         if (!$classes->error)
             $this->lvTabs->addListviewTab(new Listview(['data' => $classes->getListviewData()], CharClassList::$brickFile));
 

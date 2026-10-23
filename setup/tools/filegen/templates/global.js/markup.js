@@ -82,6 +82,7 @@ var Markup = {
      // 'pt': 'ptbr'
     },
     maps: [],
+    nextMapId: 0,
     firstTags: {},
     postTags: [],
     collectTags: {},
@@ -1247,7 +1248,7 @@ var Markup = {
             },
             toHtml: function(attr)
             {
-                var str = '<img' + Markup._addGlobalAttributes(attr);
+                var str = '<img loading="lazy" decoding="async"' + Markup._addGlobalAttributes(attr);
                 var classes = [];
                 var styles = [];
                 var post = '';
@@ -1548,6 +1549,7 @@ var Markup = {
             attr:
             {
                 zone:   { req: true,  valid: /^-?[0-9a-z\-_]+$/i },
+                floor:  { req: false, valid: /^[0-9]{1,2}$/ },
                 source: { req: false, valid: /\S+/ }
             },
             allowedClass: MARKUP_CLASS_STAFF,
@@ -1555,10 +1557,11 @@ var Markup = {
             toHtml: function(attr)
             {
                 var coords = attr._contents;
-                attr.id = 'dsgdfngjkfdg' + (Markup.maps.length);
+                var mapId = Markup.nextMapId++;
+                attr.id = 'markup-map-' + mapId;
                 var str = '<div' + Markup._addGlobalAttributes(attr) + '></div><div style="clear: left"></div>';
 
-                Markup.maps.push([attr.id, attr.zone, coords]);
+                Markup.maps.push([attr.id, attr.zone, coords, mapId, attr.floor]);
 
                 return [ str ];
             }
@@ -4163,12 +4166,73 @@ var Markup = {
 
     createMaps: function()
     {
-        for (var i = 0; i < Markup.maps.length; ++i)
-        {
-            var m = Markup.maps[i];
-            new Mapper({parent: m[0], zone: m[1], coords: m[2], unique: i});
-        }
+        if (Markup.pendingMaps)
+            Markup.pendingMaps.forEach(function(load, parent) {
+                if (parent.isConnected) return;
+                Markup.mapObserver.unobserve(parent);
+                Markup.pendingMaps.delete(parent);
+            });
+        var maps = Markup.maps;
         Markup.maps = [];
+        for (var i = 0; i < maps.length; ++i)
+        {
+            var m = maps[i], parent = $WH.ge(m[0]);
+            if (!parent)
+                continue;
+
+            // Reserve the same native map geometry before deferring its work.
+            // This also lets responsive wrappers preserve map/pin coordinates.
+            parent.className = 'mapper';
+            parent.style.width = Mapper.sizes[0][0] + 'px';
+            parent.style.height = Mapper.sizes[0][1] + 'px';
+            parent.style.cssFloat = 'left';
+            var load = (function(parent, map, index) {
+                return function() {
+                    parent.removeAttribute('aria-busy');
+                    // Mapper accepts client floor numbers as coordinate-object keys.
+                    // Keep legacy array behavior when no floor was authored.
+                    var coords = map[2];
+                    if (map[4] != null)
+                    {
+                        coords = {};
+                        coords[map[4]] = map[2];
+                    }
+                    new Mapper({parent: parent, zone: map[1], coords: coords, unique: map[3] == null ? index : map[3]});
+                };
+            })(parent, m, i);
+            var bounds = parent.getBoundingClientRect();
+            if (!window.IntersectionObserver || window.matchMedia('print').matches ||
+                (bounds.height && bounds.top <= window.innerHeight + 600 && bounds.bottom >= -600))
+            {
+                load();
+                continue;
+            }
+            if (!Markup.mapObserver)
+            {
+                Markup.pendingMaps = new Map();
+                Markup.mapObserver = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(entry) {
+                        if (!entry.isIntersecting && entry.target.isConnected)
+                            return;
+                        Markup.mapObserver.unobserve(entry.target);
+                        var load = Markup.pendingMaps.get(entry.target);
+                        Markup.pendingMaps.delete(entry.target);
+                        if (entry.target.isConnected && load)
+                            load();
+                    });
+                }, {rootMargin: '600px'});
+                window.addEventListener('beforeprint', function() {
+                    Markup.pendingMaps.forEach(function(load, parent) {
+                        Markup.mapObserver.unobserve(parent);
+                        if (parent.isConnected) load();
+                    });
+                    Markup.pendingMaps.clear();
+                });
+            }
+            parent.setAttribute('aria-busy', 'true');
+            Markup.pendingMaps.set(parent, load);
+            Markup.mapObserver.observe(parent);
+        }
     },
 
     toHtml: function(str, opts)
@@ -4283,8 +4347,21 @@ var Markup = {
     printHtml: function(str, div, opts)
     {
         div = $WH.ge(div);
+        var sizes = new Map();
+        div.querySelectorAll('img[data-server-image][width][height]').forEach(function(image) {
+            sizes.set(image.src, [image.getAttribute('width'), image.getAttribute('height')]);
+        });
         var html = Markup.toHtml(str, opts);
         div.innerHTML = html;
+        // Initial HTML knows local image dimensions. Preserve that geometry
+        // during the first enhancement; later editor changes keep their intent.
+        if (sizes.size)
+            div.querySelectorAll('img').forEach(function(image) {
+                var size = sizes.get(image.src);
+                if (!size) return;
+                if (!image.hasAttribute('width')) image.setAttribute('width', size[0]);
+                if (!image.hasAttribute('height')) image.setAttribute('height', size[1]);
+            });
         Markup.createMaps();
     },
 

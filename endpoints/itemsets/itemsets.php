@@ -82,7 +82,8 @@ class ItemsetsBaseResponse extends TemplateResponse implements ICache
             $this->fiMenuExtension = $fiQuery;
         }
 
-        $itemsets = new ItemsetList($conditions, ['calcTotal' => true]);
+        $itemsets = new ItemsetList($conditions, ['calcTotal' => true, 'pagination' => $this->paginationOptions()]);
+        $this->setPagination($itemsets->getMatches());
         $this->extendGlobalData($itemsets->getJSGlobals());
 
         $tabData = ['data' => $itemsets->getListviewData()];

@@ -85,7 +85,8 @@ class FactionsBaseResponse extends TemplateResponse implements ICache
         }
 
         $data = [];
-        $factions = new FactionList($conditions);
+        $factions = new FactionList($conditions, ['pagination' => $this->paginationOptions()]);
+        $this->setPagination($factions->getMatches());
         if (!$factions->error)
             $data = $factions->getListviewData();
 

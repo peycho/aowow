@@ -9,7 +9,6 @@
             <ul>
             <li><div>Tu comentario debe ser en español, o será eliminado.</div></li>
             <li><div>¿No estás seguro de cómo escribir? ¡Échale un vistazo a <a href="?help=commenting-and-you" target="_blank">nuestra guía</a>!</div></li>
-            <li><div>Por favor, pon tus preguntas en nuestro <a href="?forums">foro</a> para obtener una respuesta más rápida.</div></li>
             <li><div>Deberías corregir tus comentarios antes de enviarlos.</div></li>
             </ul>
 

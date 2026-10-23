@@ -14,6 +14,142 @@ establish full setup acceptance with extracted client data.
 The smoke runner needs Bash, Python 3, curl and GNU `timeout`; it also exercises
 the interactive database editor through a terminal and checks saved ports.
 
+`php tests/seo-urls.php` exercises the shared SEO URL policy and the actual head
+template across all six supported locales. It checks routing order, query
+encoding, tracking removal, malformed arrays, retained content modifiers,
+configured locale availability, HTML escaping and current-request canonical,
+Open Graph and JSON-LD identity after a serialized page-cache hit. It runs in
+the PHP gate without application credentials or an external website. It does not
+establish deployed URL acceptance or search-engine canonical selection.
+
+`php tests/seo-structured-data.php` checks the real head and visible breadcrumb
+renderer across six locales, including site/publisher identity, page types,
+canonical URLs, graph references, pagination, selected guide language, hidden
+authors, excluded routes, serialized-cache identity refresh, numeric-looking
+names and script-delimiter escaping. The real guide HTTP fixture also checks
+that Article authors match visible quick facts and that creation dates are not
+misreported as publication dates. These run in the PHP gate without application
+credentials. Deployed rich-result validation remains a separate acceptance step.
+`node tests/seo-structured-data.mjs` exercises the real head output and legacy
+JavaScript hook in Chromium with scripts enabled and blocked. It rejects duplicate
+schema on public pages and any schema on excluded search, draft and revision pages.
+
+`php tests/seo-metadata.php` exercises the real metadata builder, article markup,
+head template and serialized page-cache path across all six supported locales.
+Its 187 checks cover descriptive titles, validated page labels, matching Open
+Graph/RSS titles, server-rendered manual homepage titles, manual-description
+priority and length, article/factual fallback, Unicode summaries, preserved
+literal text, cached viewport refresh and escaping against title/attribute breakout.
+Visitor and excluded-page titles also cover pre-escaped response values, apostrophes,
+literal entity text and cache hits. It runs in the PHP
+gate with synthetic database values and no application credentials.
+
+Batch 1B extends that suite with English canonical consolidation, reciprocal
+enabled-locale alternates, reviewed filters, noindex pages, guide alias identity,
+empty categories and cache isolation. `php tests/seo-locale.php` checks the real
+anonymous/saved-preference initializer without application credentials.
+
+`php tests/seo-guides.php` runs the actual guide response lifecycle, request
+filters, exact article selection, markup, metadata, head renderer and cache trait
+over a disposable loopback HTTP server. Fixtures cover all six supported locales,
+owners, staff, unrelated users and guests; approved, pending, draft, rejected,
+archived, missing and historical revisions; missing-approved-row fallback and
+tooltip disclosure. Database responses and identities are synthetic. These
+suites run in the PHP gate.
+
+`php tests/seo-guide-discovery.php` exercises the actual guide-list response and
+HTML bricks across six locales: category headings and links, first-page defaults,
+editorial/manual description priority, and safe related titles. Its browser fixture
+checks long links and category navigation at 360, 390, 768 and 1440 pixels.
+
+`tests/seo-guide-discovery-sql.php` uses the guarded disposable SEO database and
+real schema, approval method and profiler. It checks safe reference extraction,
+public-revision joins, pending metadata, language matching, ranking, bounded
+results, multi-batch replacement, rollback on failure and live withdrawal from a
+serialized page cache. It also verifies that an indexing failure prevents
+approval. Never run it against a retained database.
+
+`tests/seo-guides-sql.php` is guarded by
+`AOWOW_TEST_DATABASE=aowow_security_test_seo` and runs in the SQL gate against its
+own disposable database. It checks actual GuideList publication/access predicates,
+SQL name lookups, normalized list links and pending-metadata visibility using the
+real guides schema. Never substitute a retained database. None of these tests
+establishes deployed publication acceptance or indexing outcomes.
+
+`php tests/seo-rendering.php` checks initial article/guide markup, database
+references, source lists, quick facts, author permissions, escaping, approved
+image paths and pagination validation across all six locales. The browser gate
+uses its generated fixture with real Markup, Listview and Tabs code; checks cover
+replacement without duplicate content, lazy tab loading, failed enhancement and
+navigation fallback. A second Chromium run blocks all page scripts through CSP
+and verifies the initial headings and crawlable links remain available.
+
+`node tests/seo-responsive.mjs` runs in the browser gate with the real responsive
+CSS/JavaScript, jQuery and Menu code. Its 1,061 native Chrome DevTools checks cover 360,
+390, 470, 600, 768, 979 and 1440-pixel viewports, text reflow, bounded table/map
+scrolling, native
+pin coordinates, mobile facts ordering, class pickers, lazy content, restoration
+on desktop resize, keyboard scroll regions, actual touch-menu opening/navigation,
+long menus, dialogs and script-blocked content. Homepage news/banner links and
+localized navigation/scroll labels are also exercised. A database-free PHP fixture
+renders the real contribution and sign-in/sign-up bricks in six languages for
+guest and member states. Real Tabs and comment editors exercise panel width,
+translated tab wrapping, screenshot/video fields and recovery-link bounds;
+Markup icon lists and Book cover stacked article columns and readable pagination.
+The real Listview quest name renderer checks that status annotations fit below
+the name without overlapping it.
+`node tests/seo-performance.mjs` adds native browser checks for image geometry
+through real PHP/JavaScript rendering, deferred image requests, map construction
+on approach, unique map IDs, removed widgets, printing and unsupported-observer
+fallbacks. The map constructor is spied on in this fixture; populated-site
+acceptance separately checks the actual renderer and pin controls. A real
+screenshot-row renderer verifies thumbnail dimensions and loading attributes.
+These checks detect squeezed panels and off-screen links even when the document
+reports no horizontal overflow. `tests/browser-cdp.mjs`
+provides the small Node 24 WebSocket client; no additional browser package or
+application database is needed. These synthetic checks supplement populated-site
+screenshots and physical-device acceptance; they do not measure field performance.
+For manual populated-site sampling, see the [performance guide](../docs/performance.md).
+
+`node tests/browser-cdp-navigation.mjs` runs before the responsive suite. Its
+15 real-browser checks cover a previous document finishing while the next
+request waits for headers, delayed destination scripts, redirects, same-document
+fragments, viewport changes and genuine navigation failures. The helper owns a
+blank test tab and matches load events to the navigation's frame/loader IDs
+instead of accepting an unrelated page-load event. Download aborts and dropped
+connections remain failures with the destination URL in the error; the tests
+also verify that subsequent navigation can succeed.
+Bounded readiness predicates wait for DOM work scheduled after the load event;
+missing elements time out and script errors remain failures. The responsive
+touch test deliberately delays destination menu creation, then waits for that
+button before testing long-menu positioning.
+
+The browser gate also runs `tests/seo-home-navigation.php` with the real jQuery,
+Menu and homepage script. It holds jQuery readiness until after the native load
+event, verifies the fallback remains during delayed initialization, then checks
+that successful menu creation removes it. A script-blocked run verifies the
+crawlable links remain usable. This covers the cached/fast-load homepage timing
+that native DOMContentLoaded/load cleanup alone could miss.
+
+`tests/seo-pagination-sql.php` uses the same exact disposable SEO database guard.
+It exercises the actual DBTypeList query builder, pagination response trait,
+canonical/head renderer and list/pagination templates over SQL and loopback HTTP.
+It traverses 151 visible records, excludes 10 private records, checks stable page
+boundaries and totals, retains locale/canonical identity, and verifies malformed,
+overflow and beyond-last pages return HTTP 404. No application credentials or
+retained database are used. These checks do not replace acceptance with a full
+extracted game dataset and deployed assets.
+
+`tests/seo-sitemaps-sql.php` uses the same disposable SEO database guard and
+stock table definitions. It runs the actual sitemap generator, shared canonical
+policy and sitemap endpoint with enabled/disabled locales and features, every
+guide status with and without a public revision, missing approved article rows,
+unknown/future dates, empty browse hubs and publication withdrawal. A real
+10,001-record fixture checks chunk boundaries and traverses every advertised
+child sitemap, including decoded XML URLs and canonical identity. Malformed,
+array-shaped and out-of-range page requests must fail. No application credentials
+or retained data are loaded. It runs in the SQL gate.
+
 For the existing Apache policy suite, set `AOWOW_TEST_APACHE_PORT` to an available
 port in 8010–8020 when running locally. If omitted, Docker assigns a host port.
 
@@ -82,7 +218,7 @@ damage from forced text normalization.
 `AOWOW_TEST_DATABASE=aowow_security_test_reconciliation` on an isolated localhost
 database. Its sanitized historical structure fixture contains no rows, comments,
 auto-increment counters or environment headers. Synthetic records exercise the
-real update entrypoint, 108-table fresh/legacy schema agreement, enum ordinal
+real update entrypoint, 109-table fresh/legacy schema agreement, enum ordinal
 mapping, long captions/text and community/upload preservation. Data preflight
 rejection, strict-mode restoration, concurrency, maintenance handling and refusal
 to replay partial SQL are covered. Its guarded `fixtures/taxi-generator.php`
@@ -101,7 +237,7 @@ classification and compact versus detailed reports. It runs in the PHP CI group.
 
 The SQL group also runs `tests/schema-validator-sql.php`, guarded to require
 `AOWOW_TEST_DATABASE=aowow_security_test_schema` on an isolated localhost fixture.
-It creates the complete 108-table initial schema, then checks real metadata with
+It creates the complete 109-table initial schema, then checks real metadata with
 a SELECT-only account and invokes the actual `aowow --validate-schema` entrypoint.
 It covers MyISAM/InnoDB metadata, legacy config without `default`, missing/extra
 tables, generated DBC-copy inputs, column/index/FK drift, configured prefixes,
@@ -917,6 +1053,33 @@ Criteria migration checks widen all six localized name columns, retain existing
 rows and pending SQL/build work, store long Unicode names without truncation,
 and prevent repeated regeneration requests. Fresh-install checks verify the
 widened schema and retained pending `globaljs` build.
+
+Item-category regression checks execute the actual generator normalization SQL
+and its constant bindings against native bags, arrows, bullets and quivers,
+including specialty-bag subclasses and both quiver inventory slots. Ordinary
+equipment and miscellaneous held items retain their intended classifications.
+The same fixture runs the real custom-data applier and verifies migration
+`1792742400_02.sql` queues `items stats`, preserves existing SQL/build tasks and
+custom data, and avoids scheduling the work again on journal replay. It does
+not run the full world/client import against this synthetic schema.
+
+Festival-guide checks import the real bundled article/guide seeds and audit all
+nine guide/body associations and their event links. Legacy fixtures cover the
+swapped Children's Week/Midsummer articles, original and customized bodies,
+pending revisions, three native URL forms, unrelated articles and longer IDs.
+The upgrade uses a deliberately different imported Lunar event ID, preserves
+guide metadata and pending work, and schedules related-reference rebuilding once.
+
+Help upgrade checks compare migrated markup, talent, stat-help, tooltip, About,
+FAQ and What's New articles with the real fresh seed and preserve custom text, changed permissions,
+translations, other revisions, unrelated articles and pending setup work.
+Targeted content corrections retain surrounding custom text. Separate
+fixtures cover removal of forum entries from the four bundled error-page
+translations while preserving other revisions, custom pages and translations.
+The legacy article fixtures contain the bundled English help before migration
+`1792742400_04.sql`; the About, FAQ and What's New fixtures record the original
+placeholders before `1792742400_05.sql`. These replacements preserve complete
+editorial overrides.
 
 An isolated MySQL 8.4 fixture was exercised with PHP 8.5.10 and Dibi 5.1.1. Tests
 use real SQL/DDL/transactions, triggers for statement/accounting/persistence

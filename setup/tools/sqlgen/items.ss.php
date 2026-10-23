@@ -162,10 +162,11 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         DB::Aowow()->qry('UPDATE ::items SET `slot` = %i WHERE `slotbak` = %i', INVTYPE_RANGED, INVTYPE_RANGEDRIGHT);
         DB::Aowow()->qry('UPDATE ::items SET `slot` = %i WHERE `slotbak` = %i', INVTYPE_CHEST, INVTYPE_ROBE);
 
-        // recategorize misc equipables as armor (offhand meat)
+        // Recategorize miscellaneous equipment, preserving bags and ammunition.
         DB::Aowow()->qry(
            'UPDATE ::items SET `class` = %i, `subclass` = %i WHERE `slotbak` <> %i AND `class` NOT IN (%i)',
-            ITEM_CLASS_ARMOR, ITEM_SUBCLASS_MISC_ARMOR, INVTYPE_NON_EQUIP, [ITEM_CLASS_ARMOR, ITEM_CLASS_WEAPON, ITEM_CLASS_CONSUMABLE]
+            ITEM_CLASS_ARMOR, ITEM_SUBCLASS_MISC_ARMOR, INVTYPE_NON_EQUIP,
+            [ITEM_CLASS_ARMOR, ITEM_CLASS_WEAPON, ITEM_CLASS_CONSUMABLE, ITEM_CLASS_CONTAINER, ITEM_CLASS_AMMUNITION, ITEM_CLASS_QUIVER]
         );
 
         // custom sub-classes

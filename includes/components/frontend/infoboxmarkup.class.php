@@ -65,6 +65,11 @@ class InfoboxMarkup extends Markup
 
         return $buff ? '[ul]'.$buff.'[/ul]' : '';
     }
+
+    public function renderHtml(array $globals = []) : string
+    {
+        return $this->renderHtmlText($this->prepare() ?: $this->__text, $globals);
+    }
 }
 
 ?>

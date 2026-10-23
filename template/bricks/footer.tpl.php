@@ -37,8 +37,7 @@ endif;
 </div><!-- #layout .nosidebar -->
 
 <noscript>
-    <div id="noscript-bg"></div>
-    <div id="noscript-text"><?=Lang::main('noJScript'); ?></div>
+    <p class="server-script-notice"><?=\Aowow\ServerContent::label('javascript'); ?></p>
 </noscript>
 
 <?=$this->localizedBrickIf($this->consentFooter, 'consent'); ?>

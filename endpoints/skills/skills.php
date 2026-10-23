@@ -50,7 +50,8 @@ class SkillsBaseResponse extends TemplateResponse implements ICache
             $conditions[] = ['typeCat', $this->category[0]];
 
         $tabData = ['data' => []];
-        $skills  = new SkillList($conditions);
+        $skills  = new SkillList($conditions, ['pagination' => $this->paginationOptions()]);
+        $this->setPagination($skills->getMatches());
         if (!$skills->error)
             $tabData['data'] = $skills->getListviewData();
 

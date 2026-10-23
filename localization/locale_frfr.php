@@ -304,6 +304,20 @@ $lang = array(
                 GuideMgr::STATUS_ARCHIVED => 'Your guide is outdated and has been archived. Is will no longer be listed and can\'t be edited.',
             )
         ),
+        'relatedGuides' => 'Guides associés',
+        'browseTopics' => 'Parcourir les sujets des guides',
+        'intro' => [
+            'Parcourez les guides de la communauté pour Wrath of the Lich King (3.3.5). Choisissez un sujet ou un guide ci-dessous.',
+            'Découvrez les rôles, les talents et les choix d’équipement des classes.',
+            'Trouvez des guides sur les métiers, la fabrication et la récolte de matériaux.',
+            'Découvrez les événements saisonniers, leurs quêtes, leurs activités et leurs récompenses.',
+            'Trouvez des guides pour débuter, monter en niveau et progresser dans les quêtes.',
+            'Découvrez les donjons, les raids, les techniques des boss et les préparatifs.',
+            'Trouvez des guides sur le commerce, la récolte et la gestion de l’or et des matériaux.',
+            'Découvrez les conditions, les objectifs et les récompenses des hauts faits.',
+            'Trouvez des guides pour collectionner les familiers, les montures et les objets cosmétiques.',
+            'Parcourez les guides de la communauté sur d’autres sujets de Wrath of the Lich King.',
+        ],
         'category'  => array(
             null,                           "Classes",                      "Métiers",                      "Évènements mondiaux",              "Nouveaux Joueurs & Montée en niveau",
             "Raids & Combats contre des boss","Economie et Argent",         "Hauts faits",                  "Objets tape-à-l'oeil, Compagnons et Montures","Autre"

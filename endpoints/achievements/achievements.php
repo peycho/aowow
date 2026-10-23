@@ -107,7 +107,7 @@ class AchievementsBaseResponse extends TemplateResponse implements ICache
             $this->fiMenuExtension = $fiQuery;
         }
 
-        $acvList = new AchievementList($conditions, ['calcTotal' => true]);
+        $acvList = new AchievementList($conditions, ['calcTotal' => true, 'pagination' => $this->paginationOptions()]);
         if (!$acvList->getMatches() && $this->category)
         {
             // ToDo - we also branch into here if the filter prohibits results. That should be skipped.
@@ -117,8 +117,10 @@ class AchievementsBaseResponse extends TemplateResponse implements ICache
             if ($catList = DB::Aowow()->SelectCol('SELECT `id` FROM ::achievementcategory WHERE `parentCat` IN %in OR `parentCat2` IN %in ', $this->category, $this->category))
                 $conditions[] = ['category', $catList];
 
-            $acvList = new AchievementList($conditions, ['calcTotal' => true]);
+            $acvList = new AchievementList($conditions, ['calcTotal' => true, 'pagination' => $this->paginationOptions()]);
         }
+
+        $this->setPagination($acvList->getMatches());
 
         $tabData = [];
         if (!$acvList->error)

@@ -5,21 +5,21 @@
 
     /** @var PageTemplate $this */
 ?>
-    <title><?=$this->concat('title', ' - '); ?></title>
+    <title><?=$this->escHTML($this->documentTitle()); ?></title>
     <meta charset="UTF-8">
     <meta name="csrf-token" content="<?=\Aowow\Csrf::token();?>">
     <script>var g_csrfRoutes = <?=json_encode(\Aowow\Csrf::POST_ROUTES, JSON_HEX_TAG);?>;
         var g_csrfAdminActions = <?=json_encode(\Aowow\Csrf::ADMIN_ACTIONS, JSON_HEX_TAG);?>;</script>
     <script src="<?=$this->gStaticUrl;?>/js/csrf.js?v=<?=AOWOW_REVISION;?>"></script>
     <script src="<?=$this->gStaticUrl;?>/js/password-policy.js?v=<?=AOWOW_REVISION;?>"></script>
+    <script src="<?=$this->gStaticUrl;?>/js/server-content.js?v=<?=AOWOW_REVISION;?>"></script>
 <?=$this->renderMetaTags(4);?>
-    <link rel="canonical" href="<?=PageTemplate::buildQuery(); ?>">
-    <link rel="alternate" hreflang="x-default" href="<?=PageTemplate::buildQuery(add: ['locale' => Lang::getLocale()->getFallback()->value]); ?>">
 <?php
-foreach ($this->locale::cases() as $l):
-    if ($l->validate()):
-        echo '    <link rel="alternate" hreflang="'.$l->hreflang('-').'" href="'.PageTemplate::buildQuery(add: ['locale' => $l->value]).'">'.PHP_EOL;
-    endif;
+if ($this->isIndexable()):
+    echo '    <link rel="canonical" href="'.$this->escHTML($this->seoUrl()).'">'.PHP_EOL;
+endif;
+foreach ($this->seoAlternates() as $language => $url):
+    echo '    <link rel="alternate" hreflang="'.$language.'" href="'.$this->escHTML($url).'">'.PHP_EOL;
 endforeach;
 ?>
     <link rel="SHORTCUT ICON" href="<?=$this->gStaticUrl; ?>/images/logos/favicon.ico" />
@@ -27,13 +27,16 @@ endforeach;
     <link rel="search" type="application/opensearchdescription+xml" href="<?=$this->gStaticUrl; ?>/download/searchplugins/aowow.xml" title="<?=Lang::main('search');?>" />
 <?php endif; ?>
 <?php
-if ($this->ldIntangible):
-    echo '    <script type="application/ld+json">'.$this->json($this->ldIntangible).'</script>'.PHP_EOL;
+if ($this->structuredData):
+    // JSON-LD is plain JSON: preserve numeric-looking names and escape script delimiters.
+    echo '    <script type="application/ld+json">'.json_encode($this->structuredData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR).'</script>'.PHP_EOL;
 endif;
 if ($this->headIcons):
     echo '    <link rel="image_src" href="'.$this->gStaticUrl.'/images/wow/icons/large/'.$this->escJS($this->headIcons[0]).'.jpg">'.PHP_EOL;
 endif;
 echo $this->renderArray('css', 4);
+echo '    <link rel="stylesheet" href="'.$this->gStaticUrl.'/css/responsive.css?v='.filemtime(__DIR__.'/../../static/css/responsive.css').'">'.PHP_EOL;
+echo '    <script defer src="'.$this->gStaticUrl.'/js/responsive.js?v='.filemtime(__DIR__.'/../../static/js/responsive.js').'"></script>'.PHP_EOL;
 ?>
     <script type="text/javascript">
         var g_serverTime = <?=$this->gServerTime; ?>;
@@ -88,7 +91,7 @@ endif;
 if ($this->rss):
 ?>
 
-    <link rel="alternate" type="application/rss+xml" title="<?=$this->concat('title', ' - '); ?>" href="<?=$this->rss; ?>"/>
+    <link rel="alternate" type="application/rss+xml" title="<?=$this->escHTML($this->documentTitle()); ?>" href="<?=$this->rss; ?>"/>
 
 <?php
 endif;

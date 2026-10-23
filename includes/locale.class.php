@@ -147,6 +147,15 @@ enum Locale : int
         return null;
     }
 
+    // Query values may be arrays, disabled locales or malformed numeric strings.
+    public static function tryFromRequest(mixed $value) : ?self
+    {
+        if ((!is_string($value) && !is_int($value)) || !preg_match('/^\d{1,2}$/D', (string)$value))
+            return null;
+
+        return self::tryFrom((int)$value)?->validate();
+    }
+
     public static function tryFromHttpAcceptLanguage() : ?self
     {
         if (!($httpAccept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''))

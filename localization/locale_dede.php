@@ -303,6 +303,20 @@ $lang = array(
                 GuideMgr::STATUS_ARCHIVED => 'Ihr Leitfaden ist veraltet und wurde archiviert. Er wird nicht mehr in der Übersicht gelistet und ist kann nicht mehr bearbeitet werden.]',
             )
         ),
+        'relatedGuides' => 'Verwandte Guides',
+        'browseTopics' => 'Guide-Themen durchsuchen',
+        'intro' => [
+            'Durchstöbere Community-Guides für Wrath of the Lich King (3.3.5). Wähle ein Thema oder einen Guide aus.',
+            'Entdecke Klassenrollen, Talente und Ausrüstungsoptionen.',
+            'Finde Guides zu Berufen, zur Herstellung von Gegenständen und zum Sammeln von Materialien.',
+            'Entdecke saisonale Ereignisse, ihre Quests, Aktivitäten und Belohnungen.',
+            'Finde Guides für den Einstieg, das Aufsteigen und den Fortschritt bei Quests.',
+            'Entdecke Dungeons, Schlachtzüge, Bossmechaniken und die nötige Vorbereitung.',
+            'Finde Guides zum Handel, zum Sammeln und zum Umgang mit Gold und Materialien.',
+            'Entdecke Anforderungen, Ziele und Belohnungen von Erfolgen.',
+            'Finde Guides zum Sammeln von Begleitern, Reittieren und kosmetischen Gegenständen.',
+            'Durchstöbere Community-Guides zu weiteren Themen aus Wrath of the Lich King.',
+        ],
         'category'  => array(
             null,                           "Klassen",                      "Berufe",                       "Weltereignisse",                   "Neue Spieler & Stufenfortschritt",
             "Schlachtzüge & Bosskämpfe",    "Wirtschaft & Währung",         "Erfolge",                      "Gegenstände, Haus- & Reittiere",   "Anderes"

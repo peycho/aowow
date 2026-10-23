@@ -9,7 +9,6 @@
             <ul>
             <li><div>Votre commentaire doit être en Français ou il sera supprimé.</div></li>
             <li><div>Pas certain de savoir comment écrire un commentaire ? Consultez notre <a href="?help=commenting-and-you" target="_blank">guide pratique</a> !</div></li>
-            <li><div>Posez vos questions sur le <a href="?forums">forum</a> afin d'avoir une réponse plus rapide.</div></li>
             <li><div>Il serait avisé de corriger vos fautes avant de soumettre vos commentaires.</div></li>
             </ul>
 

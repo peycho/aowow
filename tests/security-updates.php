@@ -482,6 +482,198 @@ CODE;
             check((int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle() === 1, 'Journal prevents header image migration replay');
         }
 
+
+        // Execute the real item generator's equipment-normalization SQL and
+        // bindings. Bags/ammunition have inventory slots without being armor.
+        resetDb();
+        $db->query('CREATE TABLE ::items (id INT PRIMARY KEY, class INT NOT NULL, classBak INT NOT NULL, subClass INT NOT NULL, subClassBak INT NOT NULL, slot INT NOT NULL, slotBak INT NOT NULL, cuFlags INT NOT NULL, name_loc0 VARCHAR(100)) ENGINE=InnoDB');
+        $cases = [];
+        foreach (range(0, 8) as $subclass)
+            $cases[] = [ITEM_CLASS_CONTAINER, $subclass, INVTYPE_BAG, ITEM_CLASS_CONTAINER];
+        foreach ([ITEM_CLASS_AMMUNITION => [2, 3], ITEM_CLASS_QUIVER => [2, 3]] as $class => $subclasses)
+            foreach ($subclasses as $subclass)
+                $cases[] = [$class, $subclass, $class === ITEM_CLASS_AMMUNITION ? INVTYPE_AMMO : INVTYPE_BAG, $class];
+        $cases = array_merge($cases, [
+            [ITEM_CLASS_QUIVER, 2, INVTYPE_QUIVER, ITEM_CLASS_QUIVER],
+            [ITEM_CLASS_ARMOR, 4, INVTYPE_CHEST, ITEM_CLASS_ARMOR],
+            [ITEM_CLASS_WEAPON, 7, INVTYPE_WEAPON, ITEM_CLASS_WEAPON],
+            [ITEM_CLASS_CONSUMABLE, 6, INVTYPE_FEET, ITEM_CLASS_CONSUMABLE],
+            [ITEM_CLASS_MISC, 0, INVTYPE_HOLDABLE, ITEM_CLASS_ARMOR],
+            [ITEM_CLASS_QUEST, 0, INVTYPE_HOLDABLE, ITEM_CLASS_ARMOR],
+            [ITEM_CLASS_MISC, 0, INVTYPE_NON_EQUIP, ITEM_CLASS_MISC]
+        ]);
+        foreach ($cases as $id => [$class, $subclass, $slot])
+            $db->query('INSERT INTO ::items VALUES (%i,%i,%i,%i,%i,%i,%i,%i,%s)',
+                $id + 1, $class, $class, $subclass, $subclass, $slot, $slot,
+                $id % 2 ? CUSTOM_EXCLUDE_FOR_LISTVIEW : 0, 'Fixture item '.($id + 1));
+        $itemSource = file_get_contents($root.'/setup/tools/sqlgen/items.ss.php');
+        check((bool)preg_match("~'(UPDATE ::items SET `class` = %i, `subclass` = %i WHERE [^']+)',\\s*([A-Z_]+),\\s*([A-Z_]+),\\s*([A-Z_]+),\\s*\\[([A-Z_,\\s]+)\\]~", $itemSource, $normalization), 'real item normalization statement and constant bindings found');
+        $excluded = array_map('constant', preg_split('/\s*,\s*/', trim($normalization[5])));
+        $db->query($normalization[1], constant($normalization[2]), constant($normalization[3]), constant($normalization[4]), $excluded);
+        foreach ($cases as $id => [$class, $subclass, $slot, $expected]) {
+            $item = (array)$db->query('SELECT * FROM ::items WHERE id=%i', $id + 1)->fetch();
+            check($item['class'] === $expected, 'native item category preserved, miscellaneous equipment normalized: '.($id + 1));
+            check($item['subClass'] === ($expected === $class ? $subclass : ITEM_SUBCLASS_MISC_ARMOR), 'native subclass preserved: '.($id + 1));
+            check($item['classBak'] === $class && $item['subClassBak'] === $subclass && $item['slot'] === $slot && $item['slotBak'] === $slot,
+                'source classification and inventory slots unchanged: '.($id + 1));
+            check($item['cuFlags'] === ($id % 2 ? CUSTOM_EXCLUDE_FOR_LISTVIEW : 0) && $item['name_loc0'] === 'Fixture item '.($id + 1), 'visibility and item names unchanged: '.($id + 1));
+        }
+        foreach ([ITEM_CLASS_CONTAINER => 9, ITEM_CLASS_AMMUNITION => 2, ITEM_CLASS_QUIVER => 3] as $class => $count)
+            check((int)$db->query('SELECT COUNT(*) FROM ::items WHERE class=%i', $class)->fetchSingle() === $count, 'category and subclass lists have their native records: '.$class);
+
+        // The normal generator follow-up must continue respecting site overrides.
+        preg_match('/CREATE TABLE `aowow_setup_custom_data` \(.*?\) ENGINE=.*?;/s', file_get_contents($root.'/setup/sql/01-db_structure.sql'), $customSchema);
+        $db->nativeQuery($customSchema[0]);
+        $db->query("INSERT INTO ::setup_custom_data (command,entry,field,value) VALUES ('items',1,'class','4'),('items',1,'subClass','-5'),('items',2,'cuFlags','7')");
+        require_once $root.'/setup/tools/setupScript.class.php';
+        $customizer = new class {
+            use Aowow\TrCustomData;
+            public function getName() : string { return 'items'; }
+        };
+        check($customizer->applyCustomData(), 'normal custom-data application succeeds after classification');
+        check((int)$db->query('SELECT class FROM ::items WHERE id=1')->fetchSingle() === 4 && (int)$db->query('SELECT subClass FROM ::items WHERE id=1')->fetchSingle() === -5, 'explicit custom classification remains authoritative');
+        check((int)$db->query('SELECT cuFlags FROM ::items WHERE id=2')->fetchSingle() === 7, 'custom visibility override retained');
+
+        $itemRepair = files(['1792742400_02.sql' => file_get_contents($root.'/setup/sql/updates/1792742400_02.sql')]);
+        $itemSnapshot = $db->query('SELECT * FROM ::items ORDER BY id')->fetchAll();
+        $customSnapshot = $db->query('SELECT * FROM ::setup_custom_data ORDER BY entry,field')->fetchAll();
+        foreach ([null, 'existing'] as $pending) {
+            $db->query('DROP TABLE IF EXISTS ::sql_update_journal');
+            $db->query('UPDATE ::dbversion SET date=0,part=0,`sql`=%s,build=%s', $pending, 'globaljs');
+            SqlUpdate::apply($db, $itemRepair);
+            $tasks = trim((string)$db->query('SELECT `sql` FROM ::dbversion')->fetchSingle());
+            check($tasks === ($pending ? 'existing items stats' : 'items stats'), 'upgrade queues item and stat regeneration while preserving pending work');
+            check($db->query('SELECT build FROM ::dbversion')->fetchSingle() === 'globaljs', 'item repair preserves pending asset builds');
+            check($db->query('SELECT * FROM ::items ORDER BY id')->fetchAll() == $itemSnapshot && $db->query('SELECT * FROM ::setup_custom_data ORDER BY entry,field')->fetchAll() == $customSnapshot,
+                'migration schedules normal regeneration without replacing item or custom data');
+            SqlUpdate::apply($db, $itemRepair);
+            check(trim((string)$db->query('SELECT `sql` FROM ::dbversion')->fetchSingle()) === $tasks, 'journal prevents repeated item regeneration scheduling');
+        }
+
+
+        // Import the real bundled articles; check both fresh seeding and the
+        // guarded legacy repair without a world database or client extraction.
+        $festivalRepair = files(['1792742400_03.sql' => file_get_contents($root.'/setup/sql/updates/1792742400_03.sql')]);
+        $festivalEvents = ['lunar-festival' => [7], 'noblegarden' => [9], 'love-is-in-the-air' => [8,24],
+            'childrens-week' => [], 'midsummer-fire-festival' => [1], 'brewfest' => [],
+            'hallows-end' => [], 'pilgrims-bounty' => [26], 'winter-veil' => [2]];
+        foreach (['stock', 'edited', 'pending'] as $state) {
+            resetDb();
+            foreach (['articles','guides','events'] as $table) {
+                preg_match('/CREATE TABLE `aowow_'.preg_quote($table, '/').'` \(.*?\) ENGINE=.*?;/s', file_get_contents($root.'/setup/sql/01-db_structure.sql'), $definition);
+                $db->nativeQuery($definition[0]);
+            }
+            preg_match_all('/^INSERT INTO `aowow_(?:articles|guides)`.*;$/m', file_get_contents($root.'/setup/sql/03-db_initial_articles.sql'), $inserts);
+            check(count($inserts[0]) === 2, 'bundled guide and article seed statements found');
+            foreach ($inserts[0] as $sql) $db->nativeQuery($sql);
+            $stockArticles = $db->selectAssoc('SELECT * FROM ::articles WHERE type=300 ORDER BY typeId');
+            check(count($stockArticles) === 9, 'all nine festival guides are seeded');
+            foreach ($db->selectAssoc('SELECT g.url AS guideSlug,a.url AS articleSlug,a.article FROM ::guides g JOIN ::articles a ON a.type=300 AND a.typeId=g.id AND a.locale=g.locale AND a.rev=g.rev') as $row) {
+                check($row['guideSlug'] === $row['articleSlug'] && str_starts_with($row['article'], '[menu tab=6 path=6,3,'.$row['guideSlug'].']'), 'fresh guide body matches its own metadata and URL');
+                preg_match_all('~\[url=(?:/\?)?\??event=(\d+)\]~', $row['article'], $links);
+                check(array_map('intval', $links[1]) === $festivalEvents[$row['guideSlug']], 'fresh guide event links use game-event IDs: '.$row['guideSlug']);
+            }
+            foreach ([7=>327,9=>181,8=>423,24=>372,1=>341,2=>141,26=>404] as $event => $holiday)
+                $db->query('INSERT INTO ::events (id,holidayId,startTime,endTime,occurence,length) VALUES (%i,%i,0,0,0,0)', $event, $holiday);
+            // Use a different imported Lunar event ID to prove the upgrade is
+            // driven by application event records, not one core's numbering.
+            $db->query('UPDATE ::events SET id=107 WHERE holidayId=327');
+            $db->query('DELETE FROM ::articles WHERE type=300');
+            foreach ($stockArticles as $row) {
+                foreach ([7=>'event=327',9=>'/?event=181',8=>'/?event=335',24=>'/?event=372',1=>'event=341',2=>'/?event=141',26=>'event=26'] as $event => $legacy)
+                    $row['article'] = str_replace('[url=?event='.$event.']', '[url='.$legacy.']', $row['article']);
+                if ($row['url'] === 'midsummer-fire-festival') $row['typeId'] = 4;
+                if ($row['url'] === 'childrens-week') $row['typeId'] = 5;
+                $db->query('INSERT INTO ::articles %v', $row);
+            }
+            $legacyPair = $db->selectAssoc('SELECT typeId,url FROM ::articles WHERE type=300 AND typeId IN (4,5) ORDER BY typeId');
+            if ($state === 'edited') $db->query("UPDATE ::articles SET article=CONCAT(article,' Custom editorial note') WHERE type=300 AND typeId=4");
+            if ($state === 'pending') $db->query("INSERT INTO ::articles (type,typeId,locale,rev,url,article) VALUES (300,4,0,2,'midsummer-fire-festival','SECRET_PENDING_TEXT')");
+            $db->query("INSERT INTO ::guides (id,url,title,name,status,rev) VALUES (50,'custom-guide','Custom guide','Custom guide',3,1)");
+            $db->query("INSERT INTO ::articles (type,typeId,locale,rev,article) VALUES (300,50,0,1,'[url=event=327]Custom target[/url]'),(3,1,0,1,'[url=event=327]Unrelated article[/url]')");
+            $db->query("UPDATE ::articles SET article=CONCAT(article,' [url=?event=3270]Longer ID[/url]') WHERE type=300 AND typeId=1");
+            $guidesBefore = $db->selectAssoc('SELECT * FROM ::guides ORDER BY id');
+            $db->query("UPDATE ::dbversion SET `sql`='stats',build='existing'");
+            SqlUpdate::apply($db, $festivalRepair);
+            foreach ($db->selectAssoc('SELECT typeId,url,article FROM ::articles WHERE type=300 AND typeId<10 AND rev=1 ORDER BY typeId') as $row) {
+                preg_match_all('~\[url=(?:/\?)?\??event=(\d+)\]~', $row['article'], $links);
+                $expected = $row['url'] === 'lunar-festival' ? [107,3270] : $festivalEvents[$row['url']];
+                check(array_map('intval', $links[1]) === $expected, 'legacy event links follow imported holiday mapping, preserving longer IDs: '.$row['url']);
+                check(!preg_match('~\[url=(?:/\?)?event=~', $row['article']), 'event URL tags have an explicit query-string prefix: '.$row['url']);
+            }
+            $repairedPair = $db->selectAssoc('SELECT typeId,url FROM ::articles WHERE type=300 AND typeId IN (4,5) AND rev=1 ORDER BY typeId');
+            check($state === 'stock' ? $repairedPair === [['typeId'=>4,'url'=>'childrens-week'],['typeId'=>5,'url'=>'midsummer-fire-festival']] : $repairedPair === $legacyPair,
+                'only exact bundled article associations are repaired: '.$state);
+            if ($state === 'edited') check(str_ends_with($db->selectCell('SELECT article FROM ::articles WHERE type=300 AND typeId=4 AND rev=1'), ' Custom editorial note'), 'customized guide text preserved');
+            if ($state === 'pending') check($db->selectCell('SELECT article FROM ::articles WHERE type=300 AND typeId=4 AND rev=2') === 'SECRET_PENDING_TEXT', 'pending guide revision preserved');
+            check($db->selectAssoc('SELECT * FROM ::guides ORDER BY id') === $guidesBefore, 'guide ownership, status, approved revision and metadata unchanged');
+            check($db->selectCell('SELECT article FROM ::articles WHERE type=300 AND typeId=50') === '[url=event=327]Custom target[/url]' && $db->selectCell('SELECT article FROM ::articles WHERE type=3 AND typeId=1') === '[url=event=327]Unrelated article[/url]', 'unrelated guides and non-guide articles remain unchanged');
+            check($db->selectCell('SELECT build FROM ::dbversion') === 'existing guidereferences' && $db->selectCell('SELECT `sql` FROM ::dbversion') === 'stats', 'related-guide rebuild scheduled without losing pending tasks');
+            SqlUpdate::apply($db, $festivalRepair);
+            check($db->selectCell('SELECT build FROM ::dbversion') === 'existing guidereferences', 'journal prevents repeated guide-reference scheduling');
+        }
+
+        // Help is CMS-owned too: refresh the stock English article while
+        // retaining edits, other revisions/locales and the surrounding data.
+        $markupHelp = files(['1792742400_04.sql' => file_get_contents($root.'/setup/sql/updates/1792742400_04.sql')]);
+        $contentUpdate = files(['1792742400_05.sql' => file_get_contents($root.'/setup/sql/updates/1792742400_05.sql')]);
+        $sitePages = ['aboutus' => 'aboutus-legacy.json', 'faq' => 'faq-legacy.json', 'whats-new' => 'whats-new-legacy.json'];
+        $helpPages = ['markup-guide' => 'markup-guide-legacy.txt', 'talent-calculator' => 'talent-help-legacy.json', 'stat-weighting' => 'stat-help-legacy.json', 'tooltips' => 'tooltips-legacy.json'];
+        foreach (array_merge($helpPages, $sitePages) as $help => $fixture) {
+            $wholeArticle = isset($sitePages[$help]);
+            $helpUpdate = $wholeArticle ? $contentUpdate : $markupHelp;
+            foreach (['stock', 'edited', 'permissions'] as $state) {
+                resetDb();
+                preg_match('/CREATE TABLE `aowow_articles` \(.*?\) ENGINE=.*?;/s', file_get_contents($root.'/setup/sql/01-db_structure.sql'), $definition);
+                $db->nativeQuery($definition[0]);
+                preg_match('/^INSERT INTO `aowow_articles`.*;$/m', file_get_contents($root.'/setup/sql/03-db_initial_articles.sql'), $insert);
+                $db->nativeQuery($insert[0]);
+                $url = $wholeArticle || $help === 'tooltips' ? $help : 'help='.$help;
+                $fresh = $db->selectRow('SELECT * FROM ::articles WHERE url=%s AND locale=0 AND rev=0', $url);
+                $original = file_get_contents($root.'/tests/fixtures/'.$fixture);
+                if (str_ends_with($fixture, '.json')) $original = json_decode($original, true, 512, JSON_THROW_ON_ERROR)['article'];
+                $db->query('UPDATE ::articles SET article=%s,editAccess=%i WHERE url=%s AND locale=0 AND rev=0',
+                    $original.($state === 'edited' ? ' Custom help text' : ''), $state === 'permissions' ? 4 : 2, $url);
+                $db->query('INSERT INTO ::articles (locale,url,rev,editAccess,article) VALUES (2,%s,0,2,%s),(0,%s,1,2,%s)', $url, $original, $url, $original);
+                $before = $db->selectRow('SELECT * FROM ::articles WHERE url=%s AND locale=0 AND rev=0', $url);
+                $others = $db->selectAssoc('SELECT * FROM ::articles WHERE url IS NULL OR url<>%s OR locale<>0 OR rev<>0 ORDER BY type,typeId,locale,url,rev', $url);
+                $db->query("UPDATE ::dbversion SET `sql`='existing',build='globaljs'");
+                SqlUpdate::apply($db, $helpUpdate);
+                $after = $db->selectRow('SELECT * FROM ::articles WHERE url=%s AND locale=0 AND rev=0', $url);
+                $expected = $state === 'stock' ? $fresh : $before;
+                if (!$wholeArticle && $help !== 'markup-guide' && $state === 'edited') $expected['article'] = $fresh['article'].' Custom help text';
+                check($after === $expected, $help.' upgrade matches fresh content and preserves CMS edits/permissions: '.$state);
+                check($db->selectAssoc('SELECT * FROM ::articles WHERE url IS NULL OR url<>%s OR locale<>0 OR rev<>0 ORDER BY type,typeId,locale,url,rev', $url) === $others,
+                    $help.' preserves other locales, revisions and unrelated articles');
+                check($db->selectCell('SELECT `sql` FROM ::dbversion') === 'existing' && $db->selectCell('SELECT build FROM ::dbversion') === 'globaljs', 'help content update leaves pending setup work intact');
+                SqlUpdate::apply($db, $helpUpdate);
+                check($db->selectRow('SELECT * FROM ::articles WHERE url=%s AND locale=0 AND rev=0', $url) === $after, $help.' journal replay preserves content');
+            }
+        }
+
+        resetDb();
+        preg_match('/CREATE TABLE `aowow_articles` \(.*?\) ENGINE=.*?;/s', file_get_contents($root.'/setup/sql/01-db_structure.sql'), $definition);
+        $db->nativeQuery($definition[0]);
+        foreach ([
+            0 => '[li]Feedback [url=?forums&board=1]forum[/url][/li]',
+            2 => '[li][url=?forums&board=1]Forum[/url] de feedback[/li]',
+            3 => '[li][url=?forums&board=1]Forum[/url] für Rückmeldungen[/li]',
+            6 => '[li]Foro del [url=?forums&board=1]feedback[/url].[/li]'
+        ] as $locale => $body)
+            $db->query("INSERT INTO ::articles (locale,url,article) VALUES (%i,'page-not-found',%s)", $locale, 'Before'.$body.'After');
+        $db->query("INSERT INTO ::articles (locale,url,rev,article) VALUES (0,'page-not-found',1,'[url=?forums&board=1]Pending[/url]'),(8,'page-not-found',0,'[url=?forums&board=1]Custom translation[/url]'),(0,'custom-page',0,'[url=?forums&board=1]Custom link[/url]')");
+        $deletion = 'Any comment that does not abide by the same [forumrules] will be deleted by a moderator.';
+        $db->query("INSERT INTO ::articles (locale,url,rev,article) VALUES (0,'help=commenting-and-you',0,%s),(2,'help=commenting-and-you',0,%s),(0,'help=commenting-and-you',1,%s)", 'Before'.$deletion.'After', $deletion, $deletion);
+        SqlUpdate::apply($db, $markupHelp);
+        foreach ([0,2,3,6] as $locale)
+            check($db->selectCell("SELECT article FROM ::articles WHERE url='page-not-found' AND locale=%i AND rev=0", $locale) === 'BeforeAfter', 'obsolete forum entry removed without losing surrounding localized text: '.$locale);
+        check($db->selectCell("SELECT article FROM ::articles WHERE url='page-not-found' AND locale=0 AND rev=1") === '[url=?forums&board=1]Pending[/url]', 'forum cleanup preserves other revisions');
+        check($db->selectCell("SELECT article FROM ::articles WHERE url='page-not-found' AND locale=8") === '[url=?forums&board=1]Custom translation[/url]', 'forum cleanup preserves an unrelated translation');
+        check($db->selectCell("SELECT article FROM ::articles WHERE url='custom-page'") === '[url=?forums&board=1]Custom link[/url]', 'forum cleanup leaves custom pages untouched');
+        check($db->selectCell("SELECT article FROM ::articles WHERE url='help=commenting-and-you' AND locale=0 AND rev=0") === 'BeforeComments that do not follow the guidelines on this page may be deleted by a moderator.After', 'comment deletion uses local guidelines and preserves surrounding custom text');
+        check($db->selectCell("SELECT article FROM ::articles WHERE url='help=commenting-and-you' AND locale=2") === $deletion, 'comment-deletion correction preserves translations');
+        check($db->selectCell("SELECT article FROM ::articles WHERE url='help=commenting-and-you' AND locale=0 AND rev=1") === $deletion, 'comment-deletion correction preserves other revisions');
+
         echo "\n$checks update checks passed.\n";
     }
     finally { cleanup($temp); }

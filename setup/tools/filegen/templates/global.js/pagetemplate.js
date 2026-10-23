@@ -548,7 +548,6 @@ var PageTemplate = new function()
             return;
 
         var lastIdx = (path.length - 1);
-        var ldCrumbs  = [];
 
         $.each(path, function(idx, menuItem)
         {
@@ -574,14 +573,6 @@ var PageTemplate = new function()
 
             $span.appendTo($bread);
 
-            ldCrumbs.push({
-                name:  menuText,
-                url:   g_host + '/' + itemUrl,
-                image: menuOpt.tinyIcon ? g_staticUrl + '/images/wow/icons/medium/' + menuOpt.tinyIcon.toLowerCase() + '.jpg' : undefined
-             // url:   itemUrl,
-             // image: menuOpt.tinyIcon ? $WH.ensureUrlProtocol($WH.Icon.getIconUrl(menuOpt.tinyIcon, $WH.Icon.MEDIUM)) : undefined
-            });
-
             // Add ellipsis as appropriate
             if (idx == lastIdx && menuItem[MENU_IDX_SUB])
             {
@@ -593,8 +584,6 @@ var PageTemplate = new function()
                 $ellipsis.appendTo($bread);
             }
         });
-
-        $WH.Seo.addJsonLdBreadcrumb(ldCrumbs);
 
         $bread.trigger('update'); // Some features rely on this event to add stuff to the breadcrumb
         $bread.show();

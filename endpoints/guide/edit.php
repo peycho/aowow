@@ -12,6 +12,8 @@ class GuideEditResponse extends TemplateResponse
 
     protected ?string $articleUrl = 'edit';
 
+    protected  array  $dataLoader = ['zones'];              // native map previews, including dungeon floors
+
     protected  string $template   = 'guide-edit';
     protected  string $pageName   = 'guide=edit';
     protected ?int    $activeTab  = parent::TAB_GUIDES;

@@ -173,7 +173,7 @@ PHP);
     check(!array_diff(['items','stats','spell','taxi'],$tasks),'real update dispatches every newly scheduled SQL generator');
     check($db->query('SELECT `sql` FROM ::dbversion')->fetchSingle()==='','only reported-complete synthetic generation clears pending SQL work');
     $after=SchemaValidator::inspect($db,$root.'/setup/sql/01-db_structure.sql');
-    check($after['checked']===108 && !$after['issues'],'All 108 historical application table definitions converge exactly with the corrected initial schema: '.json_encode($after['issues']));
+    check($after['checked']===109 && !$after['issues'],'All 109 current application table definitions converge exactly with the corrected initial schema: '.json_encode($after['issues']));
     check(snapshot()==$rows,'Accounts, passwords, community text, ownership, favorites, profiles, ratings and long legacy content survive');
     check(file_get_contents($temp.'/static/uploads/screenshots/normal/1001.jpg')==='SYNTHETIC_UPLOAD_BYTES','Upload files remain unchanged');
     // Execute the generator's actual INSERTs against DBC-shaped empty-string input.

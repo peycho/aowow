@@ -1,0 +1,3 @@
+{
+  "article": "[h3]This is [s]Sparta![/s] [u]Aowow[/u][/h3]\r\n\r\nA project for private servers to sensibly display the vast amount of data a private server contains.\r\n\r\nBuilt with TrinityCore in my neck, but i'm trying to get away from that .. some time.\r\nWith it's own data structure it shouldn't be too hard to write a converter for MaNGOS, Ascent or whatever software you prefere.\r\n\r\nThe expected version is 3.3.5 (12340), everything else will get messy."
+}

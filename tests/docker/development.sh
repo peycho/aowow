@@ -30,6 +30,7 @@ else: raise SystemExit('No available development test port in 8011-8020.')
 PY
 )
 export HTTP_PORT=$port
+export APACHE_MAX_REQUEST_WORKERS=2
 "${compose[@]}" config --format json > "$work/model.json"
 python3 - "$work/model.json" <<'PY'
 import json,sys
@@ -59,6 +60,7 @@ expect() {
     echo 'Development source update did not arrive.' >&2; return 1
 }
 expect watch-initial
+python3 tests/docker/check_keepalive.py "http://127.0.0.1:$port/static/js/$probe" 2
 printf '%s\n' 'watch-updated' > "static/js/$probe"
 expect watch-updated
 kill "$watcher"
@@ -73,4 +75,13 @@ expect watch-before-restart
     if (!is_writable("includes/kernel.php")) exit(1);
 '
 COMPOSE_PROJECT_NAME="$project" AOWOW_DEV_ENV_FILE="$work/env" bash docker/development/dev.sh cli --help > "$work/cli.log" 2>&1
-echo 'PASS: development initial sync, live asset updates, writable source and private config isolation'
+"${compose[@]}" run --rm --no-deps -T cli php -r '
+    $url = "http://127.0.0.1:".getenv("AOWOW_DEV_HTTP_PORT")."/static/js/".$argv[1];
+    if (trim(file_get_contents($url)) !== "watch-before-restart") exit(1);
+' "$probe"
+set +e
+"${compose[@]}" run --rm --no-deps -T cli php -r 'exit(7);' > "$work/status.log" 2>&1
+status=$?
+set -e
+[[ "$status" == 7 ]] || { echo 'Development CLI did not preserve command status.' >&2; exit 1; }
+echo 'PASS: development sync, writable source, private config isolation, CLI HTTP forwarding and exit status'

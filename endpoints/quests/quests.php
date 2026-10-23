@@ -120,7 +120,8 @@ class QuestsBaseResponse extends TemplateResponse implements ICache
             $this->fiMenuExtension = $fiQuery;
         }
 
-        $quests = new QuestList($conditions, ['extraOpts' => $this->filter->extraOpts, 'calcTotal' => true]);
+        $quests = new QuestList($conditions, ['extraOpts' => $this->filter->extraOpts, 'calcTotal' => true, 'pagination' => $this->paginationOptions()]);
+        $this->setPagination($quests->getMatches());
 
         $this->extendGlobalData($quests->getJSGlobals());
 

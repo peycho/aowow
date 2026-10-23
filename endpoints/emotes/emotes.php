@@ -47,8 +47,11 @@ class EmotesBaseResponse extends TemplateResponse implements ICache
 
         $this->lvTabs = new Tabs(['parent' => new JsExpression("\$WH.ge('tabs-generic')")]);
 
+        $emotes = new EmoteList($cnd, ['pagination' => $this->paginationOptions()]);
+        $this->setPagination($emotes->getMatches());
+
         $tabData = array(
-            'data' => (new EmoteList($cnd))->getListviewData(),
+            'data' => $emotes->getListviewData(),
             'name' => Util::ucFirst(Lang::game('emotes'))
         );
 

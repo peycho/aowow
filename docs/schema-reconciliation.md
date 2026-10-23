@@ -80,7 +80,7 @@ validation result before accepting the rehearsal.
 
 `tests/schema-reconciliation.php` imports a sanitized structure-only historical
 fixture and synthetic community/game rows into a guarded disposable database.
-It exercises the real `--update` entrypoint, exact agreement of all 108 reference
+It exercises the real `--update` entrypoint, exact agreement of all 109 current reference
 table definitions, fresh installation, long legacy text/captions, all three enum
 conversions, taxi ordinals, numeric boundaries, NULL/enum/range/length rejection, concurrency,
 maintenance restoration/retention and incomplete-journal replay refusal.

@@ -16,7 +16,7 @@ echo '    <table class="infobox">'.PHP_EOL;
         <tr><th id="infobox-quick-facts"><?=Lang::main('quickFacts'); ?></th></tr>
         <tr><td>
             <div class="infobox-spacer"></div>
-            <div id="infobox-contents0"></div>
+            <div id="infobox-contents0"><?=$this->infobox->renderHtml($this->jsGlobals ?? []); ?></div>
             <script type="text/javascript">
                 <?=$this->infobox; ?>
             </script>
@@ -31,7 +31,7 @@ echo '    <table class="infobox">'.PHP_EOL;
         <tr><th id="infobox-contributions"><?=Lang::user('contributions'); ?></th></tr>
         <tr><td>
             <div class="infobox-spacer"></div>
-            <div id="infobox-contents1"></div>
+            <div id="infobox-contents1"><?=$this->contributions->renderHtml($this->jsGlobals ?? []); ?></div>
             <script type="text/javascript">
                 <?=$this->contributions; ?>
             </script>

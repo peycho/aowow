@@ -304,6 +304,20 @@ $lang = array(
                 GuideMgr::STATUS_ARCHIVED => 'Tu guía está desactualizada y ha sido archivada. Ya no aparecerá en la lista y no se puede editar.',
             )
         ),
+        'relatedGuides' => 'Guías relacionadas',
+        'browseTopics' => 'Explorar los temas de las guías',
+        'intro' => [
+            'Explora las guías de la comunidad para Wrath of the Lich King (3.3.5). Elige un tema o abre una guía.',
+            'Explora las funciones de clase, los talentos y las opciones de equipo.',
+            'Encuentra guías sobre profesiones, fabricación de objetos y recolección de materiales.',
+            'Descubre los eventos de temporada, sus misiones, actividades y recompensas.',
+            'Encuentra guías para empezar, subir de nivel y avanzar en las misiones.',
+            'Explora mazmorras, bandas, mecánicas de jefes y preparativos.',
+            'Encuentra guías sobre comercio, recolección y gestión del oro y los materiales.',
+            'Explora los requisitos, los objetivos y las recompensas de los logros.',
+            'Encuentra guías para coleccionar mascotas, monturas y objetos cosméticos.',
+            'Explora las guías de la comunidad sobre otros temas de Wrath of the Lich King.',
+        ],
         'category'  => array(
             null,                           "Clases",                       "Profesiones",                  "Eventos del mundo",                "Nuevos Jugadores y Leveling",
             "Combates de Bandas y Jefes",   "Economía y Dinero",            "Logros",                       "Objetos de vanidad, Mascotas y Monturas", "Otros"

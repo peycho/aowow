@@ -39,7 +39,22 @@ case "${1:-}" in
         exec "${compose[@]}" watch --no-up web
         ;;
     down) initialize; "${compose[@]}" --profile dev-tools down ;;
-    cli) build snapshot; shift; "${compose[@]}" run --rm cli php aowow "$@" ;;
+    cli)
+        build snapshot
+        shift
+        setup_requested=false
+        skip_sounds=false
+        for argument in "$@"; do
+            case "$argument" in
+                --setup|-s) setup_requested=true ;;
+                --skip-sounds) skip_sounds=true ;;
+            esac
+        done
+        if [[ "$setup_requested" == true && "$skip_sounds" == false ]]; then
+            set -- "$@" --skip-sounds
+        fi
+        "${compose[@]}" run --rm cli php aowow "$@"
+        ;;
     shell) build snapshot; "${compose[@]}" run --rm cli bash ;;
     test)
         initialize

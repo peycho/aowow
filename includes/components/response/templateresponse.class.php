@@ -34,6 +34,32 @@ trait TrListPage
     public  string $subCat          = '';
     public ?Filter $filter          = null;
     public ?string $fiMenuExtension = null;
+    public int     $listPage        = 1;
+    public array   $pagination      = [];
+
+    protected function initPagination() : void
+    {
+        if (!array_key_exists('page', $_GET))
+            return;
+        $raw = $_GET['page'];
+        $page = is_string($raw) && preg_match('/^[1-9][0-9]*$/D', $raw) ? filter_var($raw, FILTER_VALIDATE_INT) : false;
+        if ($page === false || !Template\PageTemplate::supportsPagination($this->pageName))
+            $this->generateNotFound();
+        $this->listPage = $page;
+    }
+
+    protected function paginationOptions() : array
+    {
+        return ['page' => $this->listPage, 'size' => 50];
+    }
+
+    protected function setPagination(int $total) : void
+    {
+        $pages = max(1, (int)ceil($total / 50));
+        if ($this->listPage > $pages)
+            $this->generateNotFound();
+        $this->pagination = ['page' => $this->listPage, 'pages' => $pages, 'total' => $total, 'size' => 50];
+    }
 
     public function getCacheKeyComponents() : array
     {
@@ -62,7 +88,7 @@ trait TrListPage
             $this->type,                                    // DBType
             $catg ?? -1,                                    // DBTypeId/category
             User::$groups,                                  // staff mask
-            $misc ?? ''                                     // misc (here filter)
+            ($misc ?? '').'-page'.$this->listPage             // filter and server page must not share cached rows
         );
     }
 }
@@ -142,7 +168,7 @@ class TemplateResponse extends BaseResponse
     public ?string $extraHTML   = null;
     public  array  $redButtons  = [];                       // see template/redButtons.tpl.php
     public  array  $metaTags    = array(
-        ['name' => "viewport", 'content' => "initial-scale=0.85"]
+        ['name' => "viewport", 'content' => "width=device-width, initial-scale=1"]
      // ['name' => "google-site-verification", 'content' => "<ownership-code>"]
     );
 
@@ -153,7 +179,9 @@ class TemplateResponse extends BaseResponse
     public ?Tabs   $lvTabs       = null;
     public  array  $pageTemplate = [];                      // js PageTemplate object
     public  array  $jsGlobals    = [];                      // ready to be used in template
-    public  array  $ldIntangible = [];                      // seo shit
+    public  array  $ldIntangible = [];                      // legacy metadata input and display-hook compatibility
+    public  array  $seo          = [];                      // resolved publication identity; request rules are applied when rendering
+    public  array  $relatedGuides = [];                     // live publication lookup, including on cached detail pages
 
     public function __construct(string $rawParam = '')
     {
@@ -161,6 +189,9 @@ class TemplateResponse extends BaseResponse
         self::$time = microtime(true);
 
         parent::__construct();
+
+        if (in_array(__NAMESPACE__.'\TrListPage', class_uses($this), true))
+            $this->initPagination();
 
         $this->fullParams = $this->pageName;
         if ($this->category)
@@ -385,22 +416,19 @@ class TemplateResponse extends BaseResponse
     {
         $this->metaTags[] = ['property' => 'og:site_name', 'content' => Cfg::get('NAME')];
 
-        // use manual db definition over article snippet over auto generated
-        if ($dbDesc = DB::Aowow()->selectCell('SELECT `description` FROM ::seo_descriptions WHERE `page` = %s AND `locale` IN %in ORDER BY `locale` DESC', $this->fullParams, [Lang::getLocale()->value, Locale::EN]))
+        // Manual descriptions remain authoritative, including their length.
+        // Otherwise use only the selected public article or resolved page facts.
+        require_once __DIR__.'/../seometadata.class.php';
+        if ($dbDesc = DB::Aowow()->selectCell('SELECT `description` FROM ::seo_descriptions WHERE `page` = %s AND `locale` IN %in ORDER BY `locale` DESC', $this->fullParams, [Lang::getLocale()->value, Locale::EN->value]))
             $desc = $dbDesc;
-        else if ($this->article && $useArticle)
-        {
-            $desc = $this->article->fillJSGlobals($this->jsGlobals);
-
-            $desc = preg_replace(['/^\s+|\s+$/', '/\s+/'], ['', ' '], str_replace('\\', '', $desc));
-
-            // finish sentence past 300 chars.
-            $eolChr = Lang::getLocale()->isLogographic() ? '。' : '.';
-            if (mb_strlen($desc) > 300 && ($pos = mb_strpos($desc, $eolChr, 300)))
-                $desc = mb_substr($desc, 0, ++$pos);
-        }
         else
-            $desc = $genDesc;
+        {
+            $locale = $this->seo['locale'] ?? Lang::getLocale();
+            $page = Template\PageTemplate::supportsPagination($this->pageName) ? ($this->pagination['page'] ?? 1) : 1;
+            $desc = $this->article && $useArticle ? SeoMetadata::description($this->article->fillJSGlobals($this->jsGlobals), $locale, $page) : '';
+            if ($desc === '')
+                $desc = SeoMetadata::description($genDesc, $locale, $page);
+        }
 
         if ($desc)
         {
@@ -434,8 +462,8 @@ class TemplateResponse extends BaseResponse
     protected function buildLdJson() : void
     {
         $this->ldIntangible = array(
-            '@context' => 'http://schema.org',
-            '@type'    => 'Intangible',
+            '@context' => 'https://schema.org',
+            '@type'    => 'WebPage',
             'mainEntityOfPage' => array(
                 '@type' => 'WebPage',
                 '@id'   => Template\PageTemplate::buildQuery()
@@ -445,7 +473,7 @@ class TemplateResponse extends BaseResponse
             'logo'      => Cfg::get('STATIC_URL').'/images/logos/home.png',
             'publisher' => array(
                 '@type' => 'Organization',
-                'name'  => 'Site Logo',
+                'name'  => Cfg::get('NAME'),
                 'logo'  => array(
                     '@type'  => 'ImageObject',
                     'url'    => Cfg::Get('STATIC_URL').'/images/logos/header.png',
@@ -457,7 +485,7 @@ class TemplateResponse extends BaseResponse
 
         // transfer properties
         if ($_ = array_find($this->metaTags, fn($x) => ($x['name'] ?? '') == 'keywords'))
-            $this->ldIntangible['keywords'] = implode(', ', (array)$_['content']);
+            $this->ldIntangible['keywords'] = (array)$_['content'];
 
         if ($_ = array_find($this->metaTags, fn($x) => ($x['name'] ?? '') == 'description'))
             $this->ldIntangible['description'] = $_['content'];
@@ -535,6 +563,10 @@ class TemplateResponse extends BaseResponse
         if (isset($this->guideRevision))
             $article = DB::Aowow()->selectRow('SELECT `article`, `locale`, `editAccess` FROM ::articles WHERE `type` = %i AND `typeId` = %i AND `rev` = %i',
                 Type::GUIDE, $this->typeId, $this->guideRevision);
+        // A guide's selected revision is an authorization boundary. Never fall
+        // back to the newest article when the approved/requested row is missing.
+        if ($this instanceof GuideBaseResponse && !$article)
+            $this->generateNotFound(Lang::game('guide'), Lang::guide('notFound'));
         if (!$article && !empty($this->gPageInfo['articleUrl']))
             $article = DB::Aowow()->selectRow('SELECT `article`, `locale`, `editAccess` FROM ::articles WHERE `url` = %s AND `locale` IN %in ORDER BY `locale` DESC, `rev` DESC LIMIT 1',
                 $this->gPageInfo['articleUrl'], [Lang::getLocale()->value, Locale::EN->value]);
@@ -544,6 +576,9 @@ class TemplateResponse extends BaseResponse
 
         if (!$article)
             return;
+
+        if ($this instanceof GuideBaseResponse)
+            $this->seo['locale'] = Locale::tryFromRequest($article['locale']) ?? Locale::getFallback();
 
         $text = Util::defStatic($article['article']);
         $opts = [];
@@ -567,6 +602,10 @@ class TemplateResponse extends BaseResponse
             $opts['prepend'] = '<div class="notice-box"><span class="icon-bubble">'.Lang::main('langOnly', [Lang::lang($article['locale'])]).'</span></div>';
 
         $this->article = new Markup($text, $opts);
+
+        // Native article maps need generated floor names and image keys too.
+        if (in_array($opts['allow'], [Markup::CLASS_STAFF, Markup::CLASS_ADMIN], true) && preg_match('/(?<!\\\\)\[map\s/i', $text))
+            $this->addDataLoader('zones');
 
         if ($jsg = $this->article->getJSGlobals())
             $this->extendGlobalData($jsg);
@@ -651,6 +690,12 @@ class TemplateResponse extends BaseResponse
 
     protected function generate() : void
     {
+        if (isset($this->listPage) && $this->listPage > 1 && !$this->pagination)
+            $this->generateNotFound();                       // never serve page one for an unsupported mode
+        if (!empty($this->pagination))
+            foreach ($this->lvTabs?->iterate() ?? [] as $tab)
+                if ($tab instanceof Listview)
+                    $tab->clearTruncationNote();
         $this->result = new Template\PageTemplate($this->template, $this);
 
         foreach ($this->scripts as $s)
@@ -676,6 +721,12 @@ class TemplateResponse extends BaseResponse
 
         $this->addArticle();
 
+        if (isset($this->type, $this->typeId) && $this->typeId > 0)
+        {
+            require_once __DIR__.'/../guidediscovery.class.php';
+            $this->result->registerDisplayHook('relatedGuides', [GuideDiscovery::class, 'relatedHook']);
+        }
+
         $this->applyGlobals();
 
         $this->generateMetadata();
@@ -684,6 +735,7 @@ class TemplateResponse extends BaseResponse
     // we admit this page exists and an error occured on it
     public function generateError(?string $altPageName = null) : never
     {
+        $this->seo['index'] = false;
         $this->result = new Template\PageTemplate('text-page-generic', $this);
 
         // only use own script defs
@@ -727,6 +779,7 @@ class TemplateResponse extends BaseResponse
     // we do not have this page
     public function generateNotFound(string $title = '', string $msg = '') : never
     {
+        $this->seo['index'] = false;
         $this->result = new Template\PageTemplate('text-page-generic', $this);
 
         // only use own script defs
@@ -772,6 +825,7 @@ class TemplateResponse extends BaseResponse
     // Display the maintenance page, including the exception-handler fallback.
     public function generateMaintenance() : never
     {
+        $this->seo['index'] = false;
         $this->result = new Template\PageTemplate('maintenance', $this);
 
         $this->header[] = ['HTTP/1.0 503 Service Temporarily Unavailable', true, 503];

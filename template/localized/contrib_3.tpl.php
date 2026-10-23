@@ -10,7 +10,6 @@
             <li><div>Euer Kommentar muss in Deutsch sein, oder er wird entfernt.</div></li>
             <li><div>Nicht sicher, wie Ihr schreiben sollt? Werft einen Blick auf unsere <a href="?help=commenting-and-you" target="_blank">praktische Anleitung</a>!</div></li>
             <li><div>Es ist ratsam, den Kommentar vor dem Einsenden noch einmal auf Richtigkeit zu überprüfen.</div></li>
-            <li><div>Stellt Eure Fragen bitte in unseren <a href="?forums">Foren</a>, wenn Ihr eine schnellere Antwort wünscht.</div></li>
             </ul>
 
 <?php

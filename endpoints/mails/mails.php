@@ -42,7 +42,8 @@ class MailsBaseResponse extends TemplateResponse implements ICache
         /****************/
 
         $tabData = [];
-        $mails = new MailList();
+        $mails = new MailList([], ['pagination' => $this->paginationOptions()]);
+        $this->setPagination($mails->getMatches());
         if (!$mails->error)
             $tabData['data'] = $mails->getListviewData();
 

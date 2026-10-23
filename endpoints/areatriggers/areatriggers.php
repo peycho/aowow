@@ -80,7 +80,8 @@ class AreatriggersBaseResponse extends TemplateResponse implements ICache
             $conditions[] = $_;
 
         $tabData = [];
-        $trigger = new AreaTriggerList($conditions, ['calcTotal' => true]);
+        $trigger = new AreaTriggerList($conditions, ['calcTotal' => true, 'pagination' => $this->paginationOptions()]);
+        $this->setPagination($trigger->getMatches());
         if (!$trigger->error)
         {
             $tabData['data'] = $trigger->getListviewData();

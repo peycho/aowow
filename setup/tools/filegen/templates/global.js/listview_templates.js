@@ -5059,8 +5059,13 @@ Listview.templates = {
                 scale = Math.min(150 / screenshot.width, 150 / screenshot.height);
 
             img.src = g_staticUrl + '/uploads/screenshots/thumb/' + screenshot.id + '.jpg';
-            //img.width  = Math.round(scale * screenshot.width);
-            //img.height = Math.round(scale * screenshot.height);
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            if (screenshot.width > 0 && screenshot.height > 0)
+            {
+                img.width  = Math.max(1, Math.round(scale * screenshot.width));
+                img.height = Math.max(1, Math.round(scale * screenshot.height));
+            }
             $WH.ae(a, img);
 
             $WH.ae(td, a);

@@ -57,7 +57,7 @@
 
 <?php if ($hasRecovery): ?>
                     <br />
-                    <div style="position: absolute; right: 5px; bottom: 5px; white-space: nowrap;"><?=Lang::account('forgot').Lang::main('colon'); ?><a href="?account=forgot-username"><?=Lang::account('forgotUser'); ?></a> | <a href="?account=forgot-password"><?=Lang::account('forgotPass'); ?></a> | <a href="?account=resend"><?=Lang::account('inputbox', 'head', 'resendMail'); ?></a></div>
+                    <div class="account-recovery" style="position: absolute; right: 5px; bottom: 5px; white-space: nowrap;"><?=Lang::account('forgot').Lang::main('colon'); ?><a href="?account=forgot-username"><?=Lang::account('forgotUser'); ?></a> | <a href="?account=forgot-password"><?=Lang::account('forgotPass'); ?></a> | <a href="?account=resend"><?=Lang::account('inputbox', 'head', 'resendMail'); ?></a></div>
 
 <?php endif; ?>
 

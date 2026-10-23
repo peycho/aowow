@@ -14,7 +14,7 @@ class GuidePowerResponse extends TextResponse implements ICache
 
     protected int   $type        = Type::GUIDE;
     protected int   $typeId      = 0;
-    protected int   $cacheType   = CACHE_TYPE_TOOLTIP;
+    protected int   $cacheType   = CACHE_TYPE_NONE;          // recheck publication state on every request
 
     protected array $expectedGET = array(
         'domain' => ['filter' => FILTER_CALLBACK, 'options' => [Locale::class, 'tryFromDomain']]
@@ -43,11 +43,12 @@ class GuidePowerResponse extends TextResponse implements ICache
     {
         $opts = [];
         if ($this->typeId)
-            if (!($guide = new GuideList(array(['id', $this->typeId])))->error)
-                $opts = array(
-                    'name'    => $guide->getField('name', true),
-                    'tooltip' => $guide->renderTooltip()
-                );
+            if (!($guide = new GuideList(array(['id', $this->typeId])))->error && $guide->canBeViewed())
+            {
+                $approved = $guide->getField('status') === GuideMgr::STATUS_APPROVED;
+                $name = $approved ? $guide->getField('name', true) : Lang::game('guide').' #'.$this->typeId;
+                $opts = ['name' => $name, 'tooltip' => $approved ? $guide->renderTooltip() : Util::htmlEscape($name)];
+            }
 
         if (!$opts)
             $this->cacheType = CACHE_TYPE_NONE;

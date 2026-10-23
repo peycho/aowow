@@ -45,6 +45,13 @@ PY
     php tests/security-upstream-october.php
     php tests/schema-validator.php
     php tests/maintenance-response.php
+    php tests/seo-urls.php
+    php tests/seo-metadata.php
+    php tests/seo-structured-data.php
+    php tests/seo-guides.php
+    php tests/seo-guide-discovery.php
+    php tests/seo-locale.php
+    php tests/seo-rendering.php
     php tests/security-smtp.php
     php tests/setup-maps.php
     php tests/maps-picker.php
@@ -83,12 +90,21 @@ PY
     node tests/security-turnstile.mjs --browser > "$fixture_root/turnstile.html"
     php tests/header-image.php --browser > "$fixture_root/header-image.html"
     php tests/maintenance-response.php --browser > "$fixture_root/maintenance.html"
+    php tests/seo-rendering.php --browser > "$fixture_root/seo-rendering.html"
+    php tests/seo-home-navigation.php > "$fixture_root/seo-home-navigation.html"
     for fixture in json guide-editor csrf turnstile header-image maintenance; do
       timeout 45s "$browser" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage \
         --disable-background-networking \
         --dump-dom "file://$fixture_root/$fixture.html" > "$fixture_root/$fixture.dom"
       python3 tests/ci/check-browser.py "$fixture_root/$fixture.dom"
     done
+    python3 tests/seo-rendering-browser.py "$fixture_root/seo-rendering.html" "$browser"
+    python3 tests/seo-rendering-browser.py "$fixture_root/seo-home-navigation.html" "$browser" home
+    node tests/browser-cdp-navigation.mjs
+    node tests/seo-responsive.mjs
+    node tests/seo-performance.mjs
+    node tests/seo-structured-data.mjs
+    node tests/seo-guide-discovery.mjs
     php tests/retirement.php --fixtures > "$fixture_root/retirement-assets.json"
     node tests/retirement.mjs --browser < "$fixture_root/retirement-assets.json" > "$fixture_root/retirement.html"
     python3 tests/retirement-browser.py "$fixture_root/retirement.html" "$fixture_root/retirement-assets.json" "$browser"
@@ -104,7 +120,7 @@ PY
     # shellcheck disable=SC2016 # PHP variables must be passed literally.
     php -r '
       $db = new mysqli(getenv("AOWOW_TEST_DB_HOST"), "root", "", "", (int)getenv("AOWOW_TEST_DB_PORT"));
-      foreach (["passwords", "screenshots", "updates", "resources", "legacy", "schema", "reconciliation", "reports", "turnstile", "feedback"] as $suffix) {
+      foreach (["passwords", "screenshots", "updates", "resources", "legacy", "schema", "reconciliation", "reports", "turnstile", "feedback", "seo"] as $suffix) {
           $name = "aowow_security_test_".$suffix;
           $db->query("CREATE DATABASE IF NOT EXISTS ".$name." CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
           // The historical fixture has this collation; normalize reused fixture databases too.
@@ -124,6 +140,10 @@ PY
     AOWOW_TEST_DATABASE=aowow_security_test_reports php tests/security-reports.php
     AOWOW_TEST_DATABASE=aowow_security_test_turnstile php tests/security-turnstile-budget.php
     AOWOW_TEST_DATABASE=aowow_security_test_feedback php tests/security-feedback.php
+    AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/seo-guides-sql.php
+    AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/seo-guide-discovery-sql.php
+    AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/seo-pagination-sql.php
+    AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/seo-sitemaps-sql.php
     ;;
   apache)
     # Exercise both hosting permission sets, with and without inherited negotiation.

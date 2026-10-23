@@ -91,7 +91,8 @@ class SoundsBaseResponse extends TemplateResponse implements ICache
         );
 
         $tabData = [];
-        $sounds  = new SoundList($conditions, ['calcTotal' => true]);
+        $sounds  = new SoundList($conditions, ['calcTotal' => true, 'pagination' => $this->paginationOptions()]);
+        $this->setPagination($sounds->getMatches());
         if (!$sounds->error)
         {
             $tabData['data'] = $sounds->getListviewData();

@@ -9,7 +9,7 @@
 ?>
 
     <div id="ic<?=$this->typeId; ?>" style="float: left"></div>
-    <div id="tt<?=$this->typeId; ?>" class="wowhead-tooltip" style="float: left; padding-top: 1px"></div>
+    <div id="tt<?=$this->typeId; ?>" class="wowhead-tooltip" style="float: left; padding-top: 1px"><?=$this->serverTooltip(); ?></div>
     <div style="clear: left"></div>
     <div id="sl<?=$this->typeId; ?>" style="margin-left: 70px; margin-top: 4px;"></div>
     <div id="ks<?=$this->typeId; ?>" style="margin-left: 70px; margin-top: 4px;"></div>
@@ -19,7 +19,7 @@ if ($hasBuff):
 ?>
 
     <h3><?=Lang::spell('_aura'); ?></h3>
-    <div id="btt<?=$this->typeId; ?>" class="wowhead-tooltip"></div>
+    <div id="btt<?=$this->typeId; ?>" class="wowhead-tooltip"><?=$this->serverTooltip(true); ?></div>
 
 <?php
 endif;

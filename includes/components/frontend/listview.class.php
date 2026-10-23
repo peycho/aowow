@@ -102,6 +102,27 @@ class Listview implements \JsonSerializable
 
     private string $__addIn = '';
 
+    public function hasData() : bool
+    {
+        return (bool)$this->data;
+    }
+
+    public function clearTruncationNote() : void
+    {
+        if ($this->_truncated)
+        {
+            $this->note = null;
+            $this->_truncated = null;
+        }
+    }
+
+    public function renderHtml(array $globals = []) : string
+    {
+        require_once __DIR__.'/../servercontent.class.php';
+        $name = $this->name instanceof JsExpression ? '$'.$this->name->expression : $this->name;
+        return ServerContent::listHtml($this->template ?? '', $this->id, $name, $this->data ?? [], $globals);
+    }
+
     public function __construct(array $opts, string $template = '', string $addIn = '')
     {
         if ($template && isset(self::TEMPLATES[$template]))

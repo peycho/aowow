@@ -13,7 +13,7 @@ if ([$mapper, $mapperData, $som, $foundIn] = $this->map):
             if ($_ = array_sum(array_column($areaData, 'count')))
                 $qty = '&nbsp;('.$_.')';
 
-            return '<a href="javascript:;" onclick="myMapper.update({zone: '.$areaId.'}); g_setSelectedLink(this, \'mapper\'); return false" onmousedown="return false">'.$foundIn[$areaId].'</a>'.$qty;
+            return '<a href="'.\Aowow\Util::htmlEscape(\Aowow\ServerContent::url('zone', (int)$areaId)).'" onclick="if (typeof myMapper === \'undefined\') return true; myMapper.update({zone: '.(int)$areaId.'}); g_setSelectedLink(this, \'mapper\'); return false">'.$foundIn[$areaId].'</a>'.$qty;
         });
         echo '.</span></div>'.PHP_EOL;
     else:

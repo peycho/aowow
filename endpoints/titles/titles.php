@@ -51,7 +51,8 @@ class TitlesBaseResponse extends TemplateResponse implements ICache
             $conditions[] = ['category', $this->category[0]];
 
         $tabData = ['data' => []];
-        $titles  = new TitleList($conditions);
+        $titles  = new TitleList($conditions, ['pagination' => $this->paginationOptions()]);
+        $this->setPagination($titles->getMatches());
         if (!$titles->error)
         {
             $tabData['data'] = $titles->getListviewData();

@@ -29,6 +29,7 @@
 ?>
 
                 <h1><?=$this->h1; ?></h1>
+<?php $this->brick('markup', ['markup' => $this->article]); ?>
                 <?=$this->description.PHP_EOL; ?>
                 <h3><?=Lang::achievement('criteria').($this->reqCrtQty ? ' &ndash; <small><b>'.Lang::achievement('reqNumCrt', [$this->reqCrtQty, count($this->criteria)]).'</b></small>' : ''); ?></h3>
 

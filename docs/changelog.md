@@ -8,6 +8,465 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-23 — Correct visitor page title escaping
+
+What's New and other pages outside the database title policy now display
+apostrophes and ampersands correctly in browser, Open Graph and RSS titles.
+The shared title renderer decodes the response's existing HTML escaping before
+each output context escapes it, including cached pages. Regression checks cover
+all six locales, literal entity text and attempts to escape title/attribute contexts.
+No database or asset rebuild is required.
+
+## 2026-10-23 — Refresh visitor information pages
+
+The bundled `?aboutus` placeholder is replaced with a 679-word introduction to
+AoWoW's Wrath 3.3.5 focus, browsing tools, data sources, history, community
+contributions and credits. Six native markup sections and a two-column grid
+provide readable local navigation. The history section links to the project's
+documented origins, including its releases in 2008.
+
+The FAQ placeholder becomes a 980-word reference with sixteen questions across
+six sections and a grid of relevant help links. Answers cover browsing, data
+differences, related records, maps, talent builds, equipment comparisons,
+contributions, moderation, feedback and browser requirements. Every answer is
+readable without opening a tab or enabling JavaScript.
+
+What's New replaces its placeholder with dated, visitor-focused highlights of
+mobile browsing, related guides, restored item categories, corrected festival
+guides and clearer help. A native grid links directly to relevant pages, and
+the article omits implementation and deployment details.
+
+Fresh installations include the new content. Migration `1792742400_05.sql`
+replaces only the exact original English placeholders and preserves customized
+articles, permissions, translations, other revisions and unrelated content.
+Run `php aowow --update` and invalidate page caches after deployment.
+This article update needs no JavaScript or client asset rebuild.
+
+The SQL gate passed, including 748 update checks. Six populated About browser samples
+passed with scripts enabled and disabled at 390/768/1440 px, checking the visible
+word count, six sections, grid headers, viewport bounds and eleven local link
+destinations. Local article metadata and unrelated-content checksums were retained.
+Six FAQ browser samples also passed at the same widths with scripts enabled and
+disabled. They checked all sixteen questions, the help table, eleven local links,
+the documented search-by-ID example and opening the actual contact dialog.
+Six What's New browser samples passed with scripts enabled and disabled at the
+same widths, checking thirteen local destinations, three populated item
+categories, the contact dialog and the absence of horizontal page overflow.
+
+## 2026-10-23 — Refresh help content and remove obsolete forum links
+
+The bundled `?help=markup-guide` article now documents grid tables and header
+cells, floor-specific maps, linked pins, tabbed locations, author permissions
+and the initial HTML fallback. Event examples distinguish game-event IDs from
+holiday IDs. Maps and tabs have both copyable markup and working example output.
+The ordinary external URL examples use Google over HTTPS; the original Google
+link with `rel=item=12345` is retained to demonstrate an item tooltip.
+
+Talent-calculator help replaces the obsolete external calculator link with the
+legacy URL formats accepted by Import and explains that local `?talent#...`
+build links are opened directly. The importer itself is unchanged.
+
+Stat-weighting help uses three named contact-form links instead of email labels.
+All eight acknowledgment names are retained; seven obsolete URLs are unlinked
+and the working Shadow Panther reference uses HTTPS. Obsolete internal forum
+destinations are removed from bundled help, four error-page translations and
+all six localized contribution panels. Help that asks readers to report issues
+points to the existing contact form.
+The comment-deletion tab refers to the guidelines on its own help page instead
+of linking to external Blizzard forum rules.
+
+The tooltips article drops the entire obsolete "Other resources" tab and its
+Wowhead integration links, plus the Joystiq promotion, screenshot and caption.
+The local widget instructions, advanced options and XML-feed tab are retained.
+
+Fresh installations include the corrected article content. Migration
+`1792742400_04.sql` refreshes only the exact original markup-help article and
+replaces the specific obsolete talent, stat-help, forum and tooltip fragments,
+preserving surrounding editorial text. Changed permissions, other revisions,
+custom pages and unrelated translations remain untouched.
+Run `php aowow --update` and invalidate application page caches after deployment.
+This content update needs no JavaScript or client asset rebuild.
+
+The disposable SQL gate passed, including 711 update checks. Six populated
+markup-help page browser samples passed with scripts enabled and disabled at 390/768/1440 px,
+checking copyable examples, grid headers, real floor images and linked pins,
+tab switching, the restored item tooltip, Google destinations and viewport bounds.
+The local upgrade preserved help metadata and every unrelated article checksum.
+Four talent-help browser samples passed with scripts enabled and disabled at
+390/1440 px. Both documented legacy import formats and opening their generated
+local shared-build links were also verified on the populated calculator.
+The link cleanup passed another 38 populated browser samples across help,
+localized error and contribution pages, with scripts enabled and disabled.
+All eight credit names remain, and the named contact links open the existing
+contact dialog.
+Four tooltips-page browser samples passed with scripts enabled and disabled at
+390/1440 px, including both remaining tabs and the enhanced local item example.
+Four comment-deletion browser samples passed at the same widths with scripts
+enabled and disabled, including direct navigation to the Deletion tab.
+
+## 2026-10-23 — Correct bundled festival guide links and article associations
+
+Six event links across five bundled guides used holiday IDs instead of imported
+game-event IDs. Fresh guide seeds now link to Lunar Festival (7), Noblegarden
+(9), Love Is in the Air (8), Brewfest (24), Midsummer (1) and Winter Veil (2).
+Pilgrim's Bounty keeps event ID 26 and gains the missing query-string prefix.
+
+Children's Week and Midsummer also had each other's article bodies assigned to
+their guide IDs. Fresh seeds now align each body with its guide metadata and URL.
+Migration `1792742400_03.sql` repairs only the exact original English article
+pair, preserving customized bodies and pending revisions. It resolves corrected
+event destinations from the application's holiday/event records, so existing
+installations use their imported IDs rather than assuming one core's numbering.
+Guide ownership, publication metadata and unrelated articles remain unchanged.
+
+Deploy and run `php aowow --update`, then invalidate affected application caches.
+The migration schedules `guidereferences` to refresh related-event links.
+No client asset or JavaScript rebuild is needed for this correction.
+
+The disposable SQL gate passed, including 652 update checks. Populated local
+acceptance passed 36 guide browser samples with scripts enabled and disabled at
+390/1440 px, plus eight event destination requests. Guide metadata and unrelated
+article checksums were unchanged; all nine expected event references were rebuilt.
+
+## 2026-10-23 — Restore container, projectile and quiver categories
+
+Item generation previously treated every equipped item outside the armor,
+weapon and consumable classes as armor. Bags, arrows, bullets and quivers have
+inventory slots too, so this emptied their native category and subclass lists.
+The generator now preserves those three item classes while retaining the
+miscellaneous-equipment normalization.
+
+Deploy the generator and migration together, then run `php aowow --update`.
+Migration `1792742400_02.sql` schedules normal item and stat regeneration to
+repair previously compiled data. Custom item overrides and community flags use
+the existing reapplication paths. Invalidate affected application list/detail
+caches after regeneration. No client asset or JavaScript rebuild is needed.
+
+The disposable SQL update suite executes the generator's actual normalization
+statement and bindings against native bag subclasses, arrows, bullets, quivers,
+ordinary equipment and miscellaneous held items. It checks preserved visibility,
+source classifications, custom-data application, pending-task preservation and
+journal-protected regeneration scheduling.
+
+The full development regression gate passed. Populated local acceptance also
+passed 16 category/subcategory HTTP checks and 36 phone/desktop browser samples
+with scripts enabled and disabled; the custom-data checksum remained unchanged.
+
+## 2026-10-23 — Guide tables and floor-specific maps
+
+The safe initial article renderer preserves native `[table class=grid]` styling
+and `[td=header]` semantic headers while rejecting arbitrary author attributes.
+Responsive grid cells align at the top and preserve whole words inside locally
+scrollable tables.
+
+Native `[map]` markup accepts an optional client `floor` number. Article pages
+and guide editor previews load generated zone metadata so map images and pins
+use the selected floor. Maps without `floor` retain their existing behavior.
+Without scripts, authorized pins retain safe links, labels and coordinates;
+these links also participate in related-guide discovery. See
+[guide maps](guide-discovery.md#native-guide-maps) for markup examples.
+
+Deploy the renderer, article/editor PHP, markup template and stylesheet together,
+rebuild with `php aowow --build=globaljs`, and invalidate page and asset caches.
+Corresponding generated game maps and zone metadata must be installed. No SQL
+migration is needed for these rendering changes.
+
+The full `make dev-test` gate passed, including 395 initial-HTML/safety checks,
+1,061 responsive checks, 42 image/map-loading checks, disposable SQL and all
+eight Apache policy configurations. Coverage includes safe map fallback,
+quoted attributes, coordinate bounds, floor forwarding and legacy map behavior.
+
+## 2026-10-23 — Browser menu readiness regression
+
+The responsive touch test now waits for the destination document and its menu
+button after following a link. Previously it could position a menu against a
+missing button while the destination's ready callback was still pending. The
+fixture delays menu creation to reproduce that race. Bounded browser readiness
+checks retain timeouts and report script failures. Site assets are unchanged.
+
+The delayed fixture reproduces the original missing-offset exception without the
+wait. The browser gate passed with 1,061 responsive checks; the final readiness
+helper also passed all 15 navigation/readiness checks.
+
+## 2026-10-23 — Guide categories and related guides
+
+Guide lists have localized category headings, default introductions and crawlable
+links to populated public categories. Existing editorial introductions and manual
+SEO descriptions take precedence. Database details and public guides show up to
+six related guides based on approved article references; links remain available
+without JavaScript and publication changes take effect on cached detail pages.
+Pending edits retain the approved reference set and use safe fallback titles.
+
+Migration `1792742400_01.sql` creates a reference index and schedules its backfill
+through `php aowow --update`. Approval indexes the exact revision before publishing
+it. Deploy PHP, locales and templates together and invalidate page caches; no
+JavaScript rebuild is required. See [guide discovery](guide-discovery.md).
+
+The complete development gate passed, including fresh/legacy schema agreement,
+396 guide HTML checks, 109 SQL discovery/approval/cache checks and 144 browser
+layout checks. Local acceptance covers six populated HTTP samples and 24
+script-enabled/disabled phone and desktop browser samples. Deployment and
+search-engine acceptance remain separate.
+
+## 2026-10-23 — Page-specific structured data
+
+The initial HTML now describes the configured site and publisher, database pages,
+category collections, visible breadcrumbs and public guide articles in a single
+JSON-LD graph. Cached responses refresh canonical URLs, language and site identity.
+Guide author markup follows visible quick facts; unavailable publication dates,
+generic article illustrations and ratings are omitted. Existing noindex and
+guide publication/revision boundaries remain enforced.
+
+JSON-LD preserves literal and numeric-looking names and escapes script delimiters.
+The visible breadcrumb and schema use the same labels and destinations. Retire
+the JavaScript generator that added competing breadcrumbs, including on excluded
+pages; retain its callable compatibility hook. Deploy PHP/templates and generator
+sources with a rebuilt `globaljs` bundle, then invalidate application page caches
+and cached assets. No SQL migration is required.
+
+The complete development gate passed; the final JavaScript and Chromium gates
+also passed after the legacy generator was retired. Focused coverage includes
+833 schema checks, 1,016 guide HTTP checks and 48 schema browser checks.
+Populated local acceptance covers 13 HTTP samples and 12 phone/desktop Chromium
+samples with scripts enabled and disabled. Deployed rich-result and Search
+Console acceptance remain pending.
+
+## 2026-10-23 — Measured media loading and development HTTP latency
+
+JavaScript article enhancement retains native image lazy loading and inferred
+local image dimensions from initial HTML. Authored dimensions retain priority,
+and later editor changes do not inherit stale geometry. Article maps far below
+the viewport reserve their native size and float, then initialize on approach;
+printing and browsers without IntersectionObserver retain complete maps.
+Separate markup renders receive distinct map IDs. Screenshot thumbnails reserve
+their displayed ratio and use lazy loading with asynchronous decode.
+
+The development Docker image disables HTTP keep-alive so idle browser sockets
+cannot exhaust its small prefork pool. A socket-level regression reproduces the
+old queueing failure with two workers. The production image's Apache settings
+are unchanged. Rebuild development images after pulling this change.
+
+Deploy the PHP renderer with a rebuilt `globaljs` bundle and invalidate affected
+application page caches and cached assets. No SQL migration or sound rebuild is
+required. The [performance guide](performance.md) documents the manual cold/warm
+sampler, observer limits and separate field acceptance.
+
+Validated the complete development gate, final focused browser gate (39 media
+checks and 1,061 responsive checks), production Docker smoke tests and the
+independent development Watch/socket fixture. Populated guide checks cover
+actual image geometry, 26 map pins, zoom and pin toggling. Local lab savings
+and production field acceptance remain separate.
+
+## 2026-10-22 — Browser fixture navigation synchronization
+
+The Chrome DevTools helper now creates its own blank test tab and matches load
+events to the requested frame and document loader. A late load event from the
+previous page can no longer complete a navigation before the destination is
+ready. Same-document navigation completes without waiting for a new load event;
+navigation failures still fail and include the requested URL in diagnostics.
+
+The browser gate adds a real Chromium regression covering delayed previous-page
+loads, redirects, viewport changes, fragment navigation, download aborts,
+connection failures and subsequent recovery. This changes test infrastructure;
+there are no website deployment assets.
+
+Validated lint and the complete browser gate, including 12 navigation checks
+and 1,061 responsive checks. Three additional fresh-browser navigation runs
+passed. The delayed-navigation regression fails against the previous helper.
+
+## 2026-10-22 — Mobile contribution and article panel corrections
+
+Removed the desktop sidebar reservation from mobile contribution panels and
+expanded their tabs, screenshot uploads and video fields to the available width.
+Tabs now wrap labels using their actual content height. Password-recovery links
+wrap inside the sign-in box, random-enchantment and article icon-list columns
+stack on phones, and readable books fit the screen while retaining pagination.
+Quest status annotations now flow below their names instead of overlapping them.
+Desktop layout rules remain unchanged.
+
+Browser coverage now renders the real localized contribution and account bricks
+for guests and members, exercises Tabs, comment editors, article lists and Book,
+and checks usable panel widths and visible link bounds across six languages and
+seven viewport widths. The earlier overflow-only checks missed the squeezed
+contribution panel. Deploy `static/css/responsive.css` with the updated
+`template/bricks/contribute.tpl.php` and `inputbox-form-signin.tpl.php`; invalidate
+affected application page caches and cached CSS. No JavaScript bundle rebuild or
+database migration is required.
+
+Validated development lint, PHP/HTTP and the complete Chromium gate, including
+1,061 responsive assertions across six languages and seven viewport widths.
+
+## 2026-10-22 — Responsive mobile layout
+
+Added a zoomable device-width viewport and dedicated mobile CSS/enhancement below
+980 pixels. Navigation, search, account controls, headings, quick facts, forms
+and homepage news now fit narrow screens. Tables/maps use bounded scroll areas;
+map coordinates and talent trees retain their native geometry. Class/pet pickers
+reflow, touch menus open before following a link, and long menus/dialogs remain
+within the viewport. Keyboard scroll labels follow the document language.
+Script-blocked content remains usable and desktop parents/styles are restored
+when resizing back to a wide window.
+
+The complete development suite passed, followed by the final responsive browser
+gate with 65 responsive checks. Populated local acceptance covered 44 page/width samples and real touch
+interaction with both talent calculators, homepage navigation and the item Links
+dialog. See [Batch 2B](seo-plan.md#batch-2b--responsive-presentation-and-touch-controls)
+for validation limits. Deploy PHP/templates and both new responsive assets
+together, then invalidate application page caches. No generated bundle rebuild
+or database migration is required. Production/mobile-device acceptance and
+field performance remain separate.
+
+## 2026-10-22 — Remove duplicate homepage fallback after menu initialization
+
+The homepage now removes its server-rendered navigation fallback immediately
+after building the interactive menu. jQuery readiness can run after native load
+handlers, leaving both navigation rows visible under the previous cleanup timing.
+Fallback links remain available when scripting is blocked or menu creation fails.
+Deploy `static/js/home.js`; no generated JavaScript bundle rebuild is required.
+Browser regression coverage deliberately delays menu initialization beyond load.
+
+## 2026-10-22 — Descriptive SEO titles and generated summaries
+
+Public database details, browse categories and guides now identify the topic,
+content type, WotLK 3.3.5 and configured site in document and Open Graph titles.
+Validated list pages add localized page numbers to titles and automatic
+summaries. Title text and RSS title attributes are escaped. Manually configured
+homepage titles render in the initial HTML instead of replacing the title after
+JavaScript loads.
+
+Manual description overrides keep their priority and length. Generated
+summaries normalize markup and whitespace, fall back to page facts when the
+selected article is empty, and use a Unicode-safe 240-character editorial budget.
+Selected guide revisions and existing indexing rules remain authoritative.
+Deploy PHP and templates together and invalidate affected application page
+caches. See [Batch 2A in the SEO roadmap](seo-plan.md#batch-2a--metadata-defaults-and-editorial-overrides)
+and the [metadata test guide](../tests/README.md).
+
+Validated the complete development suite and 115 focused metadata checks across
+six locales. Populated local acceptance passed for nine routes and repeat
+requests; Chromium confirmed titles and social metadata on three page types.
+External deployment and search-result acceptance remain separate.
+
+## 2026-10-22 — Canonical sitemaps and public guide discovery
+
+Sitemaps now use the shared canonical URL policy across enabled languages and
+include approved guide bodies, populated database browse roots and guide category
+hubs. Pending guide edits retain the previously approved revision. Archived or
+missing guide bodies, staff-only area triggers, disabled sounds and
+hidden/unavailable records are excluded.
+
+Removed the invented 2015 update date and unreliable community submission dates,
+including the incorrect screenshot/video flag joins. Only known, non-future guide
+approval dates supply `lastmod`. Stable 10,000-entry chunks, UTF-8 XML escaping and
+strict page validation bound sitemap output. Publication changes bypass
+application page caching. See the [SEO roadmap](seo-plan.md) for validation and
+deployment acceptance and the [test guide](../tests/README.md) for the disposable
+sitemap SQL fixtures.
+
+Validated lint, PHP/HTTP, JavaScript, Chromium, disposable SQL and all eight Apache
+policy combinations. The new sitemap fixture passed 20,134 checks. Populated
+local acceptance covered 34 child sitemaps, 154,199 unique entries, 93 public
+page/canonical checks and nine invalid-request checks. Production deployment and
+search-engine acceptance remain separate.
+
+## 2026-10-22 — Development setup skips audio by default
+
+Added `make dev-setup`. Development CLI setup commands (`--setup` and `-s`)
+automatically include `--skip-sounds`, including resumed runs, so local client
+inputs do not need the audio archive. Explicit `--sql=sounds` and
+`--build=soundfiles` commands remain available. Production setup behavior is
+unchanged. See [Docker development](docker-development.md).
+
+Development maintenance commands now forward their loopback HTTP port to the
+running web service, allowing localhost configuration checks without publishing
+another host port. Configuration edits also discard consumed CLI operands before
+scheduling rebuilds, so changing a setting with no rebuild work returns success.
+
+Validated the complete PHP/HTTP gate (including 74 setup debug/configuration
+checks), isolated Docker source-sync/CLI HTTP/exit-status checks, five CLI
+argument/default/resume cases, 25 sound setup checks and four invalid-port cases.
+Local game inputs remain ignored by Git and excluded from Docker build contexts
+and source synchronization.
+
+## 2026-10-22 — Initial HTML content and category pagination
+
+Articles/guides, quick facts, sanitized item/spell tooltips, source links,
+navigation and simple breadcrumbs now render in the initial HTML. Location
+links work without JavaScript, homepage text is included, and an inline notice
+replaces the JavaScript-disabled overlay. A bounded PHP markup renderer escapes
+raw HTML, restricts URLs/images and preserves author permissions. Existing
+JavaScript enhances the same content; lazy list tabs retain their fallback until
+initialization succeeds.
+
+The 23 database/guide list implementations support stable 50-row SQL pages with
+separate cache entries, crawlable Previous/Next links and individual canonicals.
+Invalid/unavailable pages return 404. Grouped item views preserve their first-page
+behavior and reject later pages; event calendars retain their existing dataset.
+
+`make dev-test` passed lint, PHP/HTTP, JavaScript, Chromium, disposable SQL and
+all eight Apache policy combinations. Final focused coverage includes 288
+initial-HTML/markup/permission/URL checks across six locales, 19 browser checks
+with normal/blocked scripting, and 160 SQL/HTTP pagination checks. The final
+rendering adjustments also passed the complete PHP/HTTP gate. See the
+[SEO roadmap](seo-plan.md) for scope and deployment acceptance. Deploy PHP/templates, CSS and the new
+`static/js/server-content.js` together and invalidate affected page caches.
+The generated JavaScript bundle is unchanged. Production and indexing acceptance
+remain pending.
+
+## 2026-10-22 — SEO indexing, locale and guide visibility
+
+New anonymous sessions use the configured English/fallback default while explicit
+saved preferences remain available. Locale overrides accept only supported,
+enabled values, and English SEO URLs consolidate `locale=0` into bare routes.
+Homepage language-menu state follows the rendered language.
+
+Shared rendering now applies noindex rules to search, private/editorial routes,
+previews, archived guides, empty lists and unreviewed filters. Seventeen reviewed
+filtered landing pages retain indexing eligibility. Language alternates represent
+equivalent enabled database locales; guide aliases use their authored-language
+canonical without claiming nonexistent translations. Cached metadata follows
+the current policy.
+
+Guide pages/tooltips recheck publication and permissions on every request rather
+than using shared caches. Public views select the exact approved article;
+historical/preview access remains restricted to owner/staff. Missing revisions
+return 404 without falling back to drafts. Pending guide titles/descriptions are
+hidden from public metadata because the existing schema stores body revisions
+only; the public page temporarily uses `Guide #ID` and approved-body description.
+
+Deploy PHP/templates together, regenerate robots with `php aowow --build=robots`
+using the normal output destination, and invalidate affected page/tooltip caches.
+The robots template permits crawlers to read noindex directives and retains the
+random-route restriction. See the [SEO roadmap](seo-plan.md) for checkpoint
+scope, validation and outstanding deployment acceptance. No production operation
+is performed by this change.
+
+All `make dev-test` gates passed, including disposable SQL and eight Apache
+policy combinations. The final metadata adjustment also passed the complete
+PHP/HTTP gate. SEO suites total 1,493 checks, and a local report-derived check
+confirmed all 17 reviewed filter URLs retain indexing eligibility.
+
+## 2026-10-22 — SEO canonical URL foundation
+
+SEO URLs now discard tracking and irrelevant query parameters, retain the
+routing pair first, encode values and sort content modifiers. Existing filters,
+guide revisions and supported explicit locales remain represented. Canonical
+and language-alternate attributes escape URLs; Open Graph and JSON-LD identity
+refresh for each request, including page-cache hits. Manual descriptions remain
+intact.
+
+Added the [SEO roadmap](seo-plan.md) to the documentation index with incremental
+implementation checkpoints. Deployment-specific Search Console exports and
+baseline reports belong in the ignored `reports/` directory. Indexing policy,
+anonymous locale defaults, guide aliases and translation equivalence are the
+next checkpoint; rendering, pagination and sitemap work follow separately.
+
+`make dev-test` passed all gates: lint, PHP/HTTP, JavaScript, Chromium,
+disposable SQL and eight Apache policy combinations. This includes 148 new
+SEO URL and cached-head checks. Deploy PHP and the head template together and
+invalidate affected page caches through the normal deployment workflow.
+Deployed acceptance and search-engine canonical selection remain unverified.
+
 ## 2026-10-22 — Optional Docker development environment
 
 Removed the newer Compose Watch `initial_sync` field, which prevented CI runners

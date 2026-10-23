@@ -5,6 +5,7 @@
 ?>
 
 <?php
+    $this->brick('relatedGuides');
 if (($this->lvTabs && count($this->lvTabs)) || $this->charactersLvData || $this->profilesLvData || $this->contribute):
     if ($this->lvTabs?->isTabbed()):
 ?>
@@ -14,6 +15,15 @@ if (($this->lvTabs && count($this->lvTabs)) || $this->charactersLvData || $this-
 
 <?php endif; ?>
 
+            <div id="server-lists-generic" class="server-lists">
+<?php
+    foreach ($this->lvTabs?->iterate() ?? [] as $tab):
+        if ($tab instanceof \Aowow\Listview):
+            echo $tab->renderHtml($this->jsGlobals ?? []);
+        endif;
+    endforeach;
+?>
+            </div>
             <div id="lv-generic" class="listview">
 
 <?php
@@ -70,6 +80,7 @@ if (($this->lvTabs && count($this->lvTabs)) || $this->charactersLvData || $this-
     if ($flushTabs = $this->lvTabs?->getFlush()):
         echo '                '.$flushTabs.PHP_EOL;
     endif;
+    echo "                if (typeof AowowServerContent !== 'undefined') AowowServerContent.lists('server-lists-generic');".PHP_EOL;
 ?>
 
             //]]></script>
@@ -77,3 +88,4 @@ if (($this->lvTabs && count($this->lvTabs)) || $this->charactersLvData || $this-
 <?php
 endif;
 ?>
+<?php $this->brick('pagination'); ?>

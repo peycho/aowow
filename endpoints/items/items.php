@@ -331,6 +331,9 @@ class ItemsBaseResponse extends TemplateResponse implements ICache
         /* create lv-tabs for groups */
         /*****************************/
 
+        if ($grouping && $this->listPage > 1)
+            $this->generateNotFound();
+
         foreach ($groups as $group)
         {
             $finalCnd = match ($grouping)
@@ -341,7 +344,10 @@ class ItemsBaseResponse extends TemplateResponse implements ICache
                 default                         => $conditions
             };
 
-            $items = new ItemList($finalCnd, ['extraOpts' => array_merge($extraOpts, $this->filter->extraOpts), 'calcTotal' => true]);
+            $items = new ItemList($finalCnd, ['extraOpts' => array_merge($extraOpts, $this->filter->extraOpts), 'calcTotal' => true] + (!$grouping ? ['pagination' => $this->paginationOptions()] : []));
+
+            if (!$grouping)
+                $this->setPagination($items->getMatches());
 
             if ($items->error)
                 continue;

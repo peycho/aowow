@@ -594,9 +594,7 @@ abstract class BaseResponse
 
     protected static function checkLocale(string $localeId) : ?Locale
     {
-        if (Util::checkNumeric($localeId, NUM_CAST_INT))
-            return Locale::tryFrom($localeId);
-        return null;
+        return Locale::tryFromRequest($localeId);
     }
 
     protected static function sanitizeFilter(string $filter) : string
