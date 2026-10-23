@@ -616,14 +616,19 @@ CODE;
         // Help is CMS-owned too: refresh the stock English article while
         // retaining edits, other revisions/locales and the surrounding data.
         $markupHelp = files(['1792742400_04.sql' => file_get_contents($root.'/setup/sql/updates/1792742400_04.sql')]);
-        foreach (['markup-guide' => 'markup-guide-legacy.txt', 'talent-calculator' => 'talent-help-legacy.json', 'stat-weighting' => 'stat-help-legacy.json', 'tooltips' => 'tooltips-legacy.json'] as $help => $fixture) {
+        $contentUpdate = files(['1792742400_05.sql' => file_get_contents($root.'/setup/sql/updates/1792742400_05.sql')]);
+        $sitePages = ['aboutus' => 'aboutus-legacy.json', 'faq' => 'faq-legacy.json', 'whats-new' => 'whats-new-legacy.json'];
+        $helpPages = ['markup-guide' => 'markup-guide-legacy.txt', 'talent-calculator' => 'talent-help-legacy.json', 'stat-weighting' => 'stat-help-legacy.json', 'tooltips' => 'tooltips-legacy.json'];
+        foreach (array_merge($helpPages, $sitePages) as $help => $fixture) {
+            $wholeArticle = isset($sitePages[$help]);
+            $helpUpdate = $wholeArticle ? $contentUpdate : $markupHelp;
             foreach (['stock', 'edited', 'permissions'] as $state) {
                 resetDb();
                 preg_match('/CREATE TABLE `aowow_articles` \(.*?\) ENGINE=.*?;/s', file_get_contents($root.'/setup/sql/01-db_structure.sql'), $definition);
                 $db->nativeQuery($definition[0]);
                 preg_match('/^INSERT INTO `aowow_articles`.*;$/m', file_get_contents($root.'/setup/sql/03-db_initial_articles.sql'), $insert);
                 $db->nativeQuery($insert[0]);
-                $url = $help === 'tooltips' ? $help : 'help='.$help;
+                $url = $wholeArticle || $help === 'tooltips' ? $help : 'help='.$help;
                 $fresh = $db->selectRow('SELECT * FROM ::articles WHERE url=%s AND locale=0 AND rev=0', $url);
                 $original = file_get_contents($root.'/tests/fixtures/'.$fixture);
                 if (str_ends_with($fixture, '.json')) $original = json_decode($original, true, 512, JSON_THROW_ON_ERROR)['article'];
@@ -633,15 +638,15 @@ CODE;
                 $before = $db->selectRow('SELECT * FROM ::articles WHERE url=%s AND locale=0 AND rev=0', $url);
                 $others = $db->selectAssoc('SELECT * FROM ::articles WHERE url IS NULL OR url<>%s OR locale<>0 OR rev<>0 ORDER BY type,typeId,locale,url,rev', $url);
                 $db->query("UPDATE ::dbversion SET `sql`='existing',build='globaljs'");
-                SqlUpdate::apply($db, $markupHelp);
+                SqlUpdate::apply($db, $helpUpdate);
                 $after = $db->selectRow('SELECT * FROM ::articles WHERE url=%s AND locale=0 AND rev=0', $url);
                 $expected = $state === 'stock' ? $fresh : $before;
-                if ($help !== 'markup-guide' && $state === 'edited') $expected['article'] = $fresh['article'].' Custom help text';
+                if (!$wholeArticle && $help !== 'markup-guide' && $state === 'edited') $expected['article'] = $fresh['article'].' Custom help text';
                 check($after === $expected, $help.' upgrade matches fresh content and preserves CMS edits/permissions: '.$state);
                 check($db->selectAssoc('SELECT * FROM ::articles WHERE url IS NULL OR url<>%s OR locale<>0 OR rev<>0 ORDER BY type,typeId,locale,url,rev', $url) === $others,
                     $help.' preserves other locales, revisions and unrelated articles');
                 check($db->selectCell('SELECT `sql` FROM ::dbversion') === 'existing' && $db->selectCell('SELECT build FROM ::dbversion') === 'globaljs', 'help content update leaves pending setup work intact');
-                SqlUpdate::apply($db, $markupHelp);
+                SqlUpdate::apply($db, $helpUpdate);
                 check($db->selectRow('SELECT * FROM ::articles WHERE url=%s AND locale=0 AND rev=0', $url) === $after, $help.' journal replay preserves content');
             }
         }

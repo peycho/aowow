@@ -8,6 +8,42 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-23 — Refresh visitor information pages
+
+The bundled `?aboutus` placeholder is replaced with a 679-word introduction to
+AoWoW's Wrath 3.3.5 focus, browsing tools, data sources, history, community
+contributions and credits. Six native markup sections and a two-column grid
+provide readable local navigation. The history section links to the project's
+documented origins, including its releases in 2008.
+
+The FAQ placeholder becomes a 980-word reference with sixteen questions across
+six sections and a grid of relevant help links. Answers cover browsing, data
+differences, related records, maps, talent builds, equipment comparisons,
+contributions, moderation, feedback and browser requirements. Every answer is
+readable without opening a tab or enabling JavaScript.
+
+What's New replaces its placeholder with dated, visitor-focused highlights of
+mobile browsing, related guides, restored item categories, corrected festival
+guides and clearer help. A native grid links directly to relevant pages, and
+the article omits implementation and deployment details.
+
+Fresh installations include the new content. Migration `1792742400_05.sql`
+replaces only the exact original English placeholders and preserves customized
+articles, permissions, translations, other revisions and unrelated content.
+Run `php aowow --update` and invalidate page caches after deployment.
+This article update needs no JavaScript or client asset rebuild.
+
+The SQL gate passed, including 748 update checks. Six populated About browser samples
+passed with scripts enabled and disabled at 390/768/1440 px, checking the visible
+word count, six sections, grid headers, viewport bounds and eleven local link
+destinations. Local article metadata and unrelated-content checksums were retained.
+Six FAQ browser samples also passed at the same widths with scripts enabled and
+disabled. They checked all sixteen questions, the help table, eleven local links,
+the documented search-by-ID example and opening the actual contact dialog.
+Six What's New browser samples passed with scripts enabled and disabled at the
+same widths, checking thirteen local destinations, three populated item
+categories, the contact dialog and the absence of horizontal page overflow.
+
 ## 2026-10-23 — Refresh help content and remove obsolete forum links
 
 The bundled `?help=markup-guide` article now documents grid tables and header
