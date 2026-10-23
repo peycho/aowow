@@ -8,6 +8,54 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-23 — Correct bundled festival guide links and article associations
+
+Six event links across five bundled guides used holiday IDs instead of imported
+game-event IDs. Fresh guide seeds now link to Lunar Festival (7), Noblegarden
+(9), Love Is in the Air (8), Brewfest (24), Midsummer (1) and Winter Veil (2).
+Pilgrim's Bounty keeps event ID 26 and gains the missing query-string prefix.
+
+Children's Week and Midsummer also had each other's article bodies assigned to
+their guide IDs. Fresh seeds now align each body with its guide metadata and URL.
+Migration `1792742400_03.sql` repairs only the exact original English article
+pair, preserving customized bodies and pending revisions. It resolves corrected
+event destinations from the application's holiday/event records, so existing
+installations use their imported IDs rather than assuming one core's numbering.
+Guide ownership, publication metadata and unrelated articles remain unchanged.
+
+Deploy and run `php aowow --update`, then invalidate affected application caches.
+The migration schedules `guidereferences` to refresh related-event links.
+No client asset or JavaScript rebuild is needed for this correction.
+
+The disposable SQL gate passed, including 652 update checks. Populated local
+acceptance passed 36 guide browser samples with scripts enabled and disabled at
+390/1440 px, plus eight event destination requests. Guide metadata and unrelated
+article checksums were unchanged; all nine expected event references were rebuilt.
+
+## 2026-10-23 — Restore container, projectile and quiver categories
+
+Item generation previously treated every equipped item outside the armor,
+weapon and consumable classes as armor. Bags, arrows, bullets and quivers have
+inventory slots too, so this emptied their native category and subclass lists.
+The generator now preserves those three item classes while retaining the
+miscellaneous-equipment normalization.
+
+Deploy the generator and migration together, then run `php aowow --update`.
+Migration `1792742400_02.sql` schedules normal item and stat regeneration to
+repair previously compiled data. Custom item overrides and community flags use
+the existing reapplication paths. Invalidate affected application list/detail
+caches after regeneration. No client asset or JavaScript rebuild is needed.
+
+The disposable SQL update suite executes the generator's actual normalization
+statement and bindings against native bag subclasses, arrows, bullets, quivers,
+ordinary equipment and miscellaneous held items. It checks preserved visibility,
+source classifications, custom-data application, pending-task preservation and
+journal-protected regeneration scheduling.
+
+The full development regression gate passed. Populated local acceptance also
+passed 16 category/subcategory HTTP checks and 36 phone/desktop browser samples
+with scripts enabled and disabled; the custom-data checksum remained unchanged.
+
 ## 2026-10-23 — Guide tables and floor-specific maps
 
 The safe initial article renderer preserves native `[table class=grid]` styling

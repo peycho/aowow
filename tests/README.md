@@ -1052,6 +1052,22 @@ rows and pending SQL/build work, store long Unicode names without truncation,
 and prevent repeated regeneration requests. Fresh-install checks verify the
 widened schema and retained pending `globaljs` build.
 
+Item-category regression checks execute the actual generator normalization SQL
+and its constant bindings against native bags, arrows, bullets and quivers,
+including specialty-bag subclasses and both quiver inventory slots. Ordinary
+equipment and miscellaneous held items retain their intended classifications.
+The same fixture runs the real custom-data applier and verifies migration
+`1792742400_02.sql` queues `items stats`, preserves existing SQL/build tasks and
+custom data, and avoids scheduling the work again on journal replay. It does
+not run the full world/client import against this synthetic schema.
+
+Festival-guide checks import the real bundled article/guide seeds and audit all
+nine guide/body associations and their event links. Legacy fixtures cover the
+swapped Children's Week/Midsummer articles, original and customized bodies,
+pending revisions, three native URL forms, unrelated articles and longer IDs.
+The upgrade uses a deliberately different imported Lunar event ID, preserves
+guide metadata and pending work, and schedules related-reference rebuilding once.
+
 An isolated MySQL 8.4 fixture was exercised with PHP 8.5.10 and Dibi 5.1.1. Tests
 use real SQL/DDL/transactions, triggers for statement/accounting/persistence
 failure, independent CLI processes, server named locks and a hard-killed updater.
