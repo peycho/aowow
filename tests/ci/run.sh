@@ -100,6 +100,7 @@ PY
     python3 tests/seo-rendering-browser.py "$fixture_root/seo-home-navigation.html" "$browser" home
     node tests/browser-cdp-navigation.mjs
     node tests/seo-responsive.mjs
+    node tests/seo-performance.mjs
     php tests/retirement.php --fixtures > "$fixture_root/retirement-assets.json"
     node tests/retirement.mjs --browser < "$fixture_root/retirement-assets.json" > "$fixture_root/retirement.html"
     python3 tests/retirement-browser.py "$fixture_root/retirement.html" "$fixture_root/retirement-assets.json" "$browser"

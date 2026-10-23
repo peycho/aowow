@@ -30,6 +30,7 @@ else: raise SystemExit('No available development test port in 8011-8020.')
 PY
 )
 export HTTP_PORT=$port
+export APACHE_MAX_REQUEST_WORKERS=2
 "${compose[@]}" config --format json > "$work/model.json"
 python3 - "$work/model.json" <<'PY'
 import json,sys
@@ -59,6 +60,7 @@ expect() {
     echo 'Development source update did not arrive.' >&2; return 1
 }
 expect watch-initial
+python3 tests/docker/check_keepalive.py "http://127.0.0.1:$port/static/js/$probe" 2
 printf '%s\n' 'watch-updated' > "static/js/$probe"
 expect watch-updated
 kill "$watcher"

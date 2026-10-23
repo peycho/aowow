@@ -72,11 +72,18 @@ translated tab wrapping, screenshot/video fields and recovery-link bounds;
 Markup icon lists and Book cover stacked article columns and readable pagination.
 The real Listview quest name renderer checks that status annotations fit below
 the name without overlapping it.
+`node tests/seo-performance.mjs` adds native browser checks for image geometry
+through real PHP/JavaScript rendering, deferred image requests, map construction
+on approach, unique map IDs, removed widgets, printing and unsupported-observer
+fallbacks. The map constructor is spied on in this fixture; populated-site
+acceptance separately checks the actual renderer and pin controls. A real
+screenshot-row renderer verifies thumbnail dimensions and loading attributes.
 These checks detect squeezed panels and off-screen links even when the document
 reports no horizontal overflow. `tests/browser-cdp.mjs`
 provides the small Node 24 WebSocket client; no additional browser package or
 application database is needed. These synthetic checks supplement populated-site
 screenshots and physical-device acceptance; they do not measure field performance.
+For manual populated-site sampling, see the [performance guide](../docs/performance.md).
 
 `node tests/browser-cdp-navigation.mjs` runs before the responsive suite. Its
 12 real-browser checks cover a previous document finishing while the next

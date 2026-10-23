@@ -48,6 +48,11 @@ accordingly. The site healthcheck reports unavailable databases until they are
 provisioned. A full website requires the same TrinityCore/client inputs as normal
 installation; the automated regression suites can run without those inputs.
 
+The development image disables HTTP keep-alive for its small prefork worker
+pool. Otherwise idle browser connections can occupy every worker and delay new
+CSS, script and image requests until Apache's keep-alive timeout. Loopback HTTP
+requests use short-lived connections; production image settings are independent.
+
 The development CLI forwards its own loopback HTTP port to the running web
 service, so setup/configuration self-checks can use the same localhost URLs as
 the browser. This listener stays inside each maintenance container and publishes

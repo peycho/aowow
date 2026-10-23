@@ -8,6 +8,32 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-23 — Measured media loading and development HTTP latency
+
+JavaScript article enhancement retains native image lazy loading and inferred
+local image dimensions from initial HTML. Authored dimensions retain priority,
+and later editor changes do not inherit stale geometry. Article maps far below
+the viewport reserve their native size and float, then initialize on approach;
+printing and browsers without IntersectionObserver retain complete maps.
+Separate markup renders receive distinct map IDs. Screenshot thumbnails reserve
+their displayed ratio and use lazy loading with asynchronous decode.
+
+The development Docker image disables HTTP keep-alive so idle browser sockets
+cannot exhaust its small prefork pool. A socket-level regression reproduces the
+old queueing failure with two workers. The production image's Apache settings
+are unchanged. Rebuild development images after pulling this change.
+
+Deploy the PHP renderer with a rebuilt `globaljs` bundle and invalidate affected
+application page caches and cached assets. No SQL migration or sound rebuild is
+required. The [performance guide](performance.md) documents the manual cold/warm
+sampler, observer limits and separate field acceptance.
+
+Validated the complete development gate, final focused browser gate (39 media
+checks and 1,061 responsive checks), production Docker smoke tests and the
+independent development Watch/socket fixture. Populated guide checks cover
+actual image geometry, 26 map pins, zoom and pin toggling. Local lab savings
+and production field acceptance remain separate.
+
 ## 2026-10-22 — Browser fixture navigation synchronization
 
 The Chrome DevTools helper now creates its own blank test tab and matches load

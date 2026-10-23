@@ -79,10 +79,25 @@ final class ServerContent
         $path = substr($url, strlen($base) + 1);
         if (!preg_match('~^(?:uploads/guide/images/[0-9]+|images/[a-zA-Z0-9_/-]+)\.(?:jpe?g|png|gif|webp)$~D', $path))
             return self::text($attrs['alt'] ?? '');
-        $html = '<img src="'.self::text($url).'" alt="'.self::text($attrs['alt'] ?? '').'" loading="lazy"';
+        // Approved local files can provide the ratio when an older article did
+        // not author dimensions. Reserve that space before a lazy image loads.
+        $sizes = [];
         foreach (['width', 'height'] as $key)
             if (isset($attrs[$key]) && ctype_digit((string)$attrs[$key]) && $attrs[$key] > 0 && $attrs[$key] <= 4096)
-                $html .= ' '.$key.'="'.(int)$attrs[$key].'"';
+                $sizes[$key] = (int)$attrs[$key];
+        $file = 'static/'.$path;
+        if (count($sizes) < 2 && is_file($file) && ($native = @getimagesize($file)) && $native[0] > 0 && $native[1] > 0)
+        {
+            $sizes = match (true) {
+                isset($sizes['width']) => ['width' => $sizes['width'], 'height' => max(1, (int)round($sizes['width'] * $native[1] / $native[0]))],
+                isset($sizes['height']) => ['width' => max(1, (int)round($sizes['height'] * $native[0] / $native[1])), 'height' => $sizes['height']],
+                default => ['width' => $native[0], 'height' => $native[1]]
+            };
+        }
+        $html = '<img src="'.self::text($url).'" alt="'.self::text($attrs['alt'] ?? '').'" loading="lazy" decoding="async" data-server-image';
+        foreach (['width', 'height'] as $key)
+            if (isset($sizes[$key]) && $sizes[$key] <= 4096)
+                $html .= ' '.$key.'="'.$sizes[$key].'"';
         return $html.'>';
     }
 

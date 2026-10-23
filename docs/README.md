@@ -21,6 +21,7 @@ these guides run from the checkout root unless stated otherwise.
 | [Contributing](../CONTRIBUTING.md) | Branch target, development prerequisites, validation and review expectations |
 | [Tests](../tests/README.md) | Focused suites, full regression gates and fixture limitations |
 | [Docker development](docker-development.md) | Live source updates, development tools and disposable test databases |
+| [Performance measurement](performance.md) | Repeatable cold/warm lab sampling, media loading and field acceptance |
 | [Upstream integration](upstream-sync.md) | Review and integrate Sarjuuk changes with source attribution |
 | [Maintenance illustration](artwork/maintenance.md) | Artwork provenance and presentation details |
 
