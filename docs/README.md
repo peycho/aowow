@@ -11,6 +11,7 @@ these guides run from the checkout root unless stated otherwise.
 | [Installation and updates](installation.md) | Requirements, database and client assets, Apache rules, CLI setup, upgrades and cleanup |
 | [Docker](docker.md) | Container installation, local/external databases, persistent volumes and maintenance |
 | [Configuration](configuration.md) | Private settings, mail, Turnstile, feature switches and external navigation |
+| [Guide discovery](guide-discovery.md) | Category introductions, related-guide links, publication rules and index rebuilds |
 | [Troubleshooting](troubleshooting.md) | Common setup and site problems, diagnostics and support preparation |
 | [Historical schema reconciliation](schema-reconciliation.md) | Retained-data migration preflight, compatibility and recovery |
 

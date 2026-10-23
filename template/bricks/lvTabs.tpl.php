@@ -5,6 +5,7 @@
 ?>
 
 <?php
+    $this->brick('relatedGuides');
 if (($this->lvTabs && count($this->lvTabs)) || $this->charactersLvData || $this->profilesLvData || $this->contribute):
     if ($this->lvTabs?->isTabbed()):
 ?>

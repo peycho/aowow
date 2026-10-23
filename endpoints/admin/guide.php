@@ -63,7 +63,12 @@ class AdminGuideResponse extends TextResponse
     private function update(int $id, int $status, ?string $msg = null) : bool
     {
         if ($status == GuideMgr::STATUS_APPROVED)           // set display rev to latest
-            $ok = DB::Aowow()->qry('UPDATE ::guides SET `status` = %i, `rev` = (SELECT `rev` FROM ::articles WHERE `type` = %i AND `typeId` = %i ORDER BY `rev` DESC LIMIT 1), `approveUserId` = %i, `approveDate` = %i WHERE `id` = %i', $status, Type::GUIDE, $id, User::$id, time(), $id);
+        {
+            require_once __DIR__.'/../../includes/components/guidediscovery.class.php';
+            if (!($revision = GuideDiscovery::preparePublication($id)))
+                return false;
+            $ok = DB::Aowow()->qry('UPDATE ::guides SET `status` = %i, `rev` = %i, `approveUserId` = %i, `approveDate` = %i WHERE `id` = %i', $status, $revision, User::$id, time(), $id);
+        }
         else
             $ok = DB::Aowow()->qry('UPDATE ::guides SET `status` = %i WHERE `id` = %i', $status, $id);
 

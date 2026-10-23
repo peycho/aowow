@@ -291,7 +291,7 @@ CODE;
         $audit = SchemaValidator::inspect($db, $root.'/setup/sql/01-db_structure.sql');
         $reference = SchemaValidator::parse(file_get_contents($root.'/setup/sql/01-db_structure.sql'));
         $referenceIssues = array_values(array_filter($audit['issues'], fn($issue) => isset($reference[$issue[0]])));
-        check($audit['checked'] === 108 && !$referenceIssues, 'Complete legacy upgrade converges with all fresh-install reference definitions: '.json_encode($referenceIssues));
+        check($audit['checked'] === count($reference) && !$referenceIssues, 'Complete legacy upgrade converges with all fresh-install reference definitions: '.json_encode($referenceIssues));
         check(!in_array(['aowow_account', 'column extId', 'nullable differs'], $audit['issues'], true), 'Account default/nullability drift is repaired by the explicit migration');
         check(community() === $before && (int)$db->query("SELECT value FROM ::config WHERE `key`='maintenance'")->fetchSingle() === 0, 'Auditing the migrated legacy fixture preserves community data and restored maintenance');
         foreach ($db->query('SELECT phase, tasks FROM aowow_fixture_generators')->fetchAll() as $call) {

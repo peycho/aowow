@@ -33,6 +33,8 @@
 
     $this->brick('mapper');
 
+    $this->brick('guideHub');
+
     $this->brick('markup', ['markup' => $this->article]);
 
     $this->brick('markup', ['markup' => $this->extraText]);

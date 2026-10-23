@@ -304,6 +304,20 @@ $lang = array(
                 GuideMgr::STATUS_ARCHIVED => 'Your guide is outdated and has been archived. Is will no longer be listed and can\'t be edited.',
             )
         ),
+        'relatedGuides' => 'Related guides',
+        'browseTopics' => 'Browse guide topics',
+        'intro' => [
+            'Browse community guides for Wrath of the Lich King (3.3.5). Choose a topic or open a guide below.',
+            'Explore class roles, talents and equipment choices for Wrath of the Lich King.',
+            'Find guides to learning professions, crafting items and gathering materials.',
+            'Explore seasonal events, their quests, activities and rewards.',
+            'Find guides to getting started, leveling characters and progressing through quests.',
+            'Explore dungeon and raid encounters, boss mechanics and preparation.',
+            'Find guides to trading, gathering and managing gold and materials.',
+            'Explore achievement requirements, objectives and related rewards.',
+            'Find guides to collecting pets, mounts and cosmetic items.',
+            'Browse community guides covering other Wrath of the Lich King topics.',
+        ],
         'category'  => array(
             null,                           "Classes",                      "Professions",                  "World Events",                     "New Players & Leveling",
             "Raid & Boss Fights",           "Economy & Money",              "Achievements",                 "Vanity Items, Pets & Mounts",      "Other"

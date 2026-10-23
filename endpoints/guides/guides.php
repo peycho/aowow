@@ -20,6 +20,9 @@ class GuidesBaseResponse extends TemplateResponse // implements ICache
 
     protected  array  $validCats  = [null, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
+    public string $guideIntro = '';
+    public array $guideCategories = [];
+
     public function __construct(string $rawParam)
     {
         $this->getCategoryFromUrl($rawParam);
@@ -38,7 +41,16 @@ class GuidesBaseResponse extends TemplateResponse // implements ICache
 
         array_unshift($this->title, $this->h1);
         if ($this->category)
+        {
             array_unshift($this->title, Lang::guide('category', $this->category[0]));
+            $this->h1 = Lang::guide('category', $this->category[0]);
+        }
+
+        require_once __DIR__.'/../../includes/components/guidediscovery.class.php';
+        $this->guideIntro = $this->listPage === 1 ? Lang::guide('intro', $this->category[0] ?? 0) : '';
+        foreach (GuideDiscovery::categories(Lang::getLocale()) as $category)
+            $this->guideCategories[] = ['category' => $category, 'name' => Lang::guide('category', $category),
+                'href' => Template\PageTemplate::canonicalUrl(['guides' => (string)$category, 'locale' => Lang::getLocale()->value])];
 
 
         $conditions = array(
@@ -68,6 +80,8 @@ class GuidesBaseResponse extends TemplateResponse // implements ICache
         ), GuideList::$brickFile));
 
         parent::generate();
+        if ($this->article)
+            $this->guideIntro = '';                         // existing editorial copy takes precedence
     }
 
     protected function generateMetadata(bool $useArticle = true) : void
@@ -81,7 +95,7 @@ class GuidesBaseResponse extends TemplateResponse // implements ICache
 
         array_unshift($this->metaTags, ['name' => 'keywords', 'content' => $keywords]);
 
-        $this->buildBasicMetadata(Lang::meta('description', 'genList', [$this->h1]));
+        $this->buildBasicMetadata($this->guideIntro ?: Lang::meta('description', 'genList', [$this->h1]));
     }
 }
 

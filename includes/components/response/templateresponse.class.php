@@ -181,6 +181,7 @@ class TemplateResponse extends BaseResponse
     public  array  $jsGlobals    = [];                      // ready to be used in template
     public  array  $ldIntangible = [];                      // legacy metadata input and display-hook compatibility
     public  array  $seo          = [];                      // resolved publication identity; request rules are applied when rendering
+    public  array  $relatedGuides = [];                     // live publication lookup, including on cached detail pages
 
     public function __construct(string $rawParam = '')
     {
@@ -715,6 +716,12 @@ class TemplateResponse extends BaseResponse
             $this->pageTemplate['filter'] = $this->filter->query ? 1 : 0;
 
         $this->addArticle();
+
+        if (isset($this->type, $this->typeId) && $this->typeId > 0)
+        {
+            require_once __DIR__.'/../guidediscovery.class.php';
+            $this->result->registerDisplayHook('relatedGuides', [GuideDiscovery::class, 'relatedHook']);
+        }
 
         $this->applyGlobals();
 

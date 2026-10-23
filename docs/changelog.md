@@ -8,6 +8,26 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-23 — Guide categories and related guides
+
+Guide lists have localized category headings, default introductions and crawlable
+links to populated public categories. Existing editorial introductions and manual
+SEO descriptions take precedence. Database details and public guides show up to
+six related guides based on approved article references; links remain available
+without JavaScript and publication changes take effect on cached detail pages.
+Pending edits retain the approved reference set and use safe fallback titles.
+
+Migration `1792742400_01.sql` creates a reference index and schedules its backfill
+through `php aowow --update`. Approval indexes the exact revision before publishing
+it. Deploy PHP, locales and templates together and invalidate page caches; no
+JavaScript rebuild is required. See [guide discovery](guide-discovery.md).
+
+The complete development gate passed, including fresh/legacy schema agreement,
+396 guide HTML checks, 109 SQL discovery/approval/cache checks and 144 browser
+layout checks. Local acceptance covers six populated HTTP samples and 24
+script-enabled/disabled phone and desktop browser samples. Deployment and
+search-engine acceptance remain separate.
+
 ## 2026-10-23 — Page-specific structured data
 
 The initial HTML now describes the configured site and publisher, database pages,

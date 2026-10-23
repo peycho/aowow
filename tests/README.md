@@ -55,6 +55,18 @@ archived, missing and historical revisions; missing-approved-row fallback and
 tooltip disclosure. Database responses and identities are synthetic. These
 suites run in the PHP gate.
 
+`php tests/seo-guide-discovery.php` exercises the actual guide-list response and
+HTML bricks across six locales: category headings and links, first-page defaults,
+editorial/manual description priority, and safe related titles. Its browser fixture
+checks long links and category navigation at 360, 390, 768 and 1440 pixels.
+
+`tests/seo-guide-discovery-sql.php` uses the guarded disposable SEO database and
+real schema, approval method and profiler. It checks safe reference extraction,
+public-revision joins, pending metadata, language matching, ranking, bounded
+results, multi-batch replacement, rollback on failure and live withdrawal from a
+serialized page cache. It also verifies that an indexing failure prevents
+approval. Never run it against a retained database.
+
 `tests/seo-guides-sql.php` is guarded by
 `AOWOW_TEST_DATABASE=aowow_security_test_seo` and runs in the SQL gate against its
 own disposable database. It checks actual GuideList publication/access predicates,
@@ -200,7 +212,7 @@ damage from forced text normalization.
 `AOWOW_TEST_DATABASE=aowow_security_test_reconciliation` on an isolated localhost
 database. Its sanitized historical structure fixture contains no rows, comments,
 auto-increment counters or environment headers. Synthetic records exercise the
-real update entrypoint, 108-table fresh/legacy schema agreement, enum ordinal
+real update entrypoint, 109-table fresh/legacy schema agreement, enum ordinal
 mapping, long captions/text and community/upload preservation. Data preflight
 rejection, strict-mode restoration, concurrency, maintenance handling and refusal
 to replay partial SQL are covered. Its guarded `fixtures/taxi-generator.php`
@@ -219,7 +231,7 @@ classification and compact versus detailed reports. It runs in the PHP CI group.
 
 The SQL group also runs `tests/schema-validator-sql.php`, guarded to require
 `AOWOW_TEST_DATABASE=aowow_security_test_schema` on an isolated localhost fixture.
-It creates the complete 108-table initial schema, then checks real metadata with
+It creates the complete 109-table initial schema, then checks real metadata with
 a SELECT-only account and invokes the actual `aowow --validate-schema` entrypoint.
 It covers MyISAM/InnoDB metadata, legacy config without `default`, missing/extra
 tables, generated DBC-copy inputs, column/index/FK drift, configured prefixes,

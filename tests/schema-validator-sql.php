@@ -69,7 +69,7 @@ try {
     $db->query('GRANT SELECT ON aowow_security_test_schema.* TO %s@%s', 'aowow_schema_reader', '%');
     $reader = new DibiConnection(array_replace($options, ['username' => 'aowow_schema_reader']));
     $report = SchemaValidator::inspect($reader, $root.'/setup/sql/01-db_structure.sql');
-    check($report['expected'] === 108 && $report['checked'] === 108 && !$report['issues'], 'Full fresh schema matches real SHOW CREATE TABLE: '.json_encode($report['issues']));
+    check($report['expected'] === 109 && $report['checked'] === 109 && !$report['issues'], 'Full fresh schema matches real SHOW CREATE TABLE: '.json_encode($report['issues']));
 
     // Real partial-column signup INSERT needs defaults/nullability that old schemas can lack.
     preg_match('/qry\(\x27(INSERT INTO ::account .*?)\x27,\s*\n/s', file_get_contents($root.'/endpoints/account/signup.php'), $signup);
@@ -103,7 +103,7 @@ try {
     $config = ['host'=>'127.0.0.1', 'port'=>$port, 'user'=>'aowow_schema_reader', 'pass'=>'', 'db'=>'aowow_security_test_schema', 'prefix'=>'aowow_'];
     file_put_contents($temp.'/config/config.php', '<?php $AoWoWconf = '.var_export(['aowow'=>$config], true).';');
     [$code, $out] = invoke($temp, ['--validate-schema']);
-    check($code === 0 && str_contains($out, '108/108 reference tables compared; 0 differences'), 'Real kernel/entrypoint needs only SELECT and no world DB, config load or extracted inputs: '.$out);
+    check($code === 0 && str_contains($out, '109/109 reference tables compared; 0 differences'), 'Real kernel/entrypoint needs only SELECT and no world DB, config load or extracted inputs: '.$out);
     check(snapshot() == $before, 'Successful validation preserves accounts/content/uploads, config/maintenance, marker, journal and errors');
 
     // Real legacy incompatibility: no configuration default, and MyISAM version metadata.

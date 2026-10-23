@@ -49,6 +49,7 @@ PY
     php tests/seo-metadata.php
     php tests/seo-structured-data.php
     php tests/seo-guides.php
+    php tests/seo-guide-discovery.php
     php tests/seo-locale.php
     php tests/seo-rendering.php
     php tests/security-smtp.php
@@ -103,6 +104,7 @@ PY
     node tests/seo-responsive.mjs
     node tests/seo-performance.mjs
     node tests/seo-structured-data.mjs
+    node tests/seo-guide-discovery.mjs
     php tests/retirement.php --fixtures > "$fixture_root/retirement-assets.json"
     node tests/retirement.mjs --browser < "$fixture_root/retirement-assets.json" > "$fixture_root/retirement.html"
     python3 tests/retirement-browser.py "$fixture_root/retirement.html" "$fixture_root/retirement-assets.json" "$browser"
@@ -139,6 +141,7 @@ PY
     AOWOW_TEST_DATABASE=aowow_security_test_turnstile php tests/security-turnstile-budget.php
     AOWOW_TEST_DATABASE=aowow_security_test_feedback php tests/security-feedback.php
     AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/seo-guides-sql.php
+    AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/seo-guide-discovery-sql.php
     AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/seo-pagination-sql.php
     AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/seo-sitemaps-sql.php
     ;;

@@ -80,7 +80,7 @@ namespace {
         fclose($pipes[1]); fclose($pipes[2]); return [proc_close($process), $out.$err];
     }
     $reference = SchemaValidator::parse(file_get_contents(SchemaValidator::REFERENCE));
-    check(count($reference) === 108, 'Complete initial schema is parsed');
+    check(count($reference) === 109, 'Complete initial schema is parsed');
     $copies = SchemaValidator::generatedTables();
     check(count($copies) === 18 && $copies['soundemitters'] === 'soundemitters' && $copies['dungeonmap'] === 'dungeonmap', 'DBC-copy tables discovered from literal generator declarations');
     $directory = sys_get_temp_dir().'/aowow-schema-declarations-'.bin2hex(random_bytes(6)); mkdir($directory,0700);
@@ -153,7 +153,7 @@ SQL;
             [$code, $out] = worker($mode, $debug ? ['--debug'] : []);
             check($code === $expectedExit, "$mode command exit ($code): $out");
             check(!str_contains($out, 'SECRET_'), 'Failure diagnostics exclude values and raw SQL');
-            if ($mode === 'match') check(str_contains($out, '108/108 reference tables compared; 0 differences'), 'All tables inspected without config/generators');
+            if ($mode === 'match') check(str_contains($out, '109/109 reference tables compared; 0 differences'), 'All tables inspected without config/generators');
             if ($mode === 'legacy') {
                 check(str_contains($out, 'aowow_config: 1 attribute differences') && str_contains($out, 'initial-schema drift'), 'Default output gives compact table totals without implying migration failure');
                 check(str_contains($out, 'column default: missing') === $debug, 'Debug output retains individual missing-column findings');
@@ -171,7 +171,7 @@ SQL;
     unlink($log); // CLI logging chooses a numbered sibling when the requested file exists.
     try {
         [$code, $out] = worker('match', ['--log='.$log]);
-        check($code === 0 && str_contains(file_get_contents($log), '108/108'), 'CLI log contains the validation summary');
+        check($code === 0 && str_contains(file_get_contents($log), '109/109'), 'CLI log contains the validation summary');
     } finally { unlink($log); }
     echo "PASS: $checks schema parser/read-only CLI checks\n";
 }
