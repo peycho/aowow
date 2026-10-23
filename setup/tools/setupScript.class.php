@@ -50,9 +50,18 @@ trait TrCustomData
 
         foreach ($dataById as $id => $data)
         {
-            if (DB::Aowow()->qry('UPDATE %n SET %a WHERE id = %i', '::'.$this->getName(), $data, $id) === null)
+            $flags = $data['cuFlags'] ?? null;
+            unset($data['cuFlags']);
+            if ($data && DB::Aowow()->qry('UPDATE %n SET %a WHERE id = %i', '::'.$this->getName(), $data, $id) === null)
             {
                 trigger_error('applying custom data to aowow_'.$this->getName().' entry #'.$id.' failed', E_USER_WARNING);
+                $ok = false;
+            }
+
+            // Custom flags add to generated/community flags; other fields still replace values.
+            if ($flags !== null && DB::Aowow()->qry('UPDATE %n SET `cuFlags` = `cuFlags` | %i WHERE id = %i', '::'.$this->getName(), $flags, $id) === null)
+            {
+                trigger_error('applying custom flags to aowow_'.$this->getName().' entry #'.$id.' failed', E_USER_WARNING);
                 $ok = false;
             }
         }
