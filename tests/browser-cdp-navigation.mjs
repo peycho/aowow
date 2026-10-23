@@ -21,6 +21,10 @@ const server = http.createServer(async (req, res) => {
         await new Promise(resolve => setTimeout(resolve, 400));
         res.setHeader('Content-Type', 'application/javascript'); res.end('window.navigationReady=true;'); return;
     }
+    if (req.url === '/late-menu') {
+        res.setHeader('Content-Type', 'text/html');
+        res.end('<!doctype html><script>addEventListener("load",()=>setTimeout(()=>{const a=document.createElement("a");a.id="late-menu";a.textContent="Browse";document.body.append(a);},500));</script>'); return;
+    }
     if (req.url === '/redirect') { res.writeHead(302, { Location: '/ready' }); res.end(); return; }
     if (req.url === '/download') {
         res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Disposition': 'attachment; filename="fixture.bin"' }); res.end('fixture'); return;
@@ -41,6 +45,13 @@ try {
     check(oldRequested, 'previous document has an outstanding resource');
     await page.goto(origin + '/delayed');
     check(await page.evaluate('window.navigationReady===true && !!document.querySelector("#ready")'), 'previous document load cannot finish navigation to a still-loading document');
+    await page.goto(origin + '/late-menu');
+    await page.waitFor(`!!document.querySelector('#late-menu')`, { description: 'the delayed menu button' });
+    check(await page.evaluate(`document.querySelector('#late-menu').textContent==='Browse'`), 'readiness waits for DOM initialization after the load event');
+    await assert.rejects(page.waitFor('false', { timeout: 50, description: 'missing fixture element' }), /Timed out waiting for: missing fixture element/);
+    ++checks;
+    await assert.rejects(page.waitFor('throw new Error("fixture script failure")'), /fixture script failure/);
+    ++checks;
     await page.goto(origin + '/redirect');
     check(await page.evaluate('location.pathname==="/ready" && !!document.querySelector("#ready")'), 'HTTP redirect waits for its destination');
     await page.goto(origin + '/ready#fragment');

@@ -46,6 +46,11 @@ export async function browser(binary = process.env.AOWOW_TEST_CHROME || 'google-
                 pending.set(id, { resolve, reject, timer }); socket.send(JSON.stringify({ id, method, params }));
             });
         }
+        async function evaluate(expression) {
+            const result = await call('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
+            if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
+            return result.result.value;
+        }
         await call('Page.enable'); await call('Runtime.enable');
         await call('Page.setLifecycleEventsEnabled', { enabled: true });
         return {
@@ -67,10 +72,18 @@ export async function browser(binary = process.env.AOWOW_TEST_CHROME || 'google-
                 }
                 await sleep(100);
             },
-            async evaluate(expression) {
-                const result = await call('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
-                if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
-                return result.result.value;
+            evaluate,
+            async waitFor(expression, { timeout = 10000, description = expression } = {}) {
+                const deadline = Date.now() + timeout;
+                do {
+                    try { if (await evaluate(expression) === true) return; }
+                    catch (error) {
+                        // Navigation can replace the execution context between polls.
+                        if (!error.message.startsWith('{') || !/Execution context was destroyed|Cannot find (?:default execution context|context with specified id)/i.test(error.message)) throw error;
+                    }
+                    await sleep(25);
+                } while (Date.now() < deadline);
+                throw new Error('Timed out waiting for: ' + description);
             },
             async viewport(width, mobile = width < 980) {
                 await call('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile });

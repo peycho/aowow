@@ -110,13 +110,17 @@ screenshots and physical-device acceptance; they do not measure field performanc
 For manual populated-site sampling, see the [performance guide](../docs/performance.md).
 
 `node tests/browser-cdp-navigation.mjs` runs before the responsive suite. Its
-12 real-browser checks cover a previous document finishing while the next
+15 real-browser checks cover a previous document finishing while the next
 request waits for headers, delayed destination scripts, redirects, same-document
 fragments, viewport changes and genuine navigation failures. The helper owns a
 blank test tab and matches load events to the navigation's frame/loader IDs
 instead of accepting an unrelated page-load event. Download aborts and dropped
 connections remain failures with the destination URL in the error; the tests
 also verify that subsequent navigation can succeed.
+Bounded readiness predicates wait for DOM work scheduled after the load event;
+missing elements time out and script errors remain failures. The responsive
+touch test deliberately delays destination menu creation, then waits for that
+button before testing long-menu positioning.
 
 The browser gate also runs `tests/seo-home-navigation.php` with the real jQuery,
 Menu and homepage script. It holds jQuery readiness until after the native load

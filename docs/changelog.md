@@ -8,6 +8,18 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-23 — Browser menu readiness regression
+
+The responsive touch test now waits for the destination document and its menu
+button after following a link. Previously it could position a menu against a
+missing button while the destination's ready callback was still pending. The
+fixture delays menu creation to reproduce that race. Bounded browser readiness
+checks retain timeouts and report script failures. Site assets are unchanged.
+
+The delayed fixture reproduces the original missing-offset exception without the
+wait. The browser gate passed with 1,061 responsive checks; the final readiness
+helper also passed all 15 navigation/readiness checks.
+
 ## 2026-10-23 — Guide categories and related guides
 
 Guide lists have localized category headings, default introductions and crawlable
