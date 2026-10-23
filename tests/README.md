@@ -1068,6 +1068,15 @@ pending revisions, three native URL forms, unrelated articles and longer IDs.
 The upgrade uses a deliberately different imported Lunar event ID, preserves
 guide metadata and pending work, and schedules related-reference rebuilding once.
 
+Help upgrade checks compare migrated markup, talent, stat-help and tooltip
+articles with the real fresh seed and preserve custom text, changed permissions,
+translations, other revisions, unrelated articles and pending setup work.
+Targeted content corrections retain surrounding custom text. Separate
+fixtures cover removal of forum entries from the four bundled error-page
+translations while preserving other revisions, custom pages and translations.
+The legacy article fixtures contain the bundled English help before migration
+`1792742400_04.sql`.
+
 An isolated MySQL 8.4 fixture was exercised with PHP 8.5.10 and Dibi 5.1.1. Tests
 use real SQL/DDL/transactions, triggers for statement/accounting/persistence
 failure, independent CLI processes, server named locks and a hard-killed updater.

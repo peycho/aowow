@@ -1,0 +1,126 @@
+[menu tab=2 path=2,13,7]Here we have quite a few nifty markup tags that users can insert into their comments and forum posts to improve the style and easily link to database entries! Many of these tags can easily inserted using the corresponding icon or dropdown menu found above the text box. We've put together this quick reference for all of these handy tags for you guys so you can get on your way to making high quality posts and comments!
+
+[h2]Formatting Tags[/h2]
+[h3]Bold[/h3]
+\[b]text[/b]
+
+[h3]Line break[/h3]
+\[br] -> inserts a line break.
+
+[h3]Code[/h3]
+\[code]text[/code] -> creates a block of text that ignores markup and uses a monospace font.
+
+[h3]Horizontal Rule[/h3]
+\[hr] -> creates a horizontal rule
+
+[h3]Italics[/h3]
+\[i]text[/i] -> [i]text[/i]
+
+[h3]Preformatted text[/h3]
+\[pre]text[/pre] -> shows text with all whitespace preserved in a monospace font, but allows markup
+
+[h3]Strikethrough[/h3]
+\[s]text[/s] -> [s]text[/s]
+
+[h3]Small text[/h3]
+\[small]text[/small] -> [small]text[/small]
+
+[h3]Subscript[/h3]
+\[sub]text[/sub] -> [sub]text[/sub]
+
+[h3]Superscript[/h3]
+\[sup]text[/sup] -> [sup]text[/sup]
+
+[h3]Underline[/h3]
+\[u]text[/u] -> [u]text[/u]
+
+[h2]Database Tags[/h2]
+
+
+[b]For all database tags:[/b]
+Optional attributes: site/domain (both work identically, only use one)
+Valid options are: en (default), cn, de, es, fr, ru.
+The purpose of these is to link to localized versions of items with the pretty db tags.
+[b]Example:[/b] \[achievement=3579 domain=ru] -> [achievement=3579 domain=ru] 
+
+[h3]Achievements[/h3]
+\[achievement=3579] -> [achievement=3579]
+
+[h3]Classes[/h3]
+\[class=11] -> [class=11]
+
+[h3]Events[/h3]
+\[event=1] -> [event=1]
+
+[h3]Factions[/h3]
+\[faction=749] -> [faction=749]
+
+[h3]Items[/h3]
+\[item=12345] -> [item=12345]
+
+To hide the icon: \[item=12345 icon=false] -> [item=12345 icon=false]
+
+[h3]Itemsets[/h3]
+\[itemset=699] -> [itemset=699]
+
+[h3]NPCs[/h3]
+\[npc=32906] -> [npc=32906]
+
+[h3]Objects[/h3]
+\[object=1733] -> [object=1733]
+
+[h3]Pets[/h3]
+\[pet=45] -> [pet=45]
+
+[h3]Quests[/h3]
+\[quest=7981] -> [quest=7981]
+
+[h3]Races[/h3]
+\[race=11] -> [race=11]
+
+[b]To specify the gender of the icon:[/b] \[race=11 gender=1] -> [race=11 gender=1] - 0 is male, 1 is female
+
+[h3]Skills[/h3]
+\[skill=171] -> [skill=171]
+
+[h3]Spells[/h3]
+\[spell=52398] -> [spell=52398]
+\[spell=31565 buff=true] -> [spell=31565 buff=true]
+
+[h3]Statistics[/h3]
+\[statistic=1076] -> [statistic=1076]
+
+[h3]Zones[/h3]
+\[zone=3959] -> [zone=3959]
+
+[h2]HTML Tags[/h2]
+
+[h3]Anchor[/h3]
+\[anchor=text] -> creates an anchor with the name "text" at this point.
+
+[h3]Ordered List[/h3]
+\[ol]\[li]list item[/li][/ol] -> [ol][li]list item[/li][/ol]
+
+[h3]Tables[/h3]
+[b]\[table][/b]
+Border: \[table border=2]
+Spacing: \[table cellspacing=2]
+Padding: \[table cellpadding=2]
+Width: \[table width=500px] - Valid units are px, em, %
+
+[b]\[tr][/b] - No attributes
+
+[b]\[td][/b]
+Align: \[td align=right] - Valid options are left, right, center, justify
+Vertical align: \[td valign=baseline] - Valid options are top, middle, bottom, baseline
+Column span: \[td colspan=2]
+Row span: \[td rowspan=2]
+Width: \[td width=500px] - Valid units are px, em, %
+
+[h3]Unordered List[/h3]
+\[ul]\[li]list item[/li][/ul] -> [ul][li]list item[/li][/ul]
+
+[h3]URLs[/h3]
+\[url=http://www.wowhead.com]Wowhead[/url] -> [url=http://www.wowhead.com]Wowhead[/url]
+\[url]http://www.wowhead.com[/url] -> [url]http://www.wowhead.com[/url]
+\[url=http://www.google.com rel=item=12345]Rel link[/url] -> [url=http://www.google.com rel=item=12345]Rel link[/url]

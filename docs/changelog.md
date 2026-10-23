@@ -8,6 +8,57 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-23 — Refresh help content and remove obsolete forum links
+
+The bundled `?help=markup-guide` article now documents grid tables and header
+cells, floor-specific maps, linked pins, tabbed locations, author permissions
+and the initial HTML fallback. Event examples distinguish game-event IDs from
+holiday IDs. Maps and tabs have both copyable markup and working example output.
+The ordinary external URL examples use Google over HTTPS; the original Google
+link with `rel=item=12345` is retained to demonstrate an item tooltip.
+
+Talent-calculator help replaces the obsolete external calculator link with the
+legacy URL formats accepted by Import and explains that local `?talent#...`
+build links are opened directly. The importer itself is unchanged.
+
+Stat-weighting help uses three named contact-form links instead of email labels.
+All eight acknowledgment names are retained; seven obsolete URLs are unlinked
+and the working Shadow Panther reference uses HTTPS. Obsolete internal forum
+destinations are removed from bundled help, four error-page translations and
+all six localized contribution panels. Help that asks readers to report issues
+points to the existing contact form.
+The comment-deletion tab refers to the guidelines on its own help page instead
+of linking to external Blizzard forum rules.
+
+The tooltips article drops the entire obsolete "Other resources" tab and its
+Wowhead integration links, plus the Joystiq promotion, screenshot and caption.
+The local widget instructions, advanced options and XML-feed tab are retained.
+
+Fresh installations include the corrected article content. Migration
+`1792742400_04.sql` refreshes only the exact original markup-help article and
+replaces the specific obsolete talent, stat-help, forum and tooltip fragments,
+preserving surrounding editorial text. Changed permissions, other revisions,
+custom pages and unrelated translations remain untouched.
+Run `php aowow --update` and invalidate application page caches after deployment.
+This content update needs no JavaScript or client asset rebuild.
+
+The disposable SQL gate passed, including 711 update checks. Six populated
+markup-help page browser samples passed with scripts enabled and disabled at 390/768/1440 px,
+checking copyable examples, grid headers, real floor images and linked pins,
+tab switching, the restored item tooltip, Google destinations and viewport bounds.
+The local upgrade preserved help metadata and every unrelated article checksum.
+Four talent-help browser samples passed with scripts enabled and disabled at
+390/1440 px. Both documented legacy import formats and opening their generated
+local shared-build links were also verified on the populated calculator.
+The link cleanup passed another 38 populated browser samples across help,
+localized error and contribution pages, with scripts enabled and disabled.
+All eight credit names remain, and the named contact links open the existing
+contact dialog.
+Four tooltips-page browser samples passed with scripts enabled and disabled at
+390/1440 px, including both remaining tabs and the enhanced local item example.
+Four comment-deletion browser samples passed at the same widths with scripts
+enabled and disabled, including direct navigation to the Deletion tab.
+
 ## 2026-10-23 — Correct bundled festival guide links and article associations
 
 Six event links across five bundled guides used holiday IDs instead of imported

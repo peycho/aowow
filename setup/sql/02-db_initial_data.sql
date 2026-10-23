@@ -76,7 +76,7 @@ UNLOCK TABLES;
 
 LOCK TABLES `aowow_dbversion` WRITE;
 /*!40000 ALTER TABLE `aowow_dbversion` DISABLE KEYS */;
-INSERT INTO `aowow_dbversion` VALUES (1792742400,3,NULL,'globaljs guidereferences');
+INSERT INTO `aowow_dbversion` VALUES (1792742400,4,NULL,'globaljs guidereferences');
 /*!40000 ALTER TABLE `aowow_dbversion` ENABLE KEYS */;
 UNLOCK TABLES;
 

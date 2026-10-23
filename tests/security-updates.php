@@ -613,6 +613,62 @@ CODE;
             check($db->selectCell('SELECT build FROM ::dbversion') === 'existing guidereferences', 'journal prevents repeated guide-reference scheduling');
         }
 
+        // Help is CMS-owned too: refresh the stock English article while
+        // retaining edits, other revisions/locales and the surrounding data.
+        $markupHelp = files(['1792742400_04.sql' => file_get_contents($root.'/setup/sql/updates/1792742400_04.sql')]);
+        foreach (['markup-guide' => 'markup-guide-legacy.txt', 'talent-calculator' => 'talent-help-legacy.json', 'stat-weighting' => 'stat-help-legacy.json', 'tooltips' => 'tooltips-legacy.json'] as $help => $fixture) {
+            foreach (['stock', 'edited', 'permissions'] as $state) {
+                resetDb();
+                preg_match('/CREATE TABLE `aowow_articles` \(.*?\) ENGINE=.*?;/s', file_get_contents($root.'/setup/sql/01-db_structure.sql'), $definition);
+                $db->nativeQuery($definition[0]);
+                preg_match('/^INSERT INTO `aowow_articles`.*;$/m', file_get_contents($root.'/setup/sql/03-db_initial_articles.sql'), $insert);
+                $db->nativeQuery($insert[0]);
+                $url = $help === 'tooltips' ? $help : 'help='.$help;
+                $fresh = $db->selectRow('SELECT * FROM ::articles WHERE url=%s AND locale=0 AND rev=0', $url);
+                $original = file_get_contents($root.'/tests/fixtures/'.$fixture);
+                if (str_ends_with($fixture, '.json')) $original = json_decode($original, true, 512, JSON_THROW_ON_ERROR)['article'];
+                $db->query('UPDATE ::articles SET article=%s,editAccess=%i WHERE url=%s AND locale=0 AND rev=0',
+                    $original.($state === 'edited' ? ' Custom help text' : ''), $state === 'permissions' ? 4 : 2, $url);
+                $db->query('INSERT INTO ::articles (locale,url,rev,editAccess,article) VALUES (2,%s,0,2,%s),(0,%s,1,2,%s)', $url, $original, $url, $original);
+                $before = $db->selectRow('SELECT * FROM ::articles WHERE url=%s AND locale=0 AND rev=0', $url);
+                $others = $db->selectAssoc('SELECT * FROM ::articles WHERE url IS NULL OR url<>%s OR locale<>0 OR rev<>0 ORDER BY type,typeId,locale,url,rev', $url);
+                $db->query("UPDATE ::dbversion SET `sql`='existing',build='globaljs'");
+                SqlUpdate::apply($db, $markupHelp);
+                $after = $db->selectRow('SELECT * FROM ::articles WHERE url=%s AND locale=0 AND rev=0', $url);
+                $expected = $state === 'stock' ? $fresh : $before;
+                if ($help !== 'markup-guide' && $state === 'edited') $expected['article'] = $fresh['article'].' Custom help text';
+                check($after === $expected, $help.' upgrade matches fresh content and preserves CMS edits/permissions: '.$state);
+                check($db->selectAssoc('SELECT * FROM ::articles WHERE url IS NULL OR url<>%s OR locale<>0 OR rev<>0 ORDER BY type,typeId,locale,url,rev', $url) === $others,
+                    $help.' preserves other locales, revisions and unrelated articles');
+                check($db->selectCell('SELECT `sql` FROM ::dbversion') === 'existing' && $db->selectCell('SELECT build FROM ::dbversion') === 'globaljs', 'help content update leaves pending setup work intact');
+                SqlUpdate::apply($db, $markupHelp);
+                check($db->selectRow('SELECT * FROM ::articles WHERE url=%s AND locale=0 AND rev=0', $url) === $after, $help.' journal replay preserves content');
+            }
+        }
+
+        resetDb();
+        preg_match('/CREATE TABLE `aowow_articles` \(.*?\) ENGINE=.*?;/s', file_get_contents($root.'/setup/sql/01-db_structure.sql'), $definition);
+        $db->nativeQuery($definition[0]);
+        foreach ([
+            0 => '[li]Feedback [url=?forums&board=1]forum[/url][/li]',
+            2 => '[li][url=?forums&board=1]Forum[/url] de feedback[/li]',
+            3 => '[li][url=?forums&board=1]Forum[/url] für Rückmeldungen[/li]',
+            6 => '[li]Foro del [url=?forums&board=1]feedback[/url].[/li]'
+        ] as $locale => $body)
+            $db->query("INSERT INTO ::articles (locale,url,article) VALUES (%i,'page-not-found',%s)", $locale, 'Before'.$body.'After');
+        $db->query("INSERT INTO ::articles (locale,url,rev,article) VALUES (0,'page-not-found',1,'[url=?forums&board=1]Pending[/url]'),(8,'page-not-found',0,'[url=?forums&board=1]Custom translation[/url]'),(0,'custom-page',0,'[url=?forums&board=1]Custom link[/url]')");
+        $deletion = 'Any comment that does not abide by the same [forumrules] will be deleted by a moderator.';
+        $db->query("INSERT INTO ::articles (locale,url,rev,article) VALUES (0,'help=commenting-and-you',0,%s),(2,'help=commenting-and-you',0,%s),(0,'help=commenting-and-you',1,%s)", 'Before'.$deletion.'After', $deletion, $deletion);
+        SqlUpdate::apply($db, $markupHelp);
+        foreach ([0,2,3,6] as $locale)
+            check($db->selectCell("SELECT article FROM ::articles WHERE url='page-not-found' AND locale=%i AND rev=0", $locale) === 'BeforeAfter', 'obsolete forum entry removed without losing surrounding localized text: '.$locale);
+        check($db->selectCell("SELECT article FROM ::articles WHERE url='page-not-found' AND locale=0 AND rev=1") === '[url=?forums&board=1]Pending[/url]', 'forum cleanup preserves other revisions');
+        check($db->selectCell("SELECT article FROM ::articles WHERE url='page-not-found' AND locale=8") === '[url=?forums&board=1]Custom translation[/url]', 'forum cleanup preserves an unrelated translation');
+        check($db->selectCell("SELECT article FROM ::articles WHERE url='custom-page'") === '[url=?forums&board=1]Custom link[/url]', 'forum cleanup leaves custom pages untouched');
+        check($db->selectCell("SELECT article FROM ::articles WHERE url='help=commenting-and-you' AND locale=0 AND rev=0") === 'BeforeComments that do not follow the guidelines on this page may be deleted by a moderator.After', 'comment deletion uses local guidelines and preserves surrounding custom text');
+        check($db->selectCell("SELECT article FROM ::articles WHERE url='help=commenting-and-you' AND locale=2") === $deletion, 'comment-deletion correction preserves translations');
+        check($db->selectCell("SELECT article FROM ::articles WHERE url='help=commenting-and-you' AND locale=0 AND rev=1") === $deletion, 'comment-deletion correction preserves other revisions');
+
         echo "\n$checks update checks passed.\n";
     }
     finally { cleanup($temp); }
