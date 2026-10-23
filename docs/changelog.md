@@ -8,6 +8,15 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-23 — Correct visitor page title escaping
+
+What's New and other pages outside the database title policy now display
+apostrophes and ampersands correctly in browser, Open Graph and RSS titles.
+The shared title renderer decodes the response's existing HTML escaping before
+each output context escapes it, including cached pages. Regression checks cover
+all six locales, literal entity text and attempts to escape title/attribute contexts.
+No database or asset rebuild is required.
+
 ## 2026-10-23 — Refresh visitor information pages
 
 The bundled `?aboutus` placeholder is replaced with a 679-word introduction to

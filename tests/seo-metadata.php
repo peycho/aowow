@@ -80,6 +80,17 @@ namespace {
             check($xp->query('//meta[@name="viewport"]')->item(0)->getAttribute('content') === 'width=device-width, initial-scale=1', 'cached viewport follows the current responsive policy');
             check($xp->query('//link[@type="application/rss+xml"]')->item(0)->getAttribute('title') === $expected, 'RSS title attribute uses the same escaped title');
         }
+        // TemplateResponse::display() escapes title parts before PageTemplate
+        // receives them, including on routes outside the database title policy.
+        $plain = [Lang::main('moreTitles', 'whats-new'), 'Fixture & Co'];
+        foreach ([false, true] as $cache) {
+            [$xp] = head('whats-new&locale='.$value, ['title' => Aowow\Util::htmlEscape($plain),
+                'metaTags' => [['property' => 'og:title', 'content' => 'OLD']], 'rss' => '/?rss'], $cache);
+            $expected = implode(' - ', $plain);
+            check($xp->query('//title')->item(0)->textContent === $expected, 'localized visitor title escapes once, including cache hits');
+            check($xp->query('//meta[@property="og:title"]')->item(0)->getAttribute('content') === $expected, 'visitor social title has readable punctuation');
+            check($xp->query('//link[@type="application/rss+xml"]')->item(0)->getAttribute('title') === $expected, 'visitor RSS title escapes once');
+        }
         // Validated response state, not the raw page query, controls the label.
         $data['pagination']['page'] = 1;
         [$first] = head('items&page=2&locale='.$value, $data);
@@ -117,6 +128,19 @@ namespace {
     [$xp, $html] = head('item=1', ['title' => [$attack, 'Item', 'Fixture & Co'], 'metaTags' => [['property' => 'og:title', 'content' => $attack]], 'rss' => '/?rss']);
     check($xp->query('//img')->length === 0 && !str_contains($html, '<script>ATTACK'), 'title and RSS values cannot break out of their HTML contexts');
     check(str_contains($xp->query('//title')->item(0)->textContent, $attack), 'hostile-looking literal entity names remain text');
+    foreach (['whats-new', 'search=Entity', 'guide=1&rev=2'] as $query) {
+        foreach ([false, true] as $cache) {
+            $topic = $attack.' &apos; &#039; &lt;literal&gt;';
+            [$xp, $html] = head($query, ['title' => Aowow\Util::htmlEscape([$topic, 'Fixture & Co']),
+                'metaTags' => [['property' => 'og:title', 'content' => 'OLD']], 'rss' => '/?rss',
+                'seo' => ['index' => false]], $cache);
+            $expected = $topic.' - Fixture & Co';
+            check($xp->query('//title')->item(0)->textContent === $expected, 'excluded title preserves literal entity text without recursive decoding');
+            check($xp->query('//meta[@property="og:title"]')->item(0)->getAttribute('content') === $expected &&
+                $xp->query('//link[@type="application/rss+xml"]')->item(0)->getAttribute('title') === $expected, 'excluded social and RSS titles agree');
+            check($xp->query('//img')->length === 0 && !str_contains($html, '<script>ATTACK'), 'decoded excluded titles cannot escape their HTML contexts');
+        }
+    }
     [$xp] = head('search=Entity', ['title' => ['Search', 'Fixture & Co']]);
     check($xp->query('//title')->item(0)->textContent === 'Search - Fixture & Co', 'excluded routes retain their existing title convention');
     [$xp] = head('guide=1&rev=2', ['title' => ['Historical revision', 'Guides', 'Fixture & Co'], 'seo' => ['index' => false]]);

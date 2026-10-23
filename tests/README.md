@@ -36,10 +36,12 @@ schema on public pages and any schema on excluded search, draft and revision pag
 
 `php tests/seo-metadata.php` exercises the real metadata builder, article markup,
 head template and serialized page-cache path across all six supported locales.
-Its 133 checks cover descriptive titles, validated page labels, matching Open
+Its 187 checks cover descriptive titles, validated page labels, matching Open
 Graph/RSS titles, server-rendered manual homepage titles, manual-description
 priority and length, article/factual fallback, Unicode summaries, preserved
-literal text, cached viewport refresh and escaping against title/attribute breakout. It runs in the PHP
+literal text, cached viewport refresh and escaping against title/attribute breakout.
+Visitor and excluded-page titles also cover pre-escaped response values, apostrophes,
+literal entity text and cache hits. It runs in the PHP
 gate with synthetic database values and no application credentials.
 
 Batch 1B extends that suite with English canonical consolidation, reciprocal

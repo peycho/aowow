@@ -299,7 +299,9 @@ class PageTemplate
         parse_str($_SERVER['QUERY_STRING'] ?? '', $query);
         $route = array_key_first($query) ?? 'home';
         if (!$this->isIndexable() || !in_array($route, [...self::SEO_DATABASE_ROUTES, 'home', 'guide', 'guides'], true))
-            return implode(' - ', $this->title ?? []);
+            // Response title parts are already HTML-escaped. Return plain text
+            // here so the head, social and RSS renderers escape exactly once.
+            return html_entity_decode(implode(' - ', $this->title ?? []), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         require_once __DIR__.'/seometadata.class.php';
         return \Aowow\SeoMetadata::title($this->title ?? [], (string)Cfg::get('NAME'),
