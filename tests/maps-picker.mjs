@@ -17,6 +17,7 @@ for (const fixture of fixtures) {
     const element = tag => ({ tag, children: [], style: {}, value: '', selectedIndex: 0 });
     const context = {
         pickerMarker: 0,
+        Image: class {},
         g_staticUrl: '/static',
         location: { href: 'https://example.test/?maps=2557.1:102203' },
         $WH: {

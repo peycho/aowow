@@ -71,6 +71,7 @@ PY
     php tests/security-item-tabs.php --fixtures | node tests/security-item-tabs.mjs
     php tests/setup-maps.php --fixtures | node tests/setup-maps.mjs
     php tests/maps-picker.php --fixtures | node tests/maps-picker.mjs
+    node tests/maps-fallback.mjs
     node tests/security-private-uploads.mjs
     node tests/security-guide-uploads.mjs
     node tests/security-password-policy.mjs
@@ -101,6 +102,7 @@ PY
     python3 tests/seo-rendering-browser.py "$fixture_root/seo-rendering.html" "$browser"
     python3 tests/seo-rendering-browser.py "$fixture_root/seo-home-navigation.html" "$browser" home
     node tests/browser-cdp-navigation.mjs
+    node tests/maps-fallback.mjs --browser
     node tests/seo-responsive.mjs
     node tests/seo-performance.mjs
     node tests/seo-structured-data.mjs
