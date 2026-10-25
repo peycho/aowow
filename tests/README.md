@@ -350,6 +350,20 @@ image URLs. They run in the PHP and JavaScript CI groups without a
 configured application database. Shared image detection is also exercised by
 the existing map-generation/zone-page suite.
 
+The shared renderer's image-error fallback is checked separately:
+
+```sh
+node tests/maps-fallback.mjs
+node tests/maps-fallback.mjs --browser
+```
+
+These checks cover all six supported locales, localized image precedence,
+English fallback for missing base maps and individual floors, explicit locale
+overrides, overlays, independent mapper instances and late failures after zone
+or floor changes. The browser checks serve real images and HTTP 404 responses
+to Chromium; missing English images must not cause retry loops. They run in the
+JavaScript and browser CI groups, respectively.
+
 ## Game text and SimpleHTML
 
 ```sh

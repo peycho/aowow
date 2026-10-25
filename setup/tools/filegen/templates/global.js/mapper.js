@@ -362,6 +362,31 @@ Mapper.prototype = {
         this.span.style.backgroundSize = 'contain';
      // aowow - custom end
 
+        // CSS backgrounds have no error event. Probe the same image so every
+        // mapper, including spawn maps and popups, can fall back per floor.
+        if (this.mapImage)
+            this.mapImage.onload = this.mapImage.onerror = null;
+        this.mapImage = null;
+
+        if (type != 'enus')
+        {
+            var image = this.mapImage = new Image();
+            image.onerror = (function() {
+                // A late failure must not replace a newly selected zone/floor.
+                if (this.mapImage !== image)
+                    return;
+
+                this.span.style.background = 'url(' + g_staticUrl + '/images/wow/maps/enus/' + Mapper.sizes[2][2] + '/' + map + '.jpg)';
+                this.span.style.backgroundSize = 'contain';
+                this.mapImage = null;
+            }).bind(this);
+            image.onload = (function() {
+                if (this.mapImage === image)
+                    this.mapImage = null;
+            }).bind(this);
+            image.src = g_staticUrl + '/images/wow/maps/' + type + '/' + Mapper.sizes[2][2] + '/' + map + '.jpg';
+        }
+
         if (this.overlay)
             this.overlaySpan.style.background = 'url(' + g_staticUrl + '/images/wow/maps/overlay/' + Mapper.sizes[this.zoom][2] + '/' + map + '.png)';
 

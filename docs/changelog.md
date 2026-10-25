@@ -8,6 +8,19 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-25 — Fall back to English map images
+
+The shared map renderer now uses the matching English image when a localized
+image cannot load. This covers NPC and object spawn maps, quest maps, embedded
+maps, map popups and missing individual dungeon floors. Available localized
+images still take precedence; names, pins, overlays and floor selection retain
+their existing behavior. Late image failures cannot replace a newly selected
+zone or floor, and a missing English image does not trigger repeated retries.
+
+After deploying, rebuild generated JavaScript with `php aowow --build=globaljs`
+and refresh any cached copy of `static/js/global.js`. No duplicated map images
+or database changes are required.
+
 ## 2026-10-23 — Correct visitor page title escaping
 
 What's New and other pages outside the database title policy now display
