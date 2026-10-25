@@ -50,6 +50,7 @@ PY
     php tests/seo-metadata.php
     php tests/seo-structured-data.php
     php tests/seo-guides.php
+    php tests/seo-guides.php --cache
     php tests/seo-guide-discovery.php
     php tests/seo-locale.php
     php tests/seo-rendering.php
@@ -147,6 +148,7 @@ PY
     AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/seo-guide-discovery-sql.php
     AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/seo-pagination-sql.php
     AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/seo-sitemaps-sql.php
+    AOWOW_TEST_DATABASE=aowow_security_test_seo php tests/cache-invalidation-sql.php
     ;;
   apache)
     # Exercise both hosting permission sets, with and without inherited negotiation.

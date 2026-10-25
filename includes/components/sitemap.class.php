@@ -18,6 +18,7 @@ class Sitemap
     private const int MAX_BYTES   = 50 * 1024 * 1024;
 
     public static int $maxPage = 0;
+    private static ?string $publicationKey = null;
 
     // Area triggers require staff access and must never be advertised to guests.
     private const array PAGES = [
@@ -36,6 +37,38 @@ class Sitemap
 
     public static function generate(string $page, int $offset, ?Locale $locale = null) : ?string
     {
+        require_once __DIR__.'/cachestore.class.php';
+        if ($page !== '' && $page !== 'special' && $page !== 'guide' &&
+            (!isset(self::PAGES[$page]) || !self::enabled($page)))
+        {
+            self::$maxPage = 0;
+            return null;
+        }
+        $locale ??= Locale::getFallback();
+        self::$maxPage = 0;
+        self::$publicationKey = null;
+        if (!$locale->validate() || $offset < 1 || !CacheStore::enabled())
+            return self::build($page, $offset, $locale);
+        if (in_array($page, ['', 'special', 'guide'], true))
+        {
+            require_once __DIR__.'/guidediscovery.class.php';
+            self::$publicationKey = GuideDiscovery::publicationKey();
+            if (self::$publicationKey === null)
+                return self::build($page, $offset, $locale);
+        }
+        $result = CacheStore::remember('catalog', ['sitemap', $page, $offset, $locale->value, self::$publicationKey,
+            CacheStore::version('guides')], static function () use ($page, $offset, $locale) {
+                $xml = self::build($page, $offset, $locale);
+                return $xml === null ? null : ['xml' => $xml, 'pages' => self::$maxPage];
+            });
+        if ($result === null)
+            return null;
+        self::$maxPage = $result['pages'];
+        return $result['xml'];
+    }
+
+    private static function build(string $page, int $offset, ?Locale $locale = null) : ?string
+    {
         self::$maxPage = 0;
         if ($page !== '' && $page !== 'special' && $page !== 'guide' &&
             (!isset(self::PAGES[$page]) || !self::enabled($page)))
@@ -53,7 +86,10 @@ class Sitemap
             return $offset === 1 ? self::special($locale) : null;
         }
 
-        $pages = (int)ceil(self::count($page, $locale) / self::MAX_ENTRIES);
+        $count = self::count($page, $locale);
+        if ($count === null)
+            return null;
+        $pages = (int)ceil($count / self::MAX_ENTRIES);
         self::$maxPage = $pages;
         if ($offset > $pages)
             return null;
@@ -66,6 +102,8 @@ class Sitemap
                 FROM ::guides g JOIN ::articles a ON a.`type` = %i AND a.`typeId` = g.`id` AND a.`rev` = g.`rev`
                 WHERE %sql ORDER BY g.`id`, a.`locale` LIMIT %i, %i',
                 Type::GUIDE, self::guideWhere($locale), $start, self::MAX_ENTRIES);
+            if ($rows === null)
+                return null;
             foreach ($rows as $row)
                 self::entry($root, 'guide', GuideMgr::publicUrlToken($row['url'] ?? '', $row['id']),
                     $locale, (int)$row['approveDate']);
@@ -78,6 +116,8 @@ class Sitemap
             // typo for screenshots/videos and the multiplicative join workload.
             $ids = DB::Aowow()->selectCol('SELECT `id` FROM %n WHERE %sql ORDER BY `id` LIMIT %i, %i',
                 self::PAGES[$page][0], self::recordWhere(), $start, self::MAX_ENTRIES);
+            if ($ids === null)
+                return null;
             foreach ($ids as $id)
                 self::entry($root, $page, $id, $locale);
         }
@@ -102,13 +142,18 @@ class Sitemap
         return 'g.`status` <> '.GuideMgr::STATUS_ARCHIVED.' AND g.`rev` > 0 AND a.`locale` = '.$locale->value;
     }
 
-    private static function count(string $page, Locale $locale) : int
+    private static function count(string $page, Locale $locale) : ?int
     {
-        if ($page === 'guide')
-            return (int)DB::Aowow()->selectCell('SELECT COUNT(*) FROM ::guides g
-                JOIN ::articles a ON a.`type` = %i AND a.`typeId` = g.`id` AND a.`rev` = g.`rev` WHERE %sql',
-                Type::GUIDE, self::guideWhere($locale));
-        return (int)DB::Aowow()->selectCell('SELECT COUNT(*) FROM %n WHERE %sql', self::PAGES[$page][0], self::recordWhere());
+        $count = CacheStore::remember($page === 'guide' ? 'guides' : 'catalog',
+            ['sitemap-count', $page, $page === 'guide' ? [$locale->value, self::$publicationKey] : null],
+            static function () use ($page, $locale) {
+                if ($page === 'guide')
+                    return DB::Aowow()->selectCell('SELECT COUNT(*) FROM ::guides g
+                        JOIN ::articles a ON a.`type` = %i AND a.`typeId` = g.`id` AND a.`rev` = g.`rev` WHERE %sql',
+                        Type::GUIDE, self::guideWhere($locale));
+                return DB::Aowow()->selectCell('SELECT COUNT(*) FROM %n WHERE %sql', self::PAGES[$page][0], self::recordWhere());
+            });
+        return $count === null ? null : (int)$count;
     }
 
     private static function index() : ?string
@@ -123,7 +168,10 @@ class Sitemap
             {
                 if (!self::enabled($page))
                     continue;
-                $pages = (int)ceil(self::count($page, $locale) / self::MAX_ENTRIES);
+                $count = self::count($page, $locale);
+                if ($count === null)
+                    return null;
+                $pages = (int)ceil($count / self::MAX_ENTRIES);
                 for ($i = 1; $i <= $pages; $i++)
                     self::location($root->addChild('sitemap'), self::url('sitemap', $page, $locale, ['page' => $i]));
             }
@@ -142,13 +190,22 @@ class Sitemap
         // Bounded browse roots, not arbitrary filter permutations. Each root
         // leads to the category navigation and server-rendered pagination.
         foreach (self::PAGES as $page => [, $route])
-            if (self::enabled($page) && self::count($page, $locale))
+        {
+            if (!self::enabled($page))
+                continue;
+            $count = self::count($page, $locale);
+            if ($count === null)
+                return null;
+            if ($count)
                 self::entry($root, $route, '', $locale);
+        }
 
         // Guide lists filter on the guide's language, unlike its detail page.
         $categories = DB::Aowow()->selectCol('SELECT DISTINCT g.`category` FROM ::guides g
             JOIN ::articles a ON a.`type` = %i AND a.`typeId` = g.`id` AND a.`rev` = g.`rev`
             WHERE %sql AND g.`locale` = %i ORDER BY g.`category`', Type::GUIDE, self::guideWhere($locale), $locale->value);
+        if ($categories === null)
+            return null;
         if ($categories)
             self::entry($root, 'guides', '', $locale);
         foreach ($categories as $category)

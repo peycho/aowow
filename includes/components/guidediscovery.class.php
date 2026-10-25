@@ -114,6 +114,25 @@ final class GuideDiscovery
 
     public static function related(int $type, int $id, Locale $locale, int $revision = 0) : array
     {
+        require_once __DIR__.'/cachestore.class.php';
+        if (!CacheStore::enabled() || ($publication = self::publicationKey()) === null)
+            return self::relatedRows($type, $id, $locale, $revision) ?? [];
+        return CacheStore::remember('guides', ['related', $type, $id, $locale->value, $revision, $publication],
+            static fn() => self::relatedRows($type, $id, $locale, $revision)) ?? [];
+    }
+
+    /** A small live metadata read is an access boundary, including after out-of-band withdrawals. */
+    public static function publicationKey() : ?string
+    {
+        $rows = DB::Aowow()->selectAssoc('SELECT g.`id`, g.`rev`, g.`status`, g.`locale`, g.`url`, g.`title`,
+            g.`category`, g.`approveDate`, a.`locale` AS `articleLocale` FROM ::guides g
+            JOIN ::articles a ON a.`type` = %i AND a.`typeId` = g.`id` AND a.`rev` = g.`rev`
+            WHERE g.`rev` > 0 AND g.`status` != %i ORDER BY g.`id`, a.`locale`', Type::GUIDE, GuideMgr::STATUS_ARCHIVED);
+        return $rows === null ? null : hash('sha256', serialize($rows));
+    }
+
+    private static function relatedRows(int $type, int $id, Locale $locale, int $revision) : ?array
+    {
         if ($id <= 0 || (!in_array($type, self::ROUTES, true) && $type !== Type::GUIDE))
             return [];
         $join = '';
@@ -133,7 +152,9 @@ final class GuideDiscovery
             JOIN ::articles a ON a.`type` = %i AND a.`typeId` = g.`id` AND a.`rev` = r.`rev` AND a.`locale` = r.`locale`
             WHERE %sql AND r.`locale` = %i AND g.`rev` > 0 AND g.`status` != %i AND (g.`status` = %i OR g.`rev` > 0)
             GROUP BY g.`id`, g.`url`, g.`title`, g.`status` ORDER BY `matches` DESC, g.`id` ASC LIMIT 6',
-            $join, Type::GUIDE, $where, $locale->value, GuideMgr::STATUS_ARCHIVED, GuideMgr::STATUS_APPROVED) ?? [];
+            $join, Type::GUIDE, $where, $locale->value, GuideMgr::STATUS_ARCHIVED, GuideMgr::STATUS_APPROVED);
+        if ($rows === null)
+            return null;
         foreach ($rows as &$row)
         {
             // Free-text guide metadata is not revisioned, even for staff readers.

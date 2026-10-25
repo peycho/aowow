@@ -8,7 +8,7 @@ if (!defined('AOWOW_REVISION'))
 
 class GuidePowerResponse extends TextResponse implements ICache
 {
-    use TrCache, TrTooltip;
+    use TrCache, TrTooltip { TrCache::loadCache as private loadTooltipCache; }
 
     private const string POWER_TEMPLATE = '$WowheadPower.registerGuide(%s, %d, %s);';
 
@@ -21,6 +21,29 @@ class GuidePowerResponse extends TextResponse implements ICache
     );
 
     private string $url = '';
+    private ?GuideList $guide = null;
+    private string $publicationCacheKey = '';
+
+    public function getCacheKeyComponents() : array
+    {
+        return [$this->type, $this->typeId, User::$groups, $this->publicationCacheKey];
+    }
+
+    public function loadCache(mixed &$fromCache) : bool
+    {
+        $this->guide = new GuideList([['id', $this->typeId]]);
+        require_once __DIR__.'/../../includes/components/cachestore.class.php';
+        if (!$this->guide->error && $this->guide->canBeViewed() && CacheStore::enabled() &&
+            ($epoch = CacheStore::version('guides')))
+        {
+            $fields = [];
+            foreach (['status', 'rev', 'name', 'title', 'description', 'locale', 'cuFlags'] as $field)
+                $fields[$field] = $this->guide->getField($field);
+            $this->publicationCacheKey = hash('sha256', serialize([$epoch, $this->url, $fields]));
+            $this->cacheType = CACHE_TYPE_TOOLTIP;
+        }
+        return $this->loadTooltipCache($fromCache);
+    }
 
     public function __construct(string $idOrName)
     {
@@ -43,7 +66,7 @@ class GuidePowerResponse extends TextResponse implements ICache
     {
         $opts = [];
         if ($this->typeId)
-            if (!($guide = new GuideList(array(['id', $this->typeId])))->error && $guide->canBeViewed())
+            if (!($guide = $this->guide ?? new GuideList(array(['id', $this->typeId])))->error && $guide->canBeViewed())
             {
                 $approved = $guide->getField('status') === GuideMgr::STATUS_APPROVED;
                 $name = $approved ? $guide->getField('name', true) : Lang::game('guide').' #'.$this->typeId;

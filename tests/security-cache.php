@@ -36,6 +36,7 @@ namespace {
     require __DIR__.'/../includes/components/frontend/tabs.class.php';
     require __DIR__.'/../includes/components/frontend/markup.class.php';
     require __DIR__.'/../includes/components/frontend/infoboxmarkup.class.php';
+    require __DIR__.'/../includes/components/frontend/tooltip.class.php';
     require __DIR__.'/../includes/components/response/baseresponse.class.php';
     require __DIR__.'/../includes/components/pagetemplate.class.php';
     require __DIR__.'/../includes/components/cacheenvelope.class.php';
@@ -63,9 +64,11 @@ namespace {
     class Memcached {
         public const int OPT_COMPRESSION = 1;
         public static array $options = [];
+        public static int $writes = 0;
         public function setOption(int $key, mixed $value) : bool { self::$options[$key] = $value; return true; }
         public function addServer(string $host, int $port) : bool { return true; }
         public function set(string $key, string $data, int $expiry) : bool {
+            ++self::$writes;
             $state = json_decode(file_get_contents($GLOBALS['stateFile']), true);
             $state[$key] = ['flags' => 0, 'data' => base64_encode($data), 'expiry' => $expiry];
             file_put_contents($GLOBALS['stateFile'], json_encode($state)); return true;
@@ -230,6 +233,60 @@ namespace {
             [$exit, $out, $error] = child([$mode]);
             check($exit === 0 && str_contains($out, 'PASS: 3') && $error === '', 'unconfigured/invalid key installation fails closed');
         }
+        // Actual tooltip objects must replay as JavaScript, not rejected objects.
+        Aowow\Cfg::$mode = CACHE_MODE_FILECACHE;
+        $tooltip = new Aowow\Tooltip('register(%s, %d, %s);', 1, ['name' => 'Fixture']);
+        (new CacheFixture)->saveCache($tooltip);
+        check((new CacheFixture)->loadCache($result) && $result === (string)$tooltip, 'tooltip object is stored as replayable JavaScript');
+
+        foreach ([CACHE_MODE_FILECACHE, CACHE_MODE_MEMCACHED] as $mode) {
+            Aowow\Cfg::$mode = $mode;
+            $calls = 0;
+            $load = static function () use (&$calls) { ++$calls; return ['zero' => 0, 'empty' => [], 'html' => '<b>Safe</b>']; };
+            $identity = ['data-fixture', $mode];
+            $first = Aowow\CacheStore::remember('catalog', $identity, $load);
+            check(Aowow\CacheStore::remember('catalog', $identity, $load) === $first && $calls === 1, 'data cache reuses arrays, zero and empty values on each backend');
+            $epoch = Aowow\CacheStore::version('catalog');
+            Aowow\CacheStore::invalidate('guides');
+            check(Aowow\CacheStore::version('catalog') === $epoch, 'unrelated guide changes preserve catalog data');
+            Aowow\CacheStore::invalidate('catalog');
+            Aowow\CacheStore::remember('catalog', $identity, $load);
+            check($calls === 2, 'scope invalidation makes the next read load current data');
+            Aowow\CacheStore::transaction(123, true);
+            Aowow\CacheStore::remember('catalog', $identity, $load);
+            Aowow\CacheStore::transaction(123, false);
+            Aowow\CacheStore::remember('catalog', $identity, $load);
+            check($calls === 3, 'transaction reads bypass storage without replacing the committed entry');
+            $nulls = 0;
+            $failure = static function () use (&$nulls) { ++$nulls; return null; };
+            Aowow\CacheStore::remember('catalog', ['failure', $mode], $failure);
+            Aowow\CacheStore::remember('catalog', ['failure', $mode], $failure);
+            check($nulls === 2, 'failed loads are never cached as successful empty results');
+            $races = 0;
+            $race = static function () use (&$races) { ++$races; Aowow\CacheStore::invalidate('content'); return 'old generation'; };
+            Aowow\CacheStore::remember('content', ['race', $mode], $race);
+            check(Aowow\CacheStore::remember('content', ['race', $mode], static fn() => 'new generation') === 'new generation', 'an invalidation during loading cannot publish stale data');
+        }
+        $globals = [3 => ['g_items', [1 => ['name' => 'Sword']]]];
+        $markup = new Aowow\Markup('[b]Fragment[/b] [item=1]', ['allow' => Aowow\Markup::CLASS_STAFF]);
+        $html = $markup->renderHtml($globals); $writes = Memcached::$writes;
+        check($markup->renderHtml($globals) === $html && Memcached::$writes === $writes, 'warm markup reuses the cached HTML without another store');
+        $globals[3][1][1]['name'] = 'Updated sword';
+        check(str_contains($markup->renderHtml($globals), 'Updated sword') && Memcached::$writes > $writes, 'reference-name changes cannot replay an old rendered label');
+        $markup->append(' appended text');
+        check(str_contains($markup->renderHtml($globals), 'appended text'), 'markup mutations invalidate fragment identity');
+        $private = new Aowow\Markup('[b]Private preview[/b]', ['_cacheHtml' => false]);
+        $writes = Memcached::$writes; $private->renderHtml(); $private->renderHtml();
+        check(Memcached::$writes === $writes && !array_key_exists('_cacheHtml', $private->jsonSerialize()), 'private previews bypass shared fragments and internal options stay out of JavaScript');
+        $facts = new Aowow\InfoboxMarkup(['Static fact'], []);
+        $facts->renderHtml(); $writes = Memcached::$writes;
+        $facts->renderHtml();
+        check(Memcached::$writes === $writes, 'static quick facts reuse cached HTML');
+        $facts->addItem('Live views: 123'); $writes = Memcached::$writes;
+        check(str_contains($facts->renderHtml(), '123') && Memcached::$writes === $writes, 'live quick-fact hooks render fresh counters without filling persistent slots');
+        $list = new Aowow\Listview(['id' => 'cache-list', 'name' => 'Sources', 'data' => [['id' => 1, 'name' => 'Source']]], 'npc');
+        $html = $list->renderHtml(); $writes = Memcached::$writes;
+        check($list->renderHtml() === $html && Memcached::$writes === $writes, 'list fallback HTML is reused on warm rendering');
         echo "PASS: $checks signed cache/template/raw-protocol checks\n";
     }
     finally {

@@ -2,9 +2,11 @@
 
 namespace Aowow {
     class Cfg {
+        public static int $mode = 0;
+        public static string $directory = '';
         public static function get(string $key) : mixed { return match ($key) {
             'NAME' => 'Fixture', 'HOST_URL' => 'https://fixture.example', 'STATIC_URL' => 'https://static.fixture.example',
-            'LOCALES' => 0x15D, default => 0
+            'LOCALES' => 0x15D, 'CACHE_MODE' => self::$mode, 'CACHE_DECAY' => 604800, 'CACHE_DIR' => self::$directory, default => 0
         }; }
         public static function applyToString(string $text, bool $formatNumbers = true) : string { return $text; }
     }
@@ -24,6 +26,7 @@ namespace {
         fwrite(STDERR, "Use only the disposable aowow_security_test_seo database.\n"); exit(1);
     }
     define('AOWOW_REVISION', 75); define('CLI', false); define('CLI_HAS_E', false); define('OS_WIN', false);
+    define('AOWOW_CACHE_KEY', str_repeat('22', 32));
     chdir(dirname(__DIR__)); $root = getcwd();
     require 'includes/libs/autoload.php';
     foreach (['includes/defines.php', 'includes/database.php', 'includes/locale.class.php', 'includes/type.class.php', 'includes/utilities.php',
@@ -147,6 +150,18 @@ namespace {
             check(!str_contains($html, 'SECRET_DRAFT') && !str_contains($html, 'href="?npc='), 'invalid page exposes no fallback result rows');
         }
         check(!str_contains(file_get_contents($log), 'Fatal error'), 'SQL/HTTP pagination completes without runtime failures');
+        Aowow\Cfg::$directory = require __DIR__.'/fixtures/cache-directory.php';
+        Aowow\Cfg::$mode = 1;
+        $counts = 0;
+        $db->onEvent[] = static function (Dibi\Event $event) use (&$counts) : void {
+            if (str_starts_with($event->sql, 'SELECT COUNT(*) FROM (')) ++$counts;
+        };
+        foreach ([1, 2, 3] as $page)
+            new PageList([['published', 1]], ['pagination' => ['page' => $page, 'size' => 50]]);
+        check($counts === 1, 'different category pages share one cached filtered total');
+        $db->query('UPDATE ::seo_pages SET published = 0 WHERE id = 1');
+        $list = new PageList([['published', 1]], ['pagination' => ['page' => 1, 'size' => 50]]);
+        check($counts === 2 && $list->getMatches() === 150, 'catalog writes invalidate cached totals immediately');
         echo "PASS: $checks real SQL and HTTP category pagination checks\n";
     }
     catch (Throwable $error) { if ($log) fwrite(STDERR, file_get_contents($log)); throw $error; }

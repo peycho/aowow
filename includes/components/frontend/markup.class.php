@@ -167,6 +167,7 @@ class Markup implements \JsonSerializable
     private ?int    $dbpage      = null;                    // js:bool; set on db type detail pages; adds article edit links to admin menu
 
     protected string $__text;
+    protected bool $_cacheHtml = true;
 
     private string $__parent = 'article-generic';
 
@@ -227,7 +228,12 @@ class Markup implements \JsonSerializable
         };
         if ($this->stopAtBreak)
             $text = explode('[break]', $text, 2)[0];
-        return ServerContent::safeHtml($this->prepend ?? '').ServerContent::markup($text, $globals, $level).ServerContent::safeHtml($this->append ?? '');
+        $render = fn() => ServerContent::safeHtml($this->prepend ?? '').ServerContent::markup($text, $globals, $level).ServerContent::safeHtml($this->append ?? '');
+        require_once __DIR__.'/../cachestore.class.php';
+        if (!$this->_cacheHtml || !CacheStore::enabled())
+            return $render();
+        return CacheStore::remember('content', ['markup-html', Lang::getLocale()->value, $text, $level, $this->prepend, $this->append,
+            ServerContent::cacheContext($text.($this->prepend ?? '').($this->append ?? ''), $globals)], $render);
     }
 
 

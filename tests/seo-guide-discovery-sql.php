@@ -3,8 +3,10 @@
 // Real reference indexing, approval, publication joins and cached template hooks.
 namespace Aowow {
     class Cfg {
+        public static string $directory = '';
         public static function get(string $key) : mixed { return match ($key) {
-            'HOST_URL' => 'https://fixture.example', 'STATIC_URL' => 'https://static.fixture.example', 'LOCALES' => 0x15D, default => ''
+            'HOST_URL' => 'https://fixture.example', 'STATIC_URL' => 'https://static.fixture.example', 'LOCALES' => 0x15D,
+            'CACHE_MODE' => 1, 'CACHE_DECAY' => 604800, 'CACHE_DIR' => self::$directory, default => ''
         }; }
         public static function applyToString(string $value, bool $numbers = true) : string { return $value; }
     }
@@ -24,6 +26,8 @@ namespace {
         fwrite(STDERR, "Use only the disposable aowow_security_test_seo database.\n"); exit(1);
     }
     define('AOWOW_REVISION', 75); define('CLI', true); define('CLI_HAS_E', false); define('OS_WIN', false);
+    define('AOWOW_CACHE_KEY', str_repeat('22', 32));
+    Aowow\Cfg::$directory = require __DIR__.'/fixtures/cache-directory.php';
     chdir(dirname(__DIR__));
     require 'includes/libs/autoload.php';
     foreach (['defines.php', 'database.php', 'locale.class.php', 'type.class.php', 'utilities.php', 'game/uitext.class.php',
@@ -74,6 +78,10 @@ namespace {
         check(GuideDiscovery::indexRevision(2, 2, Locale::EN, '[item=999]', 2), 'unapproved revision may be indexed without becoming public');
         check(GuideDiscovery::indexRevision(3, 1, Locale::EN, '[item=100]', 2), 'stale archived index fixture');
         check(GuideDiscovery::indexRevision(4, 1, Locale::EN, '[item=100]', 2), 'stale unpublished index fixture');
+        $rankQueries = 0;
+        $db->onEvent[] = static function (Dibi\Event $event) use (&$rankQueries) : void {
+            if (str_contains($event->sql, 'FROM aowow_guide_references r') || str_contains($event->sql, 'FROM `aowow_guide_references` r')) ++$rankQueries;
+        };
         foreach ([0, U_GROUP_ADMIN] as $groups) {
             User::$groups = $groups;
             $links = GuideDiscovery::related(3, 100, Locale::EN);
@@ -81,6 +89,7 @@ namespace {
             check($links[1]['title'] === 'Guide #2' && !str_contains(json_encode($links), 'SECRET'), 'pending metadata remains private even to staff in public discovery');
             check($links[2]['href'] === 'https://fixture.example/?guide=8', 'reserved action slug uses numeric canonical');
         }
+        check($rankQueries === 1, 'warm public discovery reuses the ranked query across readers');
         check(GuideDiscovery::related(3, 999, Locale::EN) === [], 'new draft references are not discovery links');
         check(array_column(GuideDiscovery::related(3, 100, Locale::FR), 'id') === [5], 'related links follow authored locale');
         check(GuideDiscovery::related(3, 100, Locale::FR)[0]['href'] === 'https://fixture.example/?guide=guide-5&locale=2', 'non-English guide URL remains explicit');

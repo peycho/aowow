@@ -15,6 +15,9 @@ class InfoboxMarkup extends Markup
 
     public function addItem(string $item, ?int $pos = null) : void
     {
+        // Display hooks add live views, votes and character state. Do not store
+        // a new persistent fragment for every changing counter value.
+        $this->_cacheHtml = false;
         if (is_null($pos) || $pos >= count($this->items))
             $this->items[] = $item;
         else

@@ -582,6 +582,8 @@ class TemplateResponse extends BaseResponse
 
         $text = Util::defStatic($article['article']);
         $opts = [];
+        if ($this instanceof GuideBaseResponse && (array_key_exists('rev', $_GET) || !$this->seo['index']))
+            $opts['_cacheHtml'] = false;
 
         // convert U_GROUP_* to MARKUP.CLASS_* (as seen in js-object Markup)
         if ($article['editAccess'] & (U_GROUP_ADMIN | U_GROUP_VIP | U_GROUP_DEV))

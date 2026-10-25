@@ -83,22 +83,26 @@ trait TrCache
         if ($this->_cacheType == CACHE_TYPE_NONE || !Cfg::get('CACHE_MODE') || !$this->decay || !CacheEnvelope::enabled())
             return;
 
+        if ($this->skipCache)
+            $this->deleteCache($this->skipCache & (int)Cfg::get('CACHE_MODE'));
         $cKey = $this->formatCacheKey();
+        if (!$cKey)
+            return;
+        // Tooltips are JavaScript strings on replay; the envelope only restores
+        // PageTemplate objects. Storing the Tooltip object made every read miss.
+        if ($toCache instanceof Tooltip)
+            $toCache = (string)$toCache;
         $data = CacheEnvelope::seal($cKey[2], $toCache, $this->onCacheLoaded, $this->decay);
         if ($data === null)
             return;
 
         if (Cfg::get('CACHE_MODE') & CACHE_MODE_MEMCACHED)
         {
-            if ($this->skipCache & CACHE_MODE_MEMCACHED)
-                $this->deleteCache(CACHE_MODE_MEMCACHED);
             $this->memcached()?->set(CacheEnvelope::memcachedKey($cKey[2]), $data, time() + $this->decay);
         }
 
         if (Cfg::get('CACHE_MODE') & CACHE_MODE_FILECACHE)
         {
-            if ($this->skipCache & CACHE_MODE_FILECACHE)
-                $this->deleteCache(CACHE_MODE_FILECACHE);
             CacheEnvelope::writeBoundedFile($this->cacheDir, $cKey[2], $data);
         }
     }
@@ -110,6 +114,8 @@ trait TrCache
             return false;
 
         $cKey = $this->formatCacheKey();
+        if (!$cKey)
+            return false;
         $cache = null;
         $mode = CACHE_MODE_MEMCACHED;
         if ((Cfg::get('CACHE_MODE') & CACHE_MODE_MEMCACHED) && !($this->skipCache & CACHE_MODE_MEMCACHED))
@@ -139,6 +145,8 @@ trait TrCache
 
         // type+typeId/catg+mode; 3+10+1
         $cKey    = $this->formatCacheKey();
+        if (!$cKey)
+            return;
         $cKey[2] = substr($cKey[2], 0, 13);
 
         if ($modeMask & CACHE_MODE_MEMCACHED)
@@ -148,6 +156,9 @@ trait TrCache
 
         if ($modeMask & CACHE_MODE_FILECACHE)
             CacheEnvelope::clearFiles($this->cacheDir);
+
+        require_once __DIR__.'/../cachestore.class.php';
+        CacheStore::invalidate();
     }
 
     private function memcached() : ?\Memcached
@@ -220,6 +231,18 @@ trait TrCache
 
         // Sound tabs, markup and search results must never cross the current site setting.
         $fileKey .= '-sounds'.(int)(bool)Cfg::get('SOUNDS_ENABLE');
+
+        require_once __DIR__.'/../cachestore.class.php';
+        if (CacheStore::enabled())
+        {
+            if (CacheStore::inTransaction())
+                return [];
+            $catalog = CacheStore::version('catalog');
+            $content = CacheStore::version('content');
+            if ($catalog === null || $content === null)
+                return [];
+            $fileKey .= '-data'.$catalog.$content;
+        }
 
         // topDir, 2ndDir, file
         return array(

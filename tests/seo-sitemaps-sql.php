@@ -4,12 +4,14 @@
 // schema. Never use configured application databases or retained client data.
 namespace Aowow {
     class Cfg {
+        public static string $directory = '';
         public static int $locales = 5; // English + French
         public static bool $sounds = false;
         public static bool $profiler = false;
         public static function get(string $key) : mixed { return match ($key) {
             'HOST_URL' => 'https://fixture.example', 'LOCALES' => self::$locales,
-            'SOUNDS_ENABLE' => self::$sounds, 'PROFILER_ENABLE' => self::$profiler, default => ''
+            'SOUNDS_ENABLE' => self::$sounds, 'PROFILER_ENABLE' => self::$profiler,
+            'CACHE_MODE' => 1, 'CACHE_DECAY' => 604800, 'CACHE_DIR' => self::$directory, default => ''
         }; }
     }
     class Lang {
@@ -36,6 +38,8 @@ namespace {
         fwrite(STDERR, "Use only the disposable aowow_security_test_seo database.\n"); exit(1);
     }
     define('AOWOW_REVISION', 75); define('CLI', true); define('CLI_HAS_E', false); define('OS_WIN', false);
+    define('AOWOW_CACHE_KEY', str_repeat('22', 32));
+    Cfg::$directory = require __DIR__.'/fixtures/cache-directory.php';
     $root = dirname(__DIR__);
     require $root.'/includes/libs/autoload.php';
     foreach (['defines.php', 'database.php', 'locale.class.php', 'type.class.php', 'utilities.php',
@@ -122,9 +126,13 @@ namespace {
         $fr = xml(Sitemap::generate('guide', 1, Locale::FR));
         check(locations($fr) === ['https://fixture.example/?guide=20&locale=2', 'https://fixture.example/?guide=future&locale=2'], 'authored locale and safe numeric fallback share canonical policy');
         check(count($fr->url[0]->lastmod) === 0 && count($fr->url[1]->lastmod) === 0, 'unknown and future dates omitted');
-        $items = xml(Sitemap::generate('item', 1));
+        $items = xml($itemXml = Sitemap::generate('item', 1));
         check(locations($items) === ['https://fixture.example/?item=1'], 'hidden/unavailable records excluded and cookie ignored');
         check(count($items->url[0]->lastmod) === 0, 'no fabricated import or community update date');
+        $queries = 0;
+        $db->onEvent[] = static function (Dibi\Event $event) use (&$queries) : void { ++$queries; };
+        check(Sitemap::generate('item', 1) === $itemXml, 'cached sitemap preserves XML byte for byte');
+        check($queries === 0, 'warm catalog sitemap performs no SQL');
         check($_SERVER === $original, 'explicit URL generation never changes request globals');
         check(Sitemap::generate('sound', 1) === null && Sitemap::generate('areatrigger', 1) === null, 'disabled sounds and staff routes excluded');
         check(Sitemap::generate('guide', 0) === null && Sitemap::generate('guide', 2) === null, 'invalid and out-of-range pages rejected');
