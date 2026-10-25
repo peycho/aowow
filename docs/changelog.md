@@ -8,6 +8,20 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-25 — Redirect locale-first public entity URLs
+
+GET and HEAD requests such as `?locale=3&object=3948` now receive a permanent
+redirect to `?object=3948&locale=3` before configuration, database or session
+startup. The redirect preserves passive tracking parameters and the current
+installation path. It handles one numeric public database entity; ambiguous,
+malformed, private/editor, list and specialized-response requests retain their
+existing behavior. Standalone language switching still requires a protected POST.
+
+Deploy `index.php` and `includes/components/requesturl.class.php` together.
+No SQL migration, asset rebuild or application cache flush is required.
+Validation: the PHP/HTTP gate passed, including 846 focused routing checks for
+all six locales, early redirects, installation paths and POST/CSRF protection.
+
 ## 2026-10-25 — Fall back to English map images
 
 The shared map renderer now uses the matching English image when a localized

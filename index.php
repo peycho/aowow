@@ -2,6 +2,14 @@
 
 namespace Aowow;
 
+// Repair reordered public links before configuration, database or session startup.
+require_once __DIR__.'/includes/components/requesturl.class.php';
+if ($target = RequestUrl::localeFirstRedirect($_SERVER['REQUEST_METHOD'] ?? '', $_SERVER['QUERY_STRING'] ?? ''))
+{
+    header('Location: '.$target, true, 301);
+    exit;
+}
+
 require 'includes/kernel.php';
 
 if (CLI)
