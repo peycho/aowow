@@ -22,6 +22,13 @@ Open Graph and JSON-LD identity after a serialized page-cache hit. It runs in
 the PHP gate without application credentials or an external website. It does not
 establish deployed URL acceptance or search-engine canonical selection.
 
+`php tests/seo-request-routing.php` checks locale-first public entity redirects
+through the real front controller over disposable loopback HTTP. Its synthetic
+kernel proves redirects happen before application bootstrap. GET/HEAD, tracking
+parameters, subdirectory/index.php installations, malformed and ambiguous input,
+redirect-loop prevention and the existing language-action POST/CSRF boundary are
+covered without application credentials or databases. It runs in the PHP gate.
+
 `php tests/seo-structured-data.php` checks the real head and visible breadcrumb
 renderer across six locales, including site/publisher identity, page types,
 canonical URLs, graph references, pagination, selected guide language, hidden
