@@ -19,9 +19,17 @@ if (CLI)
 $pageCall  = 'home';                                        // default to Homepage unless specified otherwise
 $pageParam = '';
 parse_str(parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY) ?? '', $query);
+
+// Inventory arrays belong in POST; query parameters must be scalar.
+if (array_any($query, fn($value) => !is_string($value)))
+{
+    header('Location: .', true, 302);
+    exit;
+}
+
 if (($page = array_key_first($query)) !== null)
 {
-    // Only the routing pair must be scalar; custom-profile inventory uses later arrays.
+    // Validate the routing key before dispatch.
     if (!is_string($page) || !is_string($query[$page]) || preg_match('/[^a-z-]/i', $page))
     {
         header('Location: .', true, 302);
