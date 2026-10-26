@@ -121,6 +121,19 @@ namespace {
     $ready = $directory.'/ready'; $server = null;
     try {
         check(CacheEnvelope::enabled(), 'valid deployment key enables response cache');
+        $initialDirectory = Aowow\Cfg::$directory;
+        foreach ([0, CACHE_MODE_MEMCACHED, CACHE_MODE_FILECACHE] as $cacheMode) {
+            Aowow\Cfg::$directory = $directory.'/mode-'.$cacheMode;
+            Aowow\Cfg::$mode = $cacheMode;
+            (new ReflectionMethod(CacheFixture::class, 'initCache'))->invoke(new CacheFixture);
+            check(is_dir(Aowow\Cfg::$directory) === ($cacheMode === CACHE_MODE_FILECACHE), 'Response initialization creates storage only for file-cache mode');
+        }
+        Aowow\Cfg::$directory = $initialDirectory; Aowow\Cfg::$mode = CACHE_MODE_FILECACHE;
+        check(Aowow\Markup::parseTags('[ITEM=133]') === Aowow\Markup::parseTags('[item=133]'), 'Mixed-case markup registers the same globals');
+        check(Aowow\Markup::stripTags('[ITEM=133]', [Aowow\Type::ITEM=>[1=>[133=>['name'=>'Fixture item']]]]) === Aowow\Markup::stripTags('[item=133]', [Aowow\Type::ITEM=>[1=>[133=>['name'=>'Fixture item']]]]), 'Mixed-case markup strips through the same content policy');
+        Aowow\Cfg::$sounds = false;
+        check(Aowow\Markup::parseTags('[SOUND=133]') === [], 'Mixed-case sound tags retain the disabled-sound guard');
+        Aowow\Cfg::$sounds = true;
         $soundCache = new CacheFixture;
         $soundCache->saveCache('enabled sound tabs');
         Aowow\Cfg::$sounds = false;

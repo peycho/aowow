@@ -154,7 +154,7 @@ trait TrCache
                 if (strpos($k, CacheEnvelope::memcachedKey($cKey[2])) === 0)
                     $this->memcached()?->delete($k);
 
-        if ($modeMask & CACHE_MODE_FILECACHE)
+        if (($modeMask & CACHE_MODE_FILECACHE) && (Cfg::get('CACHE_MODE') & CACHE_MODE_FILECACHE))
             CacheEnvelope::clearFiles($this->cacheDir);
 
         require_once __DIR__.'/../cachestore.class.php';

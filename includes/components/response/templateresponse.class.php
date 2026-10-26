@@ -652,7 +652,7 @@ class TemplateResponse extends BaseResponse
 
                 if ($this->ldIntangible)
                 {
-                    $this->ldIntangible['keywords'] .= ', '.Lang::main('screenshots');
+                    $this->ldIntangible['keywords'][] = Lang::main('screenshots');
 
                     $this->ldIntangible['image']['url']    = Cfg::get('STATIC_URL') . '/uploads/screenshots/normal/'.$sticky['id'].'.jpg';
                     $this->ldIntangible['image']['width']  = $sticky['width'];
@@ -672,7 +672,7 @@ class TemplateResponse extends BaseResponse
                     $this->metaTags[$idx]['content'][] = Lang::main('videos');
 
                 if ($this->ldIntangible)
-                    $this->ldIntangible['keywords'] .= ', '.Lang::main('videos');
+                    $this->ldIntangible['keywords'][] = Lang::main('videos');
             }
         }
 

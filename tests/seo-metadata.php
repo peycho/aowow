@@ -20,6 +20,11 @@ namespace Aowow {
         public static function Aowow() : self { return new self; }
         public function selectCell(string $query, mixed ...$args) : mixed { return self::$manual; }
     }
+    class CommunityContent {
+        public static function getScreenshots(int $type, int $id) : array { return [['id'=>7, 'sticky'=>1, 'width'=>640, 'height'=>480]]; }
+        public static function getVideos(int $type, int $id) : array { return [['id'=>8, 'sticky'=>1]]; }
+        public static function getJSGlobals() : array { return []; }
+    }
     class Turnstile { public static function clientConfig() : array { return ['actions' => []]; } }
     class ExternalLinks { public static function urls() : array { return []; } }
 }
@@ -66,6 +71,31 @@ namespace {
         ob_start(); (new ReflectionMethod(PageTemplate::class, 'brick'))->invoke($template, 'head'); $html = ob_get_clean();
         $dom = new DOMDocument(); $dom->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_NOERROR | LIBXML_NOWARNING);
         return [new DOMXPath($dom), $html];
+    }
+    require 'endpoints/guide/edit.php';
+    require 'endpoints/profiles/profiles.php';
+    $post = (new ReflectionClass(Aowow\GuideEditResponse::class))->getDefaultProperties()['expectedPOST'];
+    $get = (new ReflectionClass(Aowow\ProfilesBaseResponse::class))->getDefaultProperties()['expectedGET'];
+    foreach ([[$post['category'], 1, 1], [$post['category'], 9, 9], [$post['category'], 10, false],
+        [$post['specId'], -1, -1], [$post['specId'], 2, 2], [$post['specId'], 3, -1],
+        [$post['classId'], 11, 11], [$post['classId'], 12, 0],
+        [$get['roster'], 1, 1], [$get['roster'], 4, 4], [$get['roster'], 0, false], [$get['roster'], 5, false]] as [$spec, $value, $expected])
+        check(filter_var($value, $spec['filter'], $spec) === $expected, 'Guide/profile integer bounds enforce their actual endpoint definitions');
+    Lang::load(Locale::EN);
+    foreach (['keywords', 'og:image'] as $first) {
+        $sticky = new MetadataFixture('spell');
+        $sticky->type = Aowow\Type::SPELL; $sticky->typeId = 133;
+        $sticky->contribute = CONTRIBUTE_SS | CONTRIBUTE_VI;
+        $tags = ['keywords'=>['name'=>'keywords', 'content'=>['Fixture']], 'og:image'=>['property'=>'og:image', 'content'=>'old']];
+        $sticky->metaTags = [$tags[$first], $tags[$first === 'keywords' ? 'og:image' : 'keywords']];
+        $sticky->ldIntangible = ['keywords'=>['Fixture'], 'image'=>['url'=>'old']];
+        (new ReflectionProperty($sticky, 'result'))->setValue($sticky, new PageTemplate('text-page-generic'));
+        (new ReflectionMethod($sticky, 'addCommunityContent'))->invoke($sticky);
+        $expected = ['Fixture', Lang::main('screenshots'), Lang::main('videos')];
+        check($sticky->ldIntangible['keywords'] === $expected, 'Sticky media preserve keyword arrays');
+        $byKey = [];
+        foreach ($sticky->metaTags as $tag) $byKey[$tag['name'] ?? $tag['property']] = $tag['content'];
+        check($byKey['keywords'] === $expected && str_ends_with($byKey['og:image'], '/uploads/screenshots/normal/7.jpg'), 'Both metadata keys accept index zero without missing-key warnings');
     }
     foreach ([0 => 'Page', 2 => 'Page', 3 => 'Seite', 4 => '页', 6 => 'Página', 8 => 'Страница'] as $value => $pageWord) {
         $locale = Locale::from($value); Lang::load($locale);
