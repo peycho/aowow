@@ -8,7 +8,7 @@ if (!defined('AOWOW_REVISION'))
 
 class GuideBaseResponse extends TemplateResponse implements ICache
 {
-    use TrDetailPage, TrCache;
+    use TrDetailPage, TrCache { TrCache::loadCache as private loadPageCache; }
 
     // Publication state and revision access must be checked on every request.
     // A staff/group cache key cannot isolate owner previews or status changes.
@@ -30,7 +30,37 @@ class GuideBaseResponse extends TemplateResponse implements ICache
     public  array $guideRating   = [];
     public ?int   $guideRevision = null;
 
-    private GuideList $subject;
+    private ?GuideList $subject = null;
+    private string $publicationCacheKey = '';
+
+    public function getCacheKeyComponents() : array
+    {
+        return [$this->type, $this->typeId, User::$groups, $this->publicationCacheKey];
+    }
+
+    public function loadCache(mixed &$fromCache) : bool
+    {
+        // Always resolve visibility before a shared-cache lookup. Owner/staff
+        // previews and explicit historical revisions never enter this cache.
+        $this->subject = new GuideList([['id', $this->typeId]]);
+        require_once __DIR__.'/../../includes/components/cachestore.class.php';
+        if (!$this->subject->error && $this->subject->canBeViewed() && !User::isLoggedIn() &&
+            !array_key_exists('rev', $_GET) && CacheStore::enabled())
+        {
+            $revision = (int)$this->subject->getField('rev');
+            $article = DB::Aowow()->selectRow('SELECT `locale`, `editAccess` FROM ::articles WHERE `type` = %i AND `typeId` = %i AND `rev` = %i',
+                Type::GUIDE, $this->typeId, $revision);
+            if ($revision && $article && ($epoch = CacheStore::version('guides')))
+            {
+                $fields = [];
+                foreach (['status', 'rev', 'url', 'name', 'title', 'description', 'author', 'userId', 'cuFlags', 'date', 'category', 'classId', 'specId'] as $field)
+                    $fields[$field] = $this->subject->getField($field);
+                $this->publicationCacheKey = hash('sha256', serialize([$epoch, $fields, $article]));
+                $this->cacheType = CACHE_TYPE_DETAIL_PAGE;
+            }
+        }
+        return $this->loadPageCache($fromCache);
+    }
 
     public function __construct(string $nameOrId)
     {
@@ -56,7 +86,7 @@ class GuideBaseResponse extends TemplateResponse implements ICache
 
     protected function generate() : void
     {
-        $this->subject = new GuideList(array(['id', $this->typeId]));
+        $this->subject ??= new GuideList(array(['id', $this->typeId]));
         if ($this->subject->error)
             $this->generateNotFound(Lang::game('guide'), Lang::guide('notFound'));
 
@@ -66,7 +96,6 @@ class GuideBaseResponse extends TemplateResponse implements ICache
         $this->guideStatus = $this->subject->getField('status');
         if ($this->guideStatus != GuideMgr::STATUS_APPROVED && $this->guideStatus != GuideMgr::STATUS_ARCHIVED)
         {
-            $this->cacheType  = CACHE_TYPE_NONE;
             $this->contribute = CONTRIBUTE_NONE;
         }
 

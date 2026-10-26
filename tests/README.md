@@ -64,6 +64,12 @@ archived, missing and historical revisions; missing-approved-row fallback and
 tooltip disclosure. Database responses and identities are synthetic. These
 suites run in the PHP gate.
 
+`php tests/seo-guides.php --cache` repeats the publication/privacy matrix with
+real signed file caching, then checks warm public pages/tooltips, private
+previews, withdrawal and missing approved rows. `security-cache.php` also checks
+data caches on both backends, tooltip-string replay, fragment reuse/mutation,
+live quick facts, failed loads and invalidation during generation.
+
 `php tests/seo-guide-discovery.php` exercises the actual guide-list response and
 HTML bricks across six locales: category headings and links, first-page defaults,
 editorial/manual description priority, and safe related titles. Its browser fixture
@@ -75,6 +81,13 @@ public-revision joins, pending metadata, language matching, ranking, bounded
 results, multi-batch replacement, rollback on failure and live withdrawal from a
 serialized page cache. It also verifies that an indexing failure prevents
 approval. Never run it against a retained database.
+
+The SQL sitemap and pagination fixtures assert zero SQL for a warm catalog
+sitemap and one shared total query across category pages. The discovery fixture
+asserts reuse of the ranked reference query. `cache-invalidation-sql.php` checks
+commits, rollbacks, SQL/API savepoints, autocommit, failed writes, scope isolation
+and preservation of insert IDs/affected rows against the same disposable SEO
+database. All run in the SQL gate.
 
 `tests/seo-guides-sql.php` is guarded by
 `AOWOW_TEST_DATABASE=aowow_security_test_seo` and runs in the SQL gate against its

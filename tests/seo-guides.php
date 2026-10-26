@@ -8,7 +8,7 @@ namespace Aowow {
             return match ($key) {
                 'NAME' => 'Fixture database', 'HOST_URL' => 'https://fixture.example',
                 'STATIC_URL' => 'https://static.fixture.example', 'LOCALES' => 0x15D,
-                'CACHE_MODE' => 1, 'CACHE_DECAY' => 600, default => 0
+                'CACHE_MODE' => 1, 'CACHE_DECAY' => 604800, 'CACHE_DIR' => getenv('AOWOW_TEST_GUIDE_CACHE') ?: '', default => 0
             };
         }
         public static function applyToString(string $text, bool $formatNumbers = true) : string { return $text; }
@@ -23,9 +23,6 @@ namespace Aowow {
         public static function canWriteGuide() : bool { return self::$id > 0; }
         public static function canUpvote() : bool { return false; }
         public static function canDownvote() : bool { return false; }
-    }
-    class CacheEnvelope {
-        public static function enabled() : bool { throw new \RuntimeException('Guide request consulted a shared page/tooltip cache'); }
     }
     class DB {
         public static function Aowow() : self { return new self; }
@@ -70,6 +67,10 @@ namespace Aowow {
 }
 namespace {
     define('AOWOW_REVISION', 75); define('CLI', false);
+    if (PHP_SAPI === 'cli' && ($argv[1] ?? '') === '--cache')
+        putenv('AOWOW_TEST_GUIDE_CACHE='.(require __DIR__.'/fixtures/cache-directory.php'));
+    if (getenv('AOWOW_TEST_GUIDE_CACHE'))
+        define('AOWOW_CACHE_KEY', str_repeat('44', 32));
     chdir(dirname(__DIR__));
     foreach (['includes/defines.php', 'includes/locale.class.php', 'includes/type.class.php', 'includes/utilities.php',
         'includes/game/uitext.class.php', 'includes/components/guidemgr.class.php',
@@ -77,7 +78,7 @@ namespace {
         'includes/components/SmartAI/SmartAction.class.php', 'includes/components/SmartAI/SmartTarget.class.php',
         'localization/lang.class.php', 'includes/components/csrf.class.php', 'includes/components/jsexpression.class.php',
         'includes/components/frontend/markup.class.php', 'includes/components/frontend/infoboxmarkup.class.php', 'includes/components/frontend/tabs.class.php',
-        'includes/components/pagetemplate.class.php', 'includes/components/response/baseresponse.class.php',
+        'includes/components/pagetemplate.class.php', 'includes/components/cacheenvelope.class.php', 'includes/components/response/baseresponse.class.php',
         'includes/components/response/templateresponse.class.php', 'includes/components/response/textresponse.class.php',
         'includes/components/frontend/tooltip.class.php', 'endpoints/guide/guide.php', 'endpoints/guide/guide_power.php'] as $file)
         require $file;
@@ -94,8 +95,8 @@ namespace Aowow {
             ob_start();
             (new \ReflectionMethod(Template\PageTemplate::class, 'brick'))->invoke($this->result, 'head');
             $head = ob_get_clean();
-            echo json_encode(['head' => $head, 'article' => (string)($this->article ?? ''), 'revision' => $this->guideRevision,
-                'name' => $this->gPageInfo['name'] ?? '', 'seo' => $this->seo,
+            echo json_encode(['head' => $head, 'article' => (string)($this->result->article ?? ''), 'revision' => $this->result->guideRevision,
+                'name' => $this->result->gPageInfo['name'] ?? '', 'seo' => $this->result->seo, 'cached' => (bool)static::$cacheStats,
                 'facts' => $this->infobox?->renderHtml($this->jsGlobals) ?? ''], JSON_THROW_ON_ERROR);
         }
     }
@@ -188,6 +189,27 @@ namespace {
         foreach ([GuideMgr::STATUS_DRAFT, GuideMgr::STATUS_REVIEW, GuideMgr::STATUS_APPROVED] as $status) {
             [$code, $body] = requestGuide(['guide' => '1', 'power' => '', 'status' => $status, 'published' => 0]);
             check($code === 200 && !str_contains($body, 'SECRET_'), 'tooltips do not disclose unpublished guide metadata');
+        }
+        if (getenv('AOWOW_TEST_GUIDE_CACHE')) {
+            foreach ([GuideMgr::STATUS_APPROVED, GuideMgr::STATUS_REVIEW, GuideMgr::STATUS_ARCHIVED] as $status) {
+                requestGuide(['guide' => 'guide-slug', 'status' => $status]);
+                [$code, $body] = requestGuide(['guide' => 'guide-slug', 'status' => $status]);
+                $data = json_decode($body, true, flags: JSON_THROW_ON_ERROR);
+                check($code === 200 && $data['cached'] && str_contains($data['article'], 'APPROVED_BODY'), 'public approved revision replays from cache with current publication state');
+            }
+            foreach (['owner', 'staff'] as $actor) {
+                [$code, $body] = requestGuide(['guide' => 'guide-slug', 'actor' => $actor, 'rev' => 3]);
+                check($code === 200 && !json_decode($body, true)['cached'] && str_contains($body, 'SECRET_DRAFT_BODY'), 'private preview never uses a shared page cache');
+            }
+            [$code, $body] = requestGuide(['guide' => 'guide-slug', 'status' => 1, 'published' => 0]);
+            check($code === 302 && !str_contains($body, 'APPROVED_BODY'), 'warm guide cache cannot bypass withdrawal');
+            [$code, $body] = requestGuide(['guide' => 'guide-slug', 'missing' => 1]);
+            check($code === 404, 'missing public article cannot replay a primed body');
+            foreach (['1', 'guide-slug'] as $token) {
+                [$code, $cold] = requestGuide(['guide' => $token, 'power' => '']);
+                [$code, $warm] = requestGuide(['guide' => $token, 'power' => '']);
+                check($code === 200 && $warm === $cold && str_contains($warm, 'Public tooltip'), 'guide tooltip replays without changing numeric/slug registration identity');
+            }
         }
         check(!str_contains(file_get_contents($log), 'Fatal error'), 'HTTP requests completed without fixture/runtime failures');
         echo "PASS: $checks guide publication, revision, locale, cache and HTTP checks\n";

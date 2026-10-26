@@ -18,6 +18,27 @@ final class ServerContent
     private const array BLOCKS = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'table', 'tr', 'td', 'th', 'quote', 'pre', 'code', 'map', 'pin'];
     private const array INLINE = ['b', 'i', 'u', 's', 'del', 'small', 'sub', 'sup', 'span', 'color', 'url', 'tooltip', 'acronym', 'center'];
 
+    /** Only names referenced by this fragment affect its HTML, not live user globals. */
+    public static function cacheContext(string $text, array $globals) : array
+    {
+        $context = [];
+        if (preg_match_all('/\[('.implode('|', array_keys(self::REFERENCES)).')=(-?\d+)\b/i', $text, $matches, PREG_SET_ORDER))
+            foreach ($matches as [, $tag, $id])
+            {
+                $type = self::REFERENCES[strtolower($tag)];
+                $row = $globals[$type][1][(int)$id] ?? [];
+                $context['names'][$type][$id] = $row['name_'.Lang::getLocale()->json()] ?? $row['name'] ?? null;
+            }
+        // Local images can gain dimensions after an upload or asset deployment.
+        if (preg_match_all('~(?:uploads/guide/images/[0-9]+|images/[a-zA-Z0-9_/-]+)\.(?:jpe?g|png|gif|webp)\b~i', $text, $matches))
+            foreach (array_unique($matches[0]) as $path)
+            {
+                $stat = @stat('static/'.$path);
+                $context['images'][$path] = $stat ? [$stat['mtime'], $stat['ctime'], $stat['size']] : null;
+            }
+        return $context;
+    }
+
     public static function text(string $value) : string
     {
         return htmlspecialchars(html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');

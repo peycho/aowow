@@ -120,7 +120,9 @@ class Listview implements \JsonSerializable
     {
         require_once __DIR__.'/../servercontent.class.php';
         $name = $this->name instanceof JsExpression ? '$'.$this->name->expression : $this->name;
-        return ServerContent::listHtml($this->template ?? '', $this->id, $name, $this->data ?? [], $globals);
+        require_once __DIR__.'/../cachestore.class.php';
+        return CacheStore::remember('content', ['list-html', Lang::getLocale()->value, $this->template, $this->id, $name, $this->data],
+            fn() => ServerContent::listHtml($this->template ?? '', $this->id, $name, $this->data ?? [], $globals));
     }
 
     public function __construct(array $opts, string $template = '', string $addIn = '')

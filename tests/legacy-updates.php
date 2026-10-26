@@ -49,7 +49,7 @@ function seed(string $table, array $values) : void {
     $db->query('INSERT INTO %n', 'aowow_'.$table, $values);
 }
 function resetLegacy(string $engine = 'MyISAM') : void {
-    global $db, $root;
+    global $db, $root, $temp;
     $db->query('SET FOREIGN_KEY_CHECKS=0');
     foreach ($db->query('SHOW TABLES')->fetchPairs() as $table) $db->query('DROP TABLE %n', $table);
     foreach (SqlUpdate::statements(file_get_contents($root.'/tests/fixtures/legacy-1711739612.sql')) as $statement) $db->nativeQuery($statement);
@@ -58,6 +58,7 @@ function resetLegacy(string $engine = 'MyISAM') : void {
     $db->query("INSERT INTO ::dbversion VALUES (1711739612, 1, 'power', NULL)");
     $db->query("UPDATE ::config SET value='0' WHERE `key`='maintenance'");
     $db->query("UPDATE ::config SET value='1' WHERE `key`='locales'");
+    $db->query("UPDATE ::config SET value=%s WHERE `key`='cache_dir'", $temp.'/private-cache');
     seed('account', ['id'=>1001, 'user'=>'fixture-login', 'displayName'=>'Fixture User', 'passHash'=>'FIXTURE_HASH', 'email'=>'fixture@example.test', 'avatar'=>'fixture_icon', 'description'=>'Synthetic profile текст']);
     seed('comments', ['id'=>1001, 'type'=>3, 'typeId'=>29254, 'userId'=>1001, 'body'=>'Synthetic comment [b]текст[/b]']);
     seed('articles', ['type'=>3, 'typeId'=>29254, 'locale'=>0, 'article'=>'Synthetic custom article текст', 'url'=>null]);
@@ -157,6 +158,9 @@ try {
     symlink($root.'/setup/sql/updates', $cli.'/setup/sql/updates');
     $config = $options + ['db'=>$options['database'], 'prefix'=>'aowow_'];
     file_put_contents($cli.'/config/config.php', '<?php $AoWoWconf = '.var_export(['aowow'=>$config, 'world'=>$config], true).';');
+    // A real installation has a signing key: invalidation must work before
+    // full configuration loads, including with a nondefault private cache path.
+    file_put_contents($cli.'/config/security.php', '<?php define(\'AOWOW_CACHE_KEY\', \''.str_repeat('44', 32).'\');');
     file_put_contents($cli.'/static/uploads/screenshots/normal/1001.jpg', 'Synthetic upload bytes');
     $generators = <<<'CODE'
 <?php
@@ -241,6 +245,13 @@ CODE;
         check(!$db->query("SHOW COLUMNS FROM ::config LIKE 'default'")->fetch(), 'exact legacy config has no default column');
         [$status,$output]=invoke($cli);
         check($status===0, $engine.' legacy entrypoint succeeds: '.$output);
+        check(!str_contains($output, 'cfg not defined:'), 'signed-cache update bootstrap emits no missing-setting errors');
+        $epochFile = $temp.'/private-cache/.epochs/catalog';
+        check(is_file($epochFile) && !is_dir($cli.'/cache/template/.epochs'), 'update invalidates the configured private directory without creating fallback epochs');
+        $epochBefore = file_get_contents($epochFile);
+        [$status, $output] = invoke($cli);
+        check($status === 0 && !str_contains($output, 'cfg not defined:') && file_get_contents($epochFile) !== $epochBefore,
+            'signed-cache no-op update is quiet and still invalidates maintenance transitions');
         check(!str_contains($output, 'SECRET_SENTINEL'), 'legacy diagnostics stay redacted');
         check(strtoupper($db->query("SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aowow_dbversion'")->fetchSingle())==='INNODB', 'version metadata prepared for accounting');
         check(community()===$before, 'representative community content and upload owner/IDs survive every migration');

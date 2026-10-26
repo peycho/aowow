@@ -25,8 +25,7 @@ class SitemapBaseResponse extends TextResponse
 
     protected function generate() : void
     {
-        // Publication changes must take effect immediately, including cached
-        // indexes that could otherwise advertise withdrawn guide identities.
+        // The generator caches XML with catalog epochs and a live guide-publication identity.
         if (array_key_exists('page', $_GET) && !is_int($this->_get['page']))
             (new TemplateResponse($this->page))->generateNotFound(Sitemap::ERR_TITLE, Sitemap::ERR_PAGE);
 

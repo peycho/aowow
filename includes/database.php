@@ -9,6 +9,16 @@ if (!defined('AOWOW_REVISION'))
 
 class DibiConnection extends \Dibi\Connection
 {
+    public function __construct(array $config, ?string $name = null)
+    {
+        parent::__construct($config, $name);
+        if ($prefix = $config['substitutes'][''] ?? '')
+        {
+            require_once __DIR__.'/components/cacheinvalidation.class.php';
+            $this->onEvent[] = new CacheInvalidation($prefix, spl_object_id($this));
+        }
+    }
+
     /**
      * Executes SQL query and fetch result - shortcut for query() & fetch().
      */

@@ -8,6 +8,33 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-25 — Restore caching for SEO responses and rendering
+
+Sitemap XML and counts, related-guide rankings, filtered category totals and
+rendered article/list/static quick-fact HTML now use the configured signed cache
+backends and lifetime. Public guide pages and tooltips reuse published revisions
+after live visibility checks; private and historical previews stay uncached.
+Live guide views and ratings continue to update on cache hits.
+
+Tooltip writes now store their generated JavaScript string. Previously they
+stored an object that the authenticated cache reader rejected, causing repeated
+generation even when a tooltip entry existed.
+
+Application database writes invalidate dependent cache generations after commit.
+Uncommitted reads bypass shared caches and rollbacks preserve committed entries.
+Private generation files must be shared by web workers and maintenance CLI,
+including with Memcached. Existing response keys rotate on first use, so expect
+cache warming after deployment. No SQL migration or asset rebuild is needed.
+See [application caching](configuration.md#application-caching) for settings,
+external-import invalidation and deployment requirements.
+
+Update startup also loads the cache-directory value alongside maintenance and
+locales, without interpreting legacy configuration flags. This prevents
+`cfg not defined: CACHE_DIR` messages when a signing key enables invalidation
+before the full configuration is loaded, and preserves custom cache paths.
+The configuration guide and private default example now show how to generate
+the key once and place it in `config/security.php`.
+
 ## 2026-10-25 — Redirect locale-first public entity URLs
 
 GET and HEAD requests such as `?locale=3&object=3948` now receive a permanent

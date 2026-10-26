@@ -182,7 +182,13 @@ abstract class DBTypeList
                 if ($pagination !== null)
                 {
                     $countQuery = get_class($this) === ItemList::class ? str_replace([', `is`.*', ', i.`id` AS "id"'], '', $totalQuery) : $totalQuery;
-                    $this->matches += DB::{$n}($dbIdx)->selectCell('SELECT COUNT(*) FROM ('.$countQuery.') x', $where);
+                    require_once __DIR__.'/cachestore.class.php';
+                    // Realm, language, reader privileges and translated filter predicates remain isolated.
+                    $countSql = DB::{$n}($dbIdx)->translate('SELECT COUNT(*) FROM ('.$countQuery.') x', $where);
+                    $count = CacheStore::remember(static::$type === Type::GUIDE ? 'guides' : 'catalog',
+                        ['list-count', static::class, $n, $dbIdx, Lang::getLocale()->value, User::$groups, $countSql],
+                        static fn() => DB::{$n}($dbIdx)->selectCell($countSql));
+                    $this->matches += (int)$count;
                     if ($pagination['page'] > max(1, (int)ceil($this->matches / $pagination['size'])))
                         continue;
                 }

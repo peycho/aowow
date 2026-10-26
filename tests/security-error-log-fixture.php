@@ -2,7 +2,7 @@
 
 // Synthetic Dibi transport only: the logger, DB event callbacks, config and notes are production code.
 namespace Dibi {
-    class Connection {}
+    class Connection { public function __construct(array $config, ?string $name = null) {} }
     class Event {
         public mixed $result;
         public string $sql = '';
@@ -66,7 +66,7 @@ namespace {
             return 1;
         }
     }
-    (new ReflectionProperty(DB::class, 'interfaceCache'))->setValue(null, [DB_AOWOW => new LogConnection]);
+    (new ReflectionProperty(DB::class, 'interfaceCache'))->setValue(null, [DB_AOWOW => new LogConnection([])]);
     (new ReflectionProperty(DB::class, 'interfaceTimes'))->setValue(null, [DB_AOWOW => [time() + 3600, 3600]]);
     (new ReflectionProperty(Cfg::class, 'store'))->setValue(null, ['debug' => [3, Cfg::FLAG_TYPE_INT, 0, 0, '']]);
     (new ReflectionProperty(Cfg::class, 'isLoaded'))->setValue(null, true);

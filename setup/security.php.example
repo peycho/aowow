@@ -5,8 +5,13 @@
 if (!defined('AOWOW_REVISION'))
     die('illegal access');
 
-// Generate a unique per-installation value with: php -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'
-// Never commit the generated value. Missing/invalid keys disable response caching.
+// Generate once per installation: php8.5 -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'
+// In config/security.php, replace the placeholder below with the 64 printed hex characters:
+// define('AOWOW_CACHE_KEY', 'paste_your_generated_64_hex_characters_here');
+// Keep the same value for web workers and maintenance CLI. Do not generate it on each request.
+// Keep an existing valid key when updating the site.
+// Never commit the generated value. Missing/invalid keys disable caching; replacing a valid key
+// invalidates its existing cache entries and generation files, which then warm again.
 define('AOWOW_CACHE_KEY', 'REPLACE_WITH_64_RANDOM_HEXADECIMAL_CHARACTERS');
 
 // Optional: absolute, deployment-owned PHP >= 8.4 CLI binary matching the site's extensions/config.

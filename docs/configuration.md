@@ -17,6 +17,72 @@ CLI configuration remains available through `php aowow --configure`.
 - [Profiler](#profiler)
 - [External navigation](#external-navigation)
 - [Tooltips and widgets](#tooltips-and-widgets)
+- [Application caching](#application-caching)
+
+## Application caching
+
+`CACHE_MODE` selects file cache (`1`), Memcached (`2`), both (`3`), or disabled
+(`0`). The configured `AOWOW_CACHE_KEY` must be a private 64-character hexadecimal
+key; unsigned entries are never loaded. Memcached also requires the PHP
+`memcached` extension in the serving FPM installation, not only a running daemon.
+`CACHE_DECAY` is the maximum lifetime in seconds; `604800` keeps entries for up to
+seven days. Eviction, invalidation or a service restart can remove them earlier.
+
+If a valid key is already configured, keep it; this update does not require a
+new one. Otherwise generate the authentication key **once** on the server:
+
+```sh
+php8.5 -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'
+```
+
+Add the printed 64 hexadecimal characters to **`config/security.php`**, inside
+its PHP block. Replace an existing `AOWOW_CACHE_KEY` definition rather than
+adding a second one:
+
+```php
+define('AOWOW_CACHE_KEY', 'paste_your_generated_64_hex_characters_here');
+```
+
+The text above is a placeholder, not a usable key. For a new installation, copy
+[`setup/security.php.example`](../setup/security.php.example) to
+`config/security.php`, then replace its placeholder. If the private file already
+exists, edit it in place to preserve operator access, mail and other settings.
+Do not store this key in Site Configuration or regenerate it on requests/CLI
+runs. Web workers and maintenance CLI must load the same private value. Keep
+the file deployment-owned, readable by the site's PHP identity and inaccessible
+over HTTP; never commit the key. A deliberate key change invalidates existing
+cache entries and generation files, so expect a cold cache afterward.
+
+Response caches also cover tooltip JavaScript, sitemap XML, filtered list totals,
+related-guide rankings and rendered article/list/quick-fact HTML. Locales,
+filters, permissions, publication revisions and relevant site settings remain
+part of their identities. Public guide reads check current visibility and the
+selected article before using a cached page. Logged-in guide pages and explicit
+revision previews stay uncached. Live counters are refreshed separately.
+
+Successful application-database changes invalidate the affected cache generation
+after commit. Rollbacks retain the previous committed cache; reads inside a
+transaction bypass shared caches. Guide changes invalidate guide discovery and
+public guide responses, article changes also invalidate rendered content, and
+catalog/configuration changes invalidate the corresponding totals and responses.
+
+Private generation files live in `CACHE_DIR/.epochs`, including when Memcached
+is the only payload backend. Web workers and maintenance CLI must use the same
+writable cache directory and OS ownership. Multiple web nodes sharing Memcached
+must also share these generation files. Keep them outside publicly accessible
+storage and preserve private directory/file permissions.
+
+Direct SQL/imports outside the application's database connection cannot notify
+these caches. After such changes, use an authorized detail-page `&refresh`
+request to invalidate dependent generations, or remove the private `.epochs`
+directory while requests are stopped. Deploy code changes with a cache refresh
+when they change rendered output; no JavaScript rebuild or SQL migration is
+required for this caching implementation. The first reads then warm the cache.
+
+The bounded file backend still has 4096 shared slots and a 128 KiB compressed
+limit per entry; collisions replace older entries. Memcached is preferable for
+large crawl workloads. Monitor hit/miss rates, evictions and store failures;
+allocated capacity alone does not predict whether a larger cache will help.
 
 ## Mail delivery
 
