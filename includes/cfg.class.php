@@ -69,13 +69,16 @@ class Cfg
 
         self::$store = [];
         self::$isLoaded = false;
-        $rows = DB::Aowow()->query("SELECT `key`, `value` FROM ::config WHERE `key` IN ('maintenance', 'locales')")->fetchPairs('key', 'value');
-        if (count($rows) !== 2 || !in_array((string)($rows['maintenance'] ?? ''), ['0', '1'], true) ||
+        // Cache invalidation also runs while the update acquires maintenance.
+        // Read its path as plain text without interpreting legacy flags/defaults.
+        $rows = DB::Aowow()->query("SELECT `key`, `value` FROM ::config WHERE `key` IN ('maintenance', 'locales', 'cache_dir')")->fetchPairs('key', 'value');
+        if (!in_array((string)($rows['maintenance'] ?? ''), ['0', '1'], true) ||
             !ctype_digit((string)($rows['locales'] ?? '')))
             throw new \RuntimeException('Invalid update bootstrap configuration.');
 
-        foreach ($rows as $key => $value)
-            self::$store[$key] = [(int)$value, self::FLAG_TYPE_INT, self::CAT_SITE, null, ''];
+        foreach (['maintenance', 'locales'] as $key)
+            self::$store[$key] = [(int)$rows[$key], self::FLAG_TYPE_INT, self::CAT_SITE, null, ''];
+        self::$store['cache_dir'] = [(string)($rows['cache_dir'] ?? 'cache/template'), self::FLAG_TYPE_STRING, self::CAT_CACHE, null, ''];
         self::$isLoaded = true;
     }
 

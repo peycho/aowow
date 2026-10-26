@@ -170,8 +170,19 @@ Copy [setup/security.php.example](../setup/security.php.example) to
 `config/security.php` and replace the cache-key placeholder with a unique value:
 
 ```sh
-php -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'
+php8.5 -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'
 ```
+
+In `config/security.php`, replace the placeholder in the existing definition:
+
+```php
+define('AOWOW_CACHE_KEY', 'paste_your_generated_64_hex_characters_here');
+```
+
+Use the command's output in place of that text, and generate it only once.
+Keep an existing valid key when updating the site.
+For an existing installation, preserve the private file and its other settings;
+do not overwrite it with the example. See [application caching](configuration.md#application-caching).
 
 Keep the file and its directory deployment-owned, inaccessible over HTTP and
 unwritable by PHP-FPM. Grant the site's PHP identity read access. Missing or

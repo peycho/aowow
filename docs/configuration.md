@@ -28,6 +28,31 @@ key; unsigned entries are never loaded. Memcached also requires the PHP
 `CACHE_DECAY` is the maximum lifetime in seconds; `604800` keeps entries for up to
 seven days. Eviction, invalidation or a service restart can remove them earlier.
 
+If a valid key is already configured, keep it; this update does not require a
+new one. Otherwise generate the authentication key **once** on the server:
+
+```sh
+php8.5 -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'
+```
+
+Add the printed 64 hexadecimal characters to **`config/security.php`**, inside
+its PHP block. Replace an existing `AOWOW_CACHE_KEY` definition rather than
+adding a second one:
+
+```php
+define('AOWOW_CACHE_KEY', 'paste_your_generated_64_hex_characters_here');
+```
+
+The text above is a placeholder, not a usable key. For a new installation, copy
+[`setup/security.php.example`](../setup/security.php.example) to
+`config/security.php`, then replace its placeholder. If the private file already
+exists, edit it in place to preserve operator access, mail and other settings.
+Do not store this key in Site Configuration or regenerate it on requests/CLI
+runs. Web workers and maintenance CLI must load the same private value. Keep
+the file deployment-owned, readable by the site's PHP identity and inaccessible
+over HTTP; never commit the key. A deliberate key change invalidates existing
+cache entries and generation files, so expect a cold cache afterward.
+
 Response caches also cover tooltip JavaScript, sitemap XML, filtered list totals,
 related-guide rankings and rendered article/list/quick-fact HTML. Locales,
 filters, permissions, publication revisions and relevant site settings remain

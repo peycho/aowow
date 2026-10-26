@@ -28,6 +28,13 @@ cache warming after deployment. No SQL migration or asset rebuild is needed.
 See [application caching](configuration.md#application-caching) for settings,
 external-import invalidation and deployment requirements.
 
+Update startup also loads the cache-directory value alongside maintenance and
+locales, without interpreting legacy configuration flags. This prevents
+`cfg not defined: CACHE_DIR` messages when a signing key enables invalidation
+before the full configuration is loaded, and preserves custom cache paths.
+The configuration guide and private default example now show how to generate
+the key once and place it in `config/security.php`.
+
 ## 2026-10-25 — Redirect locale-first public entity URLs
 
 GET and HEAD requests such as `?locale=3&object=3948` now receive a permanent
