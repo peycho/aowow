@@ -26,6 +26,7 @@ namespace {
     foreach (['SmartAI','SmartEvent','SmartAction','SmartTarget'] as $class)
         require $root.'/includes/components/SmartAI/'.$class.'.class.php';
     require $root.'/localization/lang.class.php';
+    require $root.'/localization/datetime.class.php';
     require $root.'/includes/game/uitext.class.php';
     require $root.'/includes/components/locstring.class.php';
     require $root.'/includes/components/frontend/mail.class.php';
@@ -74,7 +75,20 @@ namespace {
         $header = $mail->renderHeader();
         check(str_contains($header,'href="?mail=123"'),$locale->name.': delivered mail links to its own ID');
         check(str_contains($header,'Fixture sender') && str_contains($header,'Fixture delay'),$locale->name.': sender and delay stay in their slots');
+        check(Lang::getRequiredItems(ITEM_CLASS_ARMOR, 1 << 30, false) === Lang::spell('cat', -11, 1, 8), 'Unnamed armor subclasses use the nested fallback in each locale');
+        check(Lang::getRequiredItems(ITEM_CLASS_WEAPON, 1 << 30, false) === Lang::spell('cat', -11, 1, 6), 'Unnamed weapon subclasses use the nested fallback in each locale');
+        check(is_string(Lang::meta('description', 'profile', ['Fixture', 80, 'Race', 'Class', 'Realm', 'Region'])), 'Profile meta descriptions accept exactly six values');
         $ai = new FixtureAI;
+        foreach ([SmartAction::ACTION_SET_CORPSE_DELAY, SmartAction::ACTION_PAUSE_MOVEMENT] as $action) {
+            $rendered = [];
+            foreach ([0, 3000] as $delay) {
+                $params = $action === SmartAction::ACTION_PAUSE_MOVEMENT ? [1, $delay, 0, 0, 0, 0] : [$delay, 0, 0, 0, 0, 0];
+                [$text] = (new SmartAction(1, $action, $params, $ai))->process();
+                check(!preg_match('/%\d+\$/', $text) && !str_contains($text, '(0)?'), 'SmartAI zero/nonzero time branches resolve without format syntax');
+                $rendered[] = $text;
+            }
+            check($rendered[0] !== $rendered[1], 'Zero delay has distinct instant/indefinite meaning in each locale');
+        }
         foreach ([0,133] as $spell) {
             [$body] = (new SmartAction(1,SmartAction::ACTION_REMOVEAURASFROMSPELL,[$spell,0,0,0,0,0],$ai))->process();
             check(str_contains($body,'[spell=133]') === ($spell === 133),$locale->name.': only a specific aura creates a spell link');

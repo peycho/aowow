@@ -21,6 +21,7 @@ namespace Aowow {
         public static function main(mixed ...$args) : mixed { return self::text('main', $args); }
         public static function game(mixed ...$args) : mixed { return self::text('game', $args); }
         public static function enchantment(mixed ...$args) : mixed { return self::text('enchantment', $args); }
+        public static function item(mixed ...$args) : mixed { return self::text('item', $args); }
         public static function timeUnits(mixed ...$args) : mixed { return self::text('timeUnits', $args); }
     }
     class DB {
@@ -28,6 +29,7 @@ namespace Aowow {
         public static array $calls = [];
         public static ?array $ids = [7266], $customData = [];
         public static ?int $attributes = 0, $updateResult = 0;
+        public static ?array $bonus = null;
         public static function World() : self { return new self; }
         public static function Aowow() : self { return new self; }
         public function selectCol(string $sql, mixed ...$args) : ?array {
@@ -38,7 +40,7 @@ namespace Aowow {
             self::$calls[] = [$sql, $args];
             return self::$attributes;
         }
-        public function selectRow(string $sql, mixed ...$args) : ?array { return null; }
+        public function selectRow(string $sql, mixed ...$args) : ?array { return str_contains($sql, 'spell_bonus_data') ? self::$bonus : null; }
         public function selectAssoc(string $sql, mixed ...$args) : array { return []; }
         public function qry(string $sql, mixed ...$args) : ?int {
             self::$calls[] = [$sql, $args]; return self::$updateResult;
@@ -95,7 +97,9 @@ namespace Aowow {
         public function canCreateItem() : array { return []; }
         public function canTeachSpell() : array { return []; }
         public function canTriggerSpell() : array { return []; }
-        public function isScalableHealingSpell() : bool { return false; }
+        public bool $healing = false;
+        public function isScalableHealingSpell() : bool { return $this->healing; }
+        public function periodicEffectsMask() : int { return $this->getField('effect1AuraId') ? 1 : 0; }
         public function isScalableDamagingSpell() : bool { return false; }
         public function iterate() : \Generator {
             $this->curTpl = $this->fields;
@@ -222,6 +226,24 @@ namespace {
             check(str_contains($footer['speedXY'],'4'.Lang::spell('_speedUnit')) && str_contains($footer['value'],'3'.Lang::spell('_speedUnit')),'Knockback speed values use horizontal and vertical units');
             check(str_contains($footer['value'],Lang::spell('costPerLevel',['1'.Lang::spell('_speedUnit')])) && str_contains($footer['value'],Lang::spell('pointsPerCP',['2'.Lang::spell('_speedUnit')])),'Speed level/combo values use the same scale');
         }
+        foreach ([SPELL_EFFECT_DURABILITY_DAMAGE, SPELL_EFFECT_DURABILITY_DAMAGE_PCT] as $effect) {
+            foreach ([SLOT_HEAD=>INVTYPE_HEAD, SLOT_FINGER2=>INVTYPE_FINGER, SLOT_TRINKET1=>INVTYPE_TRINKET,
+                SLOT_MAIN_HAND=>INVTYPE_WEAPONMAINHAND, SLOT_BAG1=>INVTYPE_BAG, SLOT_BAG4=>INVTYPE_BAG, -1=>-1, -2=>-2] as $slot=>$inventory) {
+                $spell->fields = ['effect1Id'=>$effect, 'effect1MiscValue'=>$slot, 'effect1BasePoints'=>20];
+                $effectMethod->invoke($page);
+                $expected = $slot < 0 ? Lang::spell('durabilityItems', $slot) : Lang::item('inventoryType', $inventory);
+                check(str_contains($page->effects[1]['name'], $expected), 'Durability damage identifies equipment/bag slots and all-items selectors in every locale');
+                check(str_contains($page->effects[1]['footer']['value'], '%') === ($effect === SPELL_EFFECT_DURABILITY_DAMAGE_PCT), 'Durability percentage and flat values keep their units');
+            }
+        }
+        $spell->healing = true; DB::$bonus = [0.25, 0.5, 0.75, 1.0];
+        foreach ([SPELL_EFFECT_HEAL=>0, SPELL_EFFECT_APPLY_AURA=>SPELL_AURA_PERIODIC_HEAL] as $effect=>$aura) {
+            $spell->fields = ['effect1Id'=>$effect, 'effect1AuraId'=>$aura, 'effect1BasePoints'=>20];
+            $effectMethod->invoke($page);
+            $text = $page->effects[1]['footer']['value'];
+            check(str_contains($text, Lang::spell('apMod', [$aura ? 1.0 : 0.75])) && str_contains($text, Lang::spell('spMod', [$aura ? 0.5 : 0.25])), 'Direct and periodic healing render their own AP/SP coefficients');
+        }
+        $spell->healing = false; DB::$bonus = null;
         $icon = new ReflectionMethod(SpellBaseResponse::class,'getIconNo');
         $spell->fields=['stackAmount'=>5,'procCharges'=>3];
         check($icon->invoke($page)===0,'A spell without an aura has no stack/proc icon count');
@@ -245,6 +267,8 @@ namespace {
     DB::$customData = null; check(!$data->applyCustomData(), 'Failed custom-data lookup is not successful');
     DB::$customData = [7266 => ['name_loc0' => 'SECRET_CUSTOM_VALUE']]; DB::$updateResult = 0;
     check($data->applyCustomData(), 'Zero affected rows remain a successful custom update');
+    DB::$calls = []; DB::$customData = [7266 => ['cuFlags' => 8]];
+    check($data->applyCustomData() && count(DB::$calls) === 2 && str_contains(DB::$calls[1][0], '`cuFlags` | %i'), 'Flag-only custom data uses OR without an empty ordinary update');
     DB::$updateResult = null;
     check(!$data->applyCustomData(), 'Swallowed update failure returns false');
     check(!str_contains(implode('\n', $diagnostics), 'SECRET_CUSTOM_VALUE'), 'Custom-data diagnostics do not disclose field values');

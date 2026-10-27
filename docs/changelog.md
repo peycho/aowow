@@ -8,6 +8,73 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-10-26 — Sarjuuk integration and compatibility (revision 76)
+
+Reviewed [Sarjuuk/aowow](https://github.com/Sarjuuk/aowow) `master` at
+`04a008bd99fce7c30b5dda6f8a7af23201347779`, starting from fork `dev` at
+`9bfde0ac97c1e2d3e6f5c3c3833c5cdb1685d213`. Integration branch:
+`upstream-sync/20261026`. Of 22 newer source commits, 16 are imported or adapted
+with `cherry-pick -x`; four are already covered locally and two are deferred.
+Original authors, author dates, coauthors, differing original committer credit
+and source-SHA provenance are retained.
+
+| Upstream revision | Result revision | Decision and adaptation |
+| --- | --- | --- |
+| `af863c66eabdbd16016b65c0ddb760fd07398c98` | `c28784baa72b111ec4308d832eda1e71815ed73a` | Remove duplicate required-item slot punctuation. |
+| `59705b54a877da749696177eba11317e2143a2b1` | `9e754fe4dc09a50f5640df9a3273daa517472715` | Fix nested item-subclass locale fallbacks. |
+| `ceccd99712d670f82c497e64739e6abee80439af` | `9e256d9969eb38b705e0573b255f7f7b2cf7e404` | Display AP/SP coefficients for healing effects and auras. |
+| `6ce594b66b9c53dad39f14641eeecde302c1f8c8` | `0931e64a503ce5236f207b90b1ab9dbe69466c5b` | Add durability-damage slot/bag descriptions and six locale labels. |
+| `33636f7686cc3305ecb1cfd1589d9755cfda1c1b` | Already present | Already covered by journaled, fail-stop SqlUpdate; retain the fork updater. |
+| `c7e4ac2ee6733f97471d20402aef84215590fd7f` | `9dca34e6bdc8c057ab6ed1803e6a49790d50078b` | Adapt file-cache initialization to retain CacheEnvelope; the CLI warning path is already removed. |
+| `ee19f329a1d67b97489464020b142384871c6122` | Already present | Already covered by item classification and items/stats migration 1792742400_02. |
+| `7386c041b5c2f456e2e5bb73561e09995b1c1bd3` | `2b7eb64b7c36ed8cfcba9abd727b7401d9651c86` | Use GLOBALINFO flags for linked real/custom profile globals. |
+| `6143fc7f8f0ab02bad02b1e330ab21a9e21635cc` | `47f41fe54c1b466c053215438cd130609ccb47be` | OR custom flags into generated flags; retain explicit read/update failure handling. |
+| `6bf3f512b60210e6d08397b758c4fd49f31e1bde` | Defer | Defer historical comment-only rewrite; retain applied migration checksums and block-comment support. |
+| `5a15a99b0cc732f61d76771829b3867867e958ca` | Already present | Already covered by nativeQuery and the quote-aware SQL lexer. |
+| `1c43f2a48505a7637350c009d8cf9589014f89eb` | `724aa9a14465202dbe2f43a43108051b8a5ae259` | Correct German profile metadata placeholders. |
+| `4e36b7d6618f530265489c9471881a4c34019c34` | Already present | Already covered for ammunition and quiver classes, including regeneration scheduling. |
+| `1cc43077710615cc6e3ac0c9cff39fcd4dd2a481` | `6692e048fc8680b0b4e6285b091f412c538daea7` | Apply guide/profile integer bounds; retain the already-correct sitemap implementation. |
+| `9fbf63112e5115f324d98fcfc33774699abb7f04` | `64a158cd5336ad9255e955e12c01b4574059f1de` | Use null-safe metadata lookup and accept index zero; retain keyword arrays in the adaptation. |
+| `3772b61fc3b9e6b40d8a3a9560c3f773e2eeb027` | `264a0bc9ce32f3da1b36ea4f891daba4f95ac3db` | Import three remaining Midsummer search seed corrections; retain prior guarded article repairs and add a narrow migration separately. |
+| `96a538d850ddb74fe378a5a2e295841727981dbf` | `b79091c3a61dcd679f5d8e51a7b38d2ba0789947` | Resolve zero corpse-delay and movement-pause semantics across six locales. |
+| `f55e11393a29a9e75f0881fc691925a966eeb0a3` | `e197887fe6e62c7d40cbdca724fe4db87d81966a` | Correct the German corpse-delay spelling. |
+| `4291fa710cf12f5afc20105820e5dba15e67cd09` | Defer | Defer the superseded blanket GET-array ban; custom-profile inventory saves require arrays. |
+| `2e1e06cc314f7b4f6ebfa2150c8fefe241326744` | `bdf217f8471f345195c4e3533d9bdcfffed9b1e3` | Avoid invalid nested category lookup for glyph metadata. |
+| `9190a2241475872f33bd7e84005aa70894f5729e` | `9150256cfe5887b59b456b8c274b8cf17295f7ac` | Normalize markup tag case while retaining disabled-sound and server-rendering guards. |
+| `04a008bd99fce7c30b5dda6f8a7af23201347779` | `d584b138de789c66197cd78e44361f01b3b779f4` | Adapt final route-key validation, preserving inventory arrays, hyphenated routes, early locale repair and canonical URL policy. |
+
+Separate integrator adaptation `b0c1af44d9fa6c084e42f4110e6c159b9d976660` retains array-valued metadata
+keywords, private response-cache storage and backend-aware deletion. The new
+`1792770294_01.sql` migration repairs only the exact bundled English Midsummer
+article, normalizing its imported event ID for the content fingerprint. Edited,
+translated, user-owned and pending-revision articles remain unchanged. It keeps
+article/guide IDs, metadata, zero-ID rows and pending generator work; URL matching
+uses binary comparison across the existing article/guide collations. Fresh setup
+advances the marker while retaining pending `globaljs guidereferences` work.
+Existing updater/journal behavior, historical migration checksums, item generator,
+canonical URL policy, locale handling, access rules and supplemented maps remain.
+
+Validation passed on PHP 8.5.12, Node 24.22.1, Chromium 156 and disposable
+MySQL 8.4.10. The `make dev-test` run passed the full lint, PHP/HTTP, JavaScript
+and browser groups; after correcting the historical fixture and new migration's
+collation comparison, `make dev-test ARGS=sql` passed the full SQL group.
+`make dev-test ARGS=apache` passed all eight policy combinations (1,835 HTTP
+checks each). The final endpoint-boundary/metadata fixture separately passed
+203 checks in the development image. Focused suites passed 738 spell/filter,
+142 locale/SmartAI/search/profile, 253 cache, five linked-profile and 16 actual
+front-controller HTTP checks. SQL passed 780 update checks, 1,030
+legacy-upgrade checks and 92 reconciliation checks, including the new guarded
+migration. Composer platform requirements and `git diff --check` passed; import
+authorship/provenance was verified for all 16 source commits. Full setup with
+operator-provided data, production image smoke tests and deployment were not run.
+
+Deploy the source and migration together, then follow the normal verified
+`php aowow --update` procedure. The migration queues `guidereferences`; revision
+76 invalidates earlier application caches. Additive custom flags take effect on
+normal generator/reapplication runs. No duplicate items/stats migration, client
+extraction, map rebuild or generated JavaScript rebuild is introduced. Production
+execution and acceptance remain separate from these disposable local checks.
+
 ## 2026-10-25 — Restore caching for SEO responses and rendering
 
 Sitemap XML and counts, related-guide rankings, filtered category totals and

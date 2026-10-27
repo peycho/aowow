@@ -78,6 +78,11 @@ namespace {
         }
         check(false, $label.' must fail');
     }
+    function legacyMidsummerSearches(string $article) : string {
+        foreach (['Honor+the+Flame', 'Desecrate+this+Fire', 'stealing+flame'] as $term)
+            $article = str_replace('[url=?search='.$term.'#quests]', '[url=?search&q='.$term.'#quests]', $article);
+        return $article;
+    }
     function marker() : array {
         global $db;
         return array_map('intval', (array)$db->query('SELECT date, part FROM ::dbversion')->fetch());
@@ -530,9 +535,11 @@ CODE;
             use Aowow\TrCustomData;
             public function getName() : string { return 'items'; }
         };
+        $db->query('UPDATE ::items SET cuFlags=64 WHERE id=2');
         check($customizer->applyCustomData(), 'normal custom-data application succeeds after classification');
         check((int)$db->query('SELECT class FROM ::items WHERE id=1')->fetchSingle() === 4 && (int)$db->query('SELECT subClass FROM ::items WHERE id=1')->fetchSingle() === -5, 'explicit custom classification remains authoritative');
-        check((int)$db->query('SELECT cuFlags FROM ::items WHERE id=2')->fetchSingle() === 7, 'custom visibility override retained');
+        check((int)$db->query('SELECT cuFlags FROM ::items WHERE id=2')->fetchSingle() === 71, 'custom flags add to existing generated flags');
+        check($customizer->applyCustomData() && (int)$db->query('SELECT cuFlags FROM ::items WHERE id=2')->fetchSingle() === 71, 'custom-flag reapplication is idempotent');
 
         $itemRepair = files(['1792742400_02.sql' => file_get_contents($root.'/setup/sql/updates/1792742400_02.sql')]);
         $itemSnapshot = $db->query('SELECT * FROM ::items ORDER BY id')->fetchAll();
@@ -582,7 +589,7 @@ CODE;
             foreach ($stockArticles as $row) {
                 foreach ([7=>'event=327',9=>'/?event=181',8=>'/?event=335',24=>'/?event=372',1=>'event=341',2=>'/?event=141',26=>'event=26'] as $event => $legacy)
                     $row['article'] = str_replace('[url=?event='.$event.']', '[url='.$legacy.']', $row['article']);
-                if ($row['url'] === 'midsummer-fire-festival') $row['typeId'] = 4;
+                if ($row['url'] === 'midsummer-fire-festival') { $row['typeId'] = 4; $row['article'] = legacyMidsummerSearches($row['article']); }
                 if ($row['url'] === 'childrens-week') $row['typeId'] = 5;
                 $db->query('INSERT INTO ::articles %v', $row);
             }
@@ -611,6 +618,47 @@ CODE;
             check($db->selectCell('SELECT build FROM ::dbversion') === 'existing guidereferences' && $db->selectCell('SELECT `sql` FROM ::dbversion') === 'stats', 'related-guide rebuild scheduled without losing pending tasks');
             SqlUpdate::apply($db, $festivalRepair);
             check($db->selectCell('SELECT build FROM ::dbversion') === 'existing guidereferences', 'journal prevents repeated guide-reference scheduling');
+        }
+
+        // The follow-up repairs only the exact stock article, even with imported event IDs.
+        $searchRepair = files(['1792770294_01.sql' => file_get_contents($root.'/setup/sql/updates/1792770294_01.sql')]);
+        foreach (['stock', 'edited', 'pending', 'owned', 'translated'] as $state) {
+            resetDb();
+            foreach (['articles', 'guides', 'events'] as $table) {
+                preg_match('/CREATE TABLE `aowow_'.preg_quote($table, '/').'` \(.*?\) ENGINE=.*?;/s', file_get_contents($root.'/setup/sql/01-db_structure.sql'), $definition);
+                $db->nativeQuery($definition[0]);
+            }
+            preg_match_all('/^INSERT INTO `aowow_(?:articles|guides)`.*;$/m', file_get_contents($root.'/setup/sql/03-db_initial_articles.sql'), $inserts);
+            foreach ($inserts[0] as $sql) $db->nativeQuery($sql);
+            $fresh = $db->selectRow('SELECT * FROM ::articles WHERE type=300 AND typeId=5 AND locale=0 AND rev=1');
+            check(!str_contains($fresh['article'], '?search&q=') && substr_count($fresh['article'], '[url=?search=') === 5, 'fresh Midsummer seeds retain two existing and three corrected search URLs');
+            $db->query('INSERT INTO ::events (id,holidayId,startTime,endTime,occurence,length) VALUES (51,341,0,0,0,0)');
+            $legacy = str_replace('[url=?event=1]', '[url=?event=51]', legacyMidsummerSearches($fresh['article']));
+            $db->query('UPDATE ::articles SET article=%s WHERE type=300 AND typeId=5 AND locale=0 AND rev=1', $legacy);
+            if ($state === 'edited') $db->query("UPDATE ::articles SET article=CONCAT(article,' Custom editorial note') WHERE type=300 AND typeId=5");
+            if ($state === 'pending') $db->query("INSERT INTO ::articles (type,typeId,locale,rev,url,article) VALUES (300,5,0,2,'midsummer-fire-festival','SECRET_PENDING_TEXT')");
+            if ($state === 'owned') $db->query('UPDATE ::guides SET userId=7 WHERE id=5');
+            if ($state === 'translated') {
+                $db->query("INSERT INTO ::articles (type,typeId,locale,rev,url,article) VALUES (300,5,2,1,'midsummer-fire-festival',%s)", $legacy);
+                $db->query('UPDATE ::articles SET article=%s WHERE type=300 AND typeId=5 AND locale=0', $fresh['article']);
+            }
+            $db->query("INSERT INTO ::articles (type,typeId,locale,rev,url,article) VALUES (300,0,0,1,'custom-zero','KEEP_ZERO_ID')");
+            $before = $db->selectAssoc('SELECT * FROM ::articles ORDER BY type,typeId,locale,rev');
+            $guidesBefore = $db->selectAssoc('SELECT * FROM ::guides ORDER BY id');
+            $db->query("UPDATE ::dbversion SET `sql`='stats',build='existing'");
+            SqlUpdate::apply($db, $searchRepair);
+            $expected = $before;
+            if ($state === 'stock') foreach ($expected as &$row) {
+                if ($row['type'] == 300 && $row['typeId'] == 5 && $row['locale'] == 0 && $row['rev'] == 1)
+                    $row['article'] = str_replace('[url=?search&q=', '[url=?search=', $row['article']);
+            }
+            unset($row);
+            check($db->selectAssoc('SELECT * FROM ::articles ORDER BY type,typeId,locale,rev') === $expected, 'search repair preserves edits, translations, pending revisions, zero-ID rows and metadata: '.$state);
+            check($db->selectAssoc('SELECT * FROM ::guides ORDER BY id') === $guidesBefore, 'search repair preserves guide ownership/status/revision: '.$state);
+            check($db->selectCell('SELECT build FROM ::dbversion') === 'existing guidereferences' && $db->selectCell('SELECT `sql` FROM ::dbversion') === 'stats', 'search repair preserves pending tasks and schedules reference refresh');
+            check(marker() === ['date'=>1792770294, 'part'=>1], 'search repair advances the verified marker');
+            SqlUpdate::apply($db, $searchRepair);
+            check($db->selectCell('SELECT build FROM ::dbversion') === 'existing guidereferences', 'search migration journal prevents reapplication');
         }
 
         // Help is CMS-owned too: refresh the stock English article while

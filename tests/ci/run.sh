@@ -43,6 +43,8 @@ PY
     php tests/security-spell-sync.php
     php tests/security-upstream-content.php
     php tests/security-upstream-october.php
+    php tests/security-upstream-profiles.php
+    php tests/security-upstream-routing.php
     php tests/schema-validator.php
     php tests/maintenance-response.php
     php tests/seo-urls.php
