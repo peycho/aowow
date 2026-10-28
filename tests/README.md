@@ -105,12 +105,13 @@ navigation fallback. A second Chromium run blocks all page scripts through CSP
 and verifies the initial headings and crawlable links remain available.
 
 `node tests/seo-responsive.mjs` runs in the browser gate with the real responsive
-CSS/JavaScript, jQuery and Menu code. Its 1,061 native Chrome DevTools checks cover 360,
-390, 470, 600, 768, 979 and 1440-pixel viewports, text reflow, bounded table/map
+CSS/JavaScript, jQuery and Menu code. Its 1,077 native Chrome DevTools checks cover 360,
+390, 440, 470, 600, 768, 979 and 1440-pixel viewports, text reflow, bounded table/map
 scrolling, native
 pin coordinates, mobile facts ordering, class pickers, lazy content, restoration
 on desktop resize, keyboard scroll regions, actual touch-menu opening/navigation,
-long menus, dialogs and script-blocked content. Homepage news/banner links and
+long menus, dialogs and script-blocked content. Homepage news/banner links,
+text insets within the actual news artwork for standard and extended boxes, and
 localized navigation/scroll labels are also exercised. A database-free PHP fixture
 renders the real contribution and sign-in/sign-up bricks in six languages for
 guest and member states. Real Tabs and comment editors exercise panel width,

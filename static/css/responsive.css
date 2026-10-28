@@ -112,7 +112,9 @@
     body.home .toplinks { position: absolute; top: 0; left: 0; right: 0; padding: 6px 12px; justify-content: center; box-sizing: border-box; }
     .home-footer, .home-oneliner { max-width: 100%; box-sizing: border-box; }
     .home-featuredbox { max-width: 100%; height: auto; min-height: 191px; background-size: 100% auto; }
-    .home-featuredbox-inner { position: relative; padding: 25px 16px 16px; overflow-wrap: anywhere; }
+    /* The news artwork paints its border inside the image; keep text inset
+       beyond that border even when the background is scaled to the box. */
+    .home-featuredbox-inner { position: relative; padding: 25px 26px 16px; overflow-wrap: anywhere; }
     /* Background links use authored pixel coordinates; text is a separate,
        readable flow on phones. Keep those links accessible below the artwork. */
     .home-featuredbox-links { display: flex; flex-wrap: wrap; gap: 8px; padding: 18px 16px 0; }
