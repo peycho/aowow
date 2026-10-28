@@ -18,28 +18,26 @@ if (CLI)
 
 $pageCall  = 'home';                                        // default to Homepage unless specified otherwise
 $pageParam = '';
-parse_str(parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY), $query);
-foreach ($query as $page => $param)
+parse_str(parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY) ?? '', $query);
+if (($page = array_key_first($query)) !== null)
 {
-    // could be an array
-    if (!is_string($param))
+    // Only the routing pair must be scalar; custom-profile inventory uses later arrays.
+    if (!is_string($page) || !is_string($query[$page]) || preg_match('/[^a-z-]/i', $page))
     {
-        $pageCall = '';                                     // just .. fail
-        break;
-    }
-
-    // fix page calls - pages like search use the page call directly and expect it as lower case
-    if (preg_match('/[A-Z]/', $page))
-    {
-        $url  = explode('=', $_SERVER['REQUEST_URI'], 2);
-        $page = Util::lower(array_shift($url)).($url ? '=' . $url[0] : '');
-        header('Location: '.$page, true, 302);
+        header('Location: .', true, 302);
         exit;
     }
 
-    $pageCall  = preg_replace('/[^\w\-]/i', '', $page);
-    $pageParam = $param ?? '';
-    break;                                                  // only use first k/v-pair to determine page
+    if (preg_match('/[A-Z]/', $page))
+    {
+        $url = explode('?', $_SERVER['REQUEST_URI'], 2);
+        $suffix = substr($url[1], strcspn($url[1], '=&'));
+        header('Location: '.$url[0].'?'.Util::lower($page).$suffix, true, 302);
+        exit;
+    }
+
+    $pageCall  = $page;
+    $pageParam = $query[$page];
 }
 
 // remove wh seo (type=typeId/urlized-name)

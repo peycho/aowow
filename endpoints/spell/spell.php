@@ -2023,7 +2023,7 @@ class SpellBaseResponse extends TemplateResponse implements ICache
                 $invType |=  (1 << INVTYPE_RANGED);
             }
 
-            $tip .= '<br />'.Lang::item('slot').Lang::main('colon').Util::asHex($invType);
+            $tip .= '<br />'.Lang::item('slot').Util::asHex($invType);
             if ($_ = array_filter(array_intersect_key(Lang::item('inventoryType'), Util::mask2bits($invType))))
                 $text .= ' '.Lang::spell('_inSlot').implode(', ', $_);
         }
@@ -2358,6 +2358,26 @@ class SpellBaseResponse extends TemplateResponse implements ICache
 
                         $_nameMV = $this->fmtStaffTip('<span class="breadcrumb-arrow">'.$start.'</span>'.$end, 'MiscValue: '.$effMV);
                     }
+                    break;
+                case SPELL_EFFECT_DURABILITY_DAMAGE_PCT:
+                    $valueFmt = '%s%%';
+                    // DO NOT BREAK !
+                case SPELL_EFFECT_DURABILITY_DAMAGE:
+                    $slotMap = array(
+                        SLOT_HEAD      => [INVTYPE_HEAD,           ''  ], SLOT_NECK     => [INVTYPE_NECK,          ''  ], SLOT_SHOULDERS => [INVTYPE_SHOULDERS, ''  ],
+                        SLOT_SHIRT     => [INVTYPE_BODY,           ''  ], SLOT_CHEST    => [INVTYPE_CHEST,         ''  ], SLOT_WAIST     => [INVTYPE_WAIST,     ''  ],
+                        SLOT_LEGS      => [INVTYPE_LEGS,           ''  ], SLOT_FEET     => [INVTYPE_FEET,          ''  ], SLOT_WRISTS    => [INVTYPE_WRISTS,    ''  ],
+                        SLOT_HANDS     => [INVTYPE_HANDS,          ''  ], SLOT_FINGER1  => [INVTYPE_FINGER,        ' 1'], SLOT_FINGER2   => [INVTYPE_FINGER,    ' 2'],
+                        SLOT_TRINKET1  => [INVTYPE_TRINKET,        ' 1'], SLOT_TRINKET2 => [INVTYPE_TRINKET,       ' 2'], SLOT_BACK      => [INVTYPE_CLOAK,     ''  ],
+                        SLOT_MAIN_HAND => [INVTYPE_WEAPONMAINHAND, ''  ], SLOT_OFF_HAND => [INVTYPE_WEAPONOFFHAND, ''  ], SLOT_RANGED    => [INVTYPE_RANGED,    ''  ],
+                        SLOT_TABARD    => [INVTYPE_TABARD,         ''  ], SLOT_BAG1     => [INVTYPE_BAG,           ' 1'], SLOT_BAG2      => [INVTYPE_BAG,       ' 2'],
+                        SLOT_BAG3      => [INVTYPE_BAG,            ' 3'], SLOT_BAG4     => [INVTYPE_BAG,           ' 4']
+                    );
+
+                    if ($effMV < 0)
+                        $_nameMV = $this->fmtStaffTip(Lang::spell('durabilityItems', $effMV < -1 ? -2 : -1), 'MiscValue: '.$effMV);
+                    else if ([$invType, $slotSuffix] = ($slotMap[$effMV] ?? null))
+                        $_nameMV = $this->fmtStaffTip(Lang::item('inventoryType', $invType).$slotSuffix, 'MiscValue: '.$effMV);
                     break;
                 case SPELL_EFFECT_TITAN_GRIP:
                     $effMV = 0;                             // effMV is trigger spell and was handled earlier
@@ -2705,7 +2725,6 @@ class SpellBaseResponse extends TemplateResponse implements ICache
                 case SPELL_EFFECT_RESURRECT:
                 case SPELL_EFFECT_SPIRIT_HEAL:
                 case SPELL_EFFECT_WEAPON_PERCENT_DAMAGE:
-                case SPELL_EFFECT_DURABILITY_DAMAGE_PCT:
                 case SPELL_EFFECT_MODIFY_THREAT_PERCENT:
                 case SPELL_EFFECT_REDIRECT_THREAT:
                 case SPELL_EFFECT_HEAL_PCT:
@@ -2748,14 +2767,14 @@ class SpellBaseResponse extends TemplateResponse implements ICache
                 if ($staffTT)
                     $buffer .= $staffTT;
 
-                if (in_array($effId, SpellList::EFFECTS_SCALING_DAMAGE))
+                if (in_array($effId, SpellList::EFFECTS_SCALING_DAMAGE) || in_array($effId, SpellList::EFFECTS_SCALING_HEAL))
                 {
                     if ($scaling[2])
                         $buffer .= Lang::spell('apMod', [$scaling[2]]);
                     if ($scaling[0])
                         $buffer .= Lang::spell('spMod', [$scaling[0]]);
                 }
-                if (in_array($effAura, SpellList::AURAS_SCALING_DAMAGE))
+                if (in_array($effAura, SpellList::AURAS_SCALING_DAMAGE) || in_array($effAura, SpellList::AURAS_SCALING_HEAL))
                 {
                     if ($scaling[3])
                         $buffer .= Lang::spell('apMod', [$scaling[3]]);
@@ -3096,7 +3115,7 @@ class SpellBaseResponse extends TemplateResponse implements ICache
         $keywords = [$this->h1, Util::ucFirst(Lang::game('spell'))];
 
         $c = array_slice($this->breadcrumb, 2);
-        if (isset($c[2]))
+        if (isset($c[2]) && $c[0] != -13)
         {
             if (!in_array($c[0], [7, -2]))
                 $keywords[] = Lang::spell('cat', $c[0], 1, $c[1], 1, $c[2]);

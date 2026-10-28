@@ -16,7 +16,8 @@ ${['static/js/jquery-3.7.0.min.js', 'static/js/basic.js', 'setup/tools/filegen/t
 <main class="main-contents"><table class="infobox"><tr><th>Quick facts</th></tr><tr><td>Public facts</td></tr></table><div class="text"><h1>A long readable entity title</h1><p>Visible article text with <a href="?item=1">a database link</a>.</p><img width="650" height="300" alt="Artwork"><table class="grid"><tr><td style="white-space:nowrap">${'Wide article table content '.repeat(5)}</td></tr></table><div id="mapper-generic" role="group" aria-label="Authored map"><div class="mapper" style="width:778px;height:519px"><a id="map-pin" style="position:absolute;left:700px;top:50px" href="?npc=1">Map pin</a></div></div></div>
 <div id="tc-classes" class="choose"><div id="tc-classes-outer"><div id="tc-classes-inner"><p>Choose a class:</p><div class="iconmedium"><a href="#class" style="display:block;width:38px;height:38px">Class</a></div></div></div></div><div id="tc-itself" class="choose"><div class="talentcalc-main"></div></div><div class="listview"><div class="listview-band-top"><span class="listview-note">Results</span><span class="listview-nav"><a href="#prev">Previous</a><a href="#next">Next</a></span></div><table class="listview-mode-default"><thead><tr><th>Name</th><th>Level</th></tr></thead><tbody><tr><td>Entity</td><td>80</td></tr></tbody></table></div></main></div></div></div>
 <script>$(function(){function addMenu(){Menu.addButtons($('#topbar-buttons'),[[1,'Browse','?items',[[2,'Items','?items'],[3,'Quests','?quests']]]]);}if(location.search==='?items')setTimeout(addMenu,350);else addMenu();});</script></body></html>`;
-const homeFixture = fixture.slice(0, fixture.indexOf('<body>')) + `<body class="home"><div class="home-wrapper"><div class="home-logo"></div><div class="home-search"><form><input name="search"><a href="#search" aria-label="Search"></a></form></div><div class="home-menu"><span class="menu-buttons"><a href="?items">Database</a><a href="?guides">Guides</a></span></div><div class="home-featuredbox home-featuredbox-extended"><div class="home-featuredbox-links"><a href="?items" title="Featured items" style="left:300px;top:18px;width:150px;height:160px"></a></div><div class="home-featuredbox-inner text"><p>Readable news text with <a href="?quest=1">a quest link</a>. ${'News paragraph. '.repeat(20)}</p></div></div></div><div class="toplinks"><a href="?account">Log in</a></div></body></html>`;
+const homeNewsBackground = 'data:image/jpeg;base64,' + fs.readFileSync('static/images/enus/mainpage-bg-news.jpg').toString('base64');
+const homeFixture = fixture.slice(0, fixture.indexOf('<body>')) + `<body class="home"><div class="home-wrapper"><div class="home-logo"></div><div class="home-search"><form><input name="search"><a href="#search" aria-label="Search"></a></form></div><div class="home-menu"><span class="menu-buttons"><a href="?items">Database</a><a href="?guides">Guides</a></span></div><div class="home-featuredbox home-featuredbox-extended" style="background-image:url(${homeNewsBackground})"><div class="home-featuredbox-links"><a href="?items" title="Featured items" style="left:300px;top:18px;width:150px;height:160px"></a></div><div class="home-featuredbox-inner text"><p>Readable news text with <a href="?quest=1">a quest link</a>. ${'News paragraph. '.repeat(20)}</p></div></div></div><div class="toplinks"><a href="?account">Log in</a></div></body></html>`;
 function panelFixture(language, kind) {
     const locale = panels[language];
     const localeData = { [locale.id]: { id: locale.id, name: locale.locale, description: language } };
@@ -60,11 +61,17 @@ try {
         }
         check(page.errors.length === 0, 'no browser exceptions: ' + page.errors.join(' | '));
     }
-    for (const width of [360, 390, 768]) {
+    for (const width of [360, 390, 440, 768, 979]) {
         await page.viewport(width); await page.goto(origin + '/home');
         check(await page.evaluate(`document.documentElement.scrollWidth<=${width}&&innerWidth===${width}`), 'homepage does not overflow at ' + width);
         check(await page.evaluate(`(()=>{const top=document.querySelector('.toplinks').getBoundingClientRect(),logo=document.querySelector('.home-logo').getBoundingClientRect(),input=document.querySelector('.home-search input').getBoundingClientRect();return top.bottom<=logo.top&&input.right<=innerWidth&&input.height>=44;})()`), 'homepage account links do not overlap the logo and search stays usable');
         check(await page.evaluate(`(()=>{const a=document.querySelector('.home-featuredbox-links a'),b=document.querySelector('.home-featuredbox-inner p');return a.textContent===''&&getComputedStyle(a,'::after').content.includes('Featured items')&&a.getBoundingClientRect().height>=36&&b.getBoundingClientRect().right<=innerWidth;})()`), 'authored banner links remain labeled and news text reflows');
+        // The news frame is painted inside the JPEG, not at the div's edges.
+        // Check both standard and extended boxes against its visible side borders.
+        for (const extended of [false, true]) {
+            await page.evaluate(`document.querySelector('.home-featuredbox').classList.toggle('home-featuredbox-extended', ${extended})`);
+            check(await page.evaluate(`(()=>{const box=document.querySelector('.home-featuredbox').getBoundingClientRect(),text=document.querySelector('.home-featuredbox-inner p').getBoundingClientRect(),scale=box.width/415;return text.left>=box.left+18*scale+1&&text.right<=box.left+395*scale-1;})()`), 'homepage text stays inside the painted news frame: ' + width + '/' + (extended ? 'extended' : 'standard'));
+        }
     }
     await page.goto(origin);
     // Resize an already enhanced page back to desktop and then back to a phone.

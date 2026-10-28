@@ -105,12 +105,13 @@ navigation fallback. A second Chromium run blocks all page scripts through CSP
 and verifies the initial headings and crawlable links remain available.
 
 `node tests/seo-responsive.mjs` runs in the browser gate with the real responsive
-CSS/JavaScript, jQuery and Menu code. Its 1,061 native Chrome DevTools checks cover 360,
-390, 470, 600, 768, 979 and 1440-pixel viewports, text reflow, bounded table/map
+CSS/JavaScript, jQuery and Menu code. Its 1,077 native Chrome DevTools checks cover 360,
+390, 440, 470, 600, 768, 979 and 1440-pixel viewports, text reflow, bounded table/map
 scrolling, native
 pin coordinates, mobile facts ordering, class pickers, lazy content, restoration
 on desktop resize, keyboard scroll regions, actual touch-menu opening/navigation,
-long menus, dialogs and script-blocked content. Homepage news/banner links and
+long menus, dialogs and script-blocked content. Homepage news/banner links,
+text insets within the actual news artwork for standard and extended boxes, and
 localized navigation/scroll labels are also exercised. A database-free PHP fixture
 renders the real contribution and sign-in/sign-up bricks in six languages for
 guest and member states. Real Tabs and comment editors exercise panel width,
@@ -180,8 +181,26 @@ covers all six locales, missing Talk text, specific/all aura removal, progress
 text precedence, multi-column fulltext and malformed collectible IDs. It runs in
 the PHP gate without application credentials.
 
+The October 26 follow-up adds zero-delay SmartAI branches, unnamed item-subclass
+fallbacks and German profile description formatting in all six locales.
+`php tests/security-upstream-profiles.php` exercises the real user/profile-global
+methods with loaded synthetic real/custom profiles and disabled/anonymous access.
+`php tests/security-upstream-routing.php` runs the actual front controller against
+loopback synthetic handlers: malformed first routing pairs, uppercase/encoded
+routes, custom-profile inventory arrays, hyphenated routes and early locale
+redirects. Both run in the PHP gate.
+
+Sticky screenshots/videos are tested at metadata index zero, with keyword arrays
+preserved. Guide/profile integer bounds use the actual endpoint definitions.
+Mixed-case markup and file-cache initialization are covered by the cache suite.
+The disposable SQL update suite exercises additive custom flags, reapplication,
+and the Midsummer search-link repair against stock, edited, translated, owned and
+pending-revision articles, including imported event IDs, zero-ID rows, pending
+generator work and journal replay prevention. No retained database is used.
+
 Spell-effect fixtures also cover signed time units, regeneration labels,
-knockback speed scaling and aura-only icon counts in all six locales. Generated
+knockback speed scaling, durability slots/bags, healing AP/SP coefficients and
+aura-only icon counts in all six locales. Generated
 PHP-to-JavaScript scaling checks preserve display precision across repeated level
 updates while formula operands retain their original precision. Existing scaling
 markers remain compatible; new display markers append `:f:0` or `:f:1` for integer
