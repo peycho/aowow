@@ -1327,6 +1327,7 @@ $lang = array(
         'mechanicimmune'=> 'Nicht anfällig für Mechanik: %s',
         '_extraFlags'   => 'Extra Flags: ',
         'versions'      => 'Schwierigkeitsgrade: ',
+        'pvpLeader'     => 'Anführer',
         'level'         => array(
             'Stufe %s',
             'Stufe %s - %s',
