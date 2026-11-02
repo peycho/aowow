@@ -373,7 +373,7 @@ class ItemBaseResponse extends TemplateResponse implements ICache
             $infobox[] = Lang::game('level').Lang::main('colon').$_ilvl;
 
         // account-wide
-        if ($_flags & ITEM_FLAG_ACCOUNTBOUND)
+        if ($_flags & ITEM_FLAG_IS_BOUND_TO_ACCOUNT)
             $infobox[] = Lang::item('accountWide');
 
         // side
@@ -525,7 +525,7 @@ class ItemBaseResponse extends TemplateResponse implements ICache
                 $infobox[] = '[tooltip=tooltip_buyoutprice]'.Lang::item('buyout.').'[/tooltip]'.Lang::main('colon').'[money='.$_.']'.$each;
 
         // avg money contained
-        if ($_flags & ITEM_FLAG_OPENABLE)
+        if ($_flags & ITEM_FLAG_HAS_LOOT)
             if ($_ = intVal(($this->subject->getField('minMoneyLoot') + $this->subject->getField('maxMoneyLoot')) / 2))
                 $infobox[] = Lang::item('worth').'[tooltip=tooltip_avgmoneycontained][money='.$_.'][/tooltip]';
 
@@ -544,13 +544,13 @@ class ItemBaseResponse extends TemplateResponse implements ICache
                 $infobox[] = Lang::item('cantDisenchant');
         }
 
-        if (($_flags & ITEM_FLAG_MILLABLE) && $this->subject->getField('requiredSkill') == SKILL_INSCRIPTION)
+        if (($_flags & ITEM_FLAG_IS_MILLABLE) && $this->subject->getField('requiredSkill') == SKILL_INSCRIPTION)
         {
             $infobox[] = Lang::item('millable').'&nbsp;([tooltip=tooltip_reqinscription]'.$this->subject->getField('requiredSkillRank').'[/tooltip])';
             $infobox[] = Lang::formatSkillBreakpoints(Game::getBreakpointsForSkill(SKILL_INSCRIPTION, $this->subject->getField('requiredSkillRank')));
         }
 
-        if (($_flags & ITEM_FLAG_PROSPECTABLE) && $this->subject->getField('requiredSkill') == SKILL_JEWELCRAFTING)
+        if (($_flags & ITEM_FLAG_IS_PROSPECTABLE) && $this->subject->getField('requiredSkill') == SKILL_JEWELCRAFTING)
         {
             $infobox[] = Lang::item('prospectable').'&nbsp;([tooltip=tooltip_reqjewelcrafting]'.$this->subject->getField('requiredSkillRank').'[/tooltip])';
             $infobox[] = Lang::formatSkillBreakpoints(Game::getBreakpointsForSkill(SKILL_JEWELCRAFTING, $this->subject->getField('requiredSkillRank')));
@@ -559,25 +559,25 @@ class ItemBaseResponse extends TemplateResponse implements ICache
         if ($_flags & ITEM_FLAG_DEPRECATED)
             $infobox[] = '[tooltip=tooltip_deprecated]'.Lang::item('deprecated').'[/tooltip]';
 
-        if ($_flags & ITEM_FLAG_NO_EQUIPCD)
+        if ($_flags & ITEM_FLAG_NO_EQUIP_COOLDOWN)
             $infobox[] = '[tooltip=tooltip_noequipcooldown]'.Lang::item('noEquipCD').'[/tooltip]';
 
-        if ($_flags & ITEM_FLAG_PARTYLOOT)
+        if ($_flags & ITEM_FLAG_MULTI_DROP)
             $infobox[] = '[tooltip=tooltip_partyloot]'.Lang::item('partyLoot').'[/tooltip]';
 
-        if ($_flags & ITEM_FLAG_REFUNDABLE)
+        if ($_flags & ITEM_FLAG_ITEM_PURCHASE_RECORD)
             $infobox[] = '[tooltip=tooltip_refundable]'.Lang::item('refundable').'[/tooltip]';
 
-        if ($_flags & ITEM_FLAG_SMARTLOOT)
+        if ($_flags & ITEM_FLAG_HIDE_UNUSABLE_RECIPE)
             $infobox[] = '[tooltip=tooltip_smartloot]'.Lang::item('smartLoot').'[/tooltip]';
 
-        if ($_flags & ITEM_FLAG_INDESTRUCTIBLE)
+        if ($_flags & ITEM_FLAG_NO_USER_DESTROY)
             $infobox[] = Lang::item('indestructible');
 
-        if ($_flags & ITEM_FLAG_USABLE_ARENA)
+        if ($_flags & ITEM_FLAG_IGNORE_DEFAULT_ARENA_RESTRICTIONS)
             $infobox[] = Lang::item('useInArena');
 
-        if ($_flags & ITEM_FLAG_USABLE_SHAPED)
+        if ($_flags & ITEM_FLAG_USE_WHEN_SHAPESHIFTED)
             $infobox[] = Lang::item('useInShape');
 
         // cant roll need
@@ -585,7 +585,7 @@ class ItemBaseResponse extends TemplateResponse implements ICache
             $infobox[] = '[tooltip=tooltip_cannotrollneed]'.Lang::item('noNeedRoll').'[/tooltip]';
 
         // fits into keyring
-        if ($_bagFamily & 0x0100)
+        if ($_bagFamily & BAG_FAMILY_MASK_KEYS)
             $infobox[] = Lang::item('atKeyring');
 
         // completion row added by InfoboxMarkup
@@ -917,7 +917,7 @@ class ItemBaseResponse extends TemplateResponse implements ICache
 
     private function tabCanBePlacedIn() : ?Listview
     {
-        if (($bf = $this->subject->getField('bagFamily')) == 0x0100)
+        if (($bf = $this->subject->getField('bagFamily')) == BAG_FAMILY_MASK_KEYS)
             return null;
 
         if (($contains = new ItemList(array(['bagFamily', $bf, '&'], ['slots', 0, '>'])))->error)
@@ -1155,7 +1155,7 @@ class ItemBaseResponse extends TemplateResponse implements ICache
         if (!($vendorIds = DB::World()->selectCol('SELECT `item` FROM npc_vendor WHERE `extendedCost` IN %in UNION SELECT `item` FROM game_event_npc_vendor WHERE `extendedCost` IN %in', $xCostIds, $xCostIds)))
             return null;
 
-        if (($boughtBy = new ItemList(array(['id', $vendorIds])))->error)
+        if (($boughtBy = new ItemList(array(Listview::DEFAULT_SIZE, ['id', $vendorIds])))->error)
             return null;
 
         if (($iCur = new CurrencyList(array(['itemId', $this->typeId])))->error)
@@ -1449,10 +1449,10 @@ class ItemBaseResponse extends TemplateResponse implements ICache
         {
             case ITEM_CLASS_CONTAINER:
             case ITEM_CLASS_QUIVER:
-                $desc = Lang::meta('itemCatDesc', ITEM_CLASS_CONTAINER, [$title, $this->subject->getField('slots'), Lang::item('subClass', $_class, $_subClass)]);
+                $desc = Lang::meta('itemCatDesc', ITEM_CLASS_CONTAINER, [$title, $this->subject->getField('slots'), Lang::item('subClass', $_class, 1, $_subClass)]);
                 break;
             case ITEM_CLASS_WEAPON:
-                $desc = Lang::meta('itemCatDesc', ITEM_CLASS_WEAPON, [Lang::item('quality', $_quality), Lang::item('inventoryType', $_slot).' '.Lang::item('subClass', $_class, $_subClass), $_itemLevel]);
+                $desc = Lang::meta('itemCatDesc', ITEM_CLASS_WEAPON, [Lang::item('quality', $_quality), Lang::item('inventoryType', $_slot).' '.Lang::item('subClass', $_class, 1, $_subClass), $_itemLevel]);
                 break;
             case ITEM_CLASS_GEM:
                 $lvl = '';
@@ -1462,7 +1462,7 @@ class ItemBaseResponse extends TemplateResponse implements ICache
                 $desc = Lang::meta('itemCatDesc', ITEM_CLASS_GEM, [$lvl, Lang::item('quality', $_quality), Lang::item('_gemColors', $_subClass)]);
                 break;
             case ITEM_CLASS_ARMOR:
-                $asc  = $_subClass < 0 ? Lang::item('cat', ITEM_CLASS_ARMOR, 1, $_subClass) : Lang::item('subClass', $_class, $_subClass).' '.Lang::item('cat', ITEM_CLASS_ARMOR, 0);
+                $asc  = $_subClass < 0 ? Lang::item('cat', ITEM_CLASS_ARMOR, 1, $_subClass) : Lang::item('subClass', $_class, 1, $_subClass).' '.Lang::item('cat', ITEM_CLASS_ARMOR, 0);
                 $desc = Lang::meta('itemCatDesc', 4, [Lang::item('quality', $_quality), $asc, $_itemLevel, Lang::item('inventoryType', $_slot)]);
                 break;
             case ITEM_CLASS_KEY:
