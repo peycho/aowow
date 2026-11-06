@@ -153,7 +153,7 @@ class SpellBaseResponse extends TemplateResponse implements ICache
                 Type::ITEM,
                 $tool['itemId'] ?? 0,
                 $tool['name'],
-                quality: ITEM_QUALITY_NORMAL,
+                quality: $tool['quality'] ?? ITEM_QUALITY_NORMAL,
                 size: IconElement::SIZE_SMALL,
                 url: !isset($tool['itemId']) ? '?items&filter=cr=91;crs='.$tool['id'].';crv=0' : '',
                 element: 'iconlist-icon'
@@ -192,7 +192,7 @@ class SpellBaseResponse extends TemplateResponse implements ICache
         $this->createSpellSchool();         // Schools cell and filter link
 
         $this->powerCost = $this->subject->createPowerCostForCurrent();
-        $this->castTime  = $this->subject->createCastTimeForCurrent(false, false);
+        $this->castTime  = $this->subject->createCastTimeForCurrent(false);
         $this->level     = $this->subject->getField('spellLevel');
         $this->rangeName = $this->subject->getField('rangeText', true);
         $this->gcd       = DateTime::formatTimeElapsedFloat($this->subject->getField('startRecoveryTime'));
@@ -216,8 +216,9 @@ class SpellBaseResponse extends TemplateResponse implements ICache
             default => ''                                   // n/a
         };
 
-        $min = $this->subject->getField('rangeMinHostile');
-        $max = $this->subject->getField('rangeMaxHostile');
+        // serverside spells may have a rangeId of 0
+        $min = $this->subject->getField('rangeMinHostile') ?: 0;
+        $max = $this->subject->getField('rangeMaxHostile') ?: 0;
         $this->range = '<a href="?spells&filter=cr=117:118;crs=3:3;crv='.$max.':'.$min.'">'.(Util::createNumRange($min ?: $max, $max) ?: 0).Lang::spell('_distUnit').'</a>';
 
         if (!($this->subject->getField('attributes2') & SPELL_ATTR2_NOT_NEED_SHAPESHIFT))
@@ -3191,21 +3192,21 @@ class SpellBaseResponse extends TemplateResponse implements ICache
            -SPELL_AURA_MOD_INCREASE_ENERGY_PERCENT,
            -SPELL_AURA_OBS_MOD_POWER,
             SPELL_EFFECT_ENERGIZE_PCT
-                => [ 1, '%s%%'],
+                => [false, '%s%%'],
            -SPELL_AURA_MOD_POWER_REGEN
-                => [10, Lang::spell('_regenPer5Sec', $effMV)],
+                => [true, Lang::spell('_regenPer5Sec', $effMV)],
             default
-                => [10, '%s']
+                => [true, '%s']
         };
 
         if ($_ = Lang::spell('powerTypes', $effMV))
             $nameMV = $this->fmtStaffTip($_, 'MiscValue: '.$effMV);
 
         // rage and runic power are stored x10, a percentage of them is not
-        if (($effMV == POWER_RAGE || $effMV == POWER_RUNIC_POWER))
+        if ($div)
         {
-            $effMin /= $div;
-            $effMax /= $div;
+            $effMin /= (SpellList::POWER_DISPLAY_MOD[$effMV] ?? 1);
+            $effMax /= (SpellList::POWER_DISPLAY_MOD[$effMV] ?? 1);
         }
 
         return [$nameMV ?? null, null, null, [$effMin, $effMax, $fmt, null]];
