@@ -1079,8 +1079,7 @@ Mapper.prototype = {
 
     addPin: function(e)
     {
-        e = $WH.$E(e);
-        if (e._button >= 2) return;
+        if (e.button >= 1) return;
 
         this.getMousePos(e);
         var p = this.getPin(this.level);
@@ -1101,11 +1100,9 @@ Mapper.prototype = {
 
     delPin: function(pin, e)
     {
-        e = $WH.$E(e);
-
         pin.style.display = 'none';
         pin.free = true;
-        $WH.sp(e);
+        e.stopPropagation();
 
         this.onPinUpdate && this.onPinUpdate(this);
 
@@ -1119,8 +1116,6 @@ Mapper.prototype = {
 
     getMousePos: function(e)
     {
-        e = $WH.$E(e);
-
         var c = $WH.ac(this.parent);
 
         var scroll = $WH.g_getScroll();

@@ -275,7 +275,7 @@ function ssm_UpdateList(openNext) {
         a.href = ssm_ImageUrl(screenshot, false);
         a.target = '_blank';
         a.onclick = function (id, e) {
-            $WH.sp(e);
+            e.stopPropagation();
             (ssm_View.bind(null, this, id))();
             return false;
         }.bind(tr, screenshot.id);
@@ -293,7 +293,7 @@ function ssm_UpdateList(openNext) {
             var a = $WH.ce('a');
             a.href = '?' + g_types[screenshot.type] + '=' + screenshot.typeId + '#screenshots:id=' + screenshot.id;
             a.target = '_blank';
-            a.onclick = function (e) { $WH.sp(e); };
+            a.onclick = (e) => e.stopPropagation();
             $WH.ae(a, $WH.ct(screenshot.id));
             $WH.ae(td, a);
         }
@@ -329,7 +329,7 @@ function ssm_UpdateList(openNext) {
         var a = $WH.ce('a');
         a.href = 'javascript:;';
         a.onclick = function (ss, e) {
-            $WH.sp(e);
+            e.stopPropagation();
             (ssm_ShowEdit.bind(this, ss))();
         }.bind(a, screenshot);
         $WH.ae(a, $WH.ct('Edit'));
@@ -339,7 +339,7 @@ function ssm_UpdateList(openNext) {
         a = $WH.ce('a');
         a.href = 'javascript:;';
         a.onclick = function (ss, e) {
-            $WH.sp(e);
+            e.stopPropagation();
             (ssm_Clear.bind(this, ss))();
         }.bind(a, screenshot);
         $WH.ae(a, $WH.ct('Clear'));
@@ -356,7 +356,7 @@ function ssm_UpdateList(openNext) {
         a = $WH.ce('a');
         a.href = '?user=' + screenshot.user;
         a.target = '_blank';
-        a.onclick = function (e) { $WH.sp(e); };
+        a.onclick = (e) => e.stopPropagation();
         $WH.ae(a, $WH.ct(screenshot.user));
         $WH.ae(td, a);
         $WH.ae(tr, td);
@@ -370,7 +370,7 @@ function ssm_UpdateList(openNext) {
         cb.type = 'checkbox';
         cb.value = screenshot.id;
         cb.onclick = function (e) {
-            $WH.sp(e);
+            e.stopPropagation();
             (ssm_UpdateMassLinks.bind(this))();
         }.bind(cb);
         $WH.ae(td, cb);
@@ -390,7 +390,7 @@ function ssm_UpdateList(openNext) {
                 a = $WH.ce('a');
                 a.href = 'javascript:;';
                 a.onclick = function (e) {
-                    $WH.sp(e);
+                    e.stopPropagation();
                     (ssm_Approve.bind(this, false))();
                 }.bind(screenshot);
                 $WH.ae(a, $WH.ct('Approve'));
@@ -405,7 +405,7 @@ function ssm_UpdateList(openNext) {
                 a = $WH.ce('a');
                 a.href = 'javascript:;';
                 a.onclick = function (e) {
-                    $WH.sp(e);
+                    e.stopPropagation();
                     (ssm_Sticky.bind(this, false))();
                 }.bind(screenshot);
                 $WH.ae(a, $WH.ct('Make sticky'));
@@ -419,7 +419,7 @@ function ssm_UpdateList(openNext) {
             a = $WH.ce('a');
             a.href = 'javascript:;';
             a.onclick = function (e) {
-                $WH.sp(e);
+                e.stopPropagation();
                 (ssm_Delete.bind(this, false))();
             }.bind(screenshot);
             $WH.ae(a, $WH.ct('Delete'));
@@ -430,7 +430,7 @@ function ssm_UpdateList(openNext) {
             a = $WH.ce('a');
             a.href = 'javascript:;';
             a.onclick = function (e) {
-                $WH.sp(e);
+                e.stopPropagation();
                 var id = prompt('Enter the ID to move this screenshot to:');
                 (ssm_Relocate.bind(this, id))();
             }.bind(screenshot);
@@ -529,7 +529,7 @@ function ssm_ShowEdit(screenshot, isAlt) {
     iCaption.value = screenshot.caption;
     iCaption.maxLength = 200;
     iCaption.size = 35;
-    iCaption.onclick = function (e) { $WH.sp(e); }          // aowow - custom to inhibit screenshot popup, when clicking into input element
+    iCaption.onclick = (e) => e.stopPropagation();          // aowow - custom to inhibit screenshot popup, when clicking into input element
     div.appendChild(iCaption);
 
     var btn = $WH.ce('input');
@@ -537,7 +537,7 @@ function ssm_ShowEdit(screenshot, isAlt) {
     btn.value = 'Update';
     btn.onclick = function (ss, isAlt, e) {
         if (!isAlt)
-            $WH.sp(e);
+            e.stopPropagation();
 
         (ssm_Edit.bind(this, ss, isAlt))();
     }.bind(btn, screenshot, isAlt);
@@ -552,7 +552,7 @@ function ssm_ShowEdit(screenshot, isAlt) {
     btn.value = 'Cancel';
     btn.onclick = function (ss, isAlt, e) {
         if (!isAlt) {
-            $WH.sp(e);
+            e.stopPropagation();
         }
 
         (ssm_CancelEdit.bind(this, ss, isAlt))();

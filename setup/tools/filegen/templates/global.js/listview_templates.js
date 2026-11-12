@@ -4085,7 +4085,7 @@ Listview.templates = {
             if (comment.deleted || comment.rating < -4) {
                 comment.headerCell.css('cursor', 'pointer');
                 comment.headerCell.bind('click', function(e) {
-                    if ($WH.$E(e)._target.nodeName == 'A') {
+                    if (e.target.nodeName == 'A') {
                         return;                             // aowow - custom: prevent toggle if using function buttons
                     }
 

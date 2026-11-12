@@ -4,31 +4,6 @@ if (typeof $WH == "undefined") { // Local
     var $WH = {};
 }
 
-$WH.$E = function (e) {
-    if (!e) {
-        if (typeof event != 'undefined') {
-            e = event;
-        }
-        else {
-            return null;
-        }
-    }
-
-    // Netscape standard (1 = Left, 2 = Middle, 3 = Right)
-    if (e.which) {
-        e._button = e.which;
-    }
-    else {
-        e._button = e.button + 1;
-    }
-
-    e._target = e.target ? e.target : e.srcElement;
-
-    e._wheelDelta = e.wheelDelta ? e.wheelDelta : -e.detail;
-
-    return e;
-};
-
 $WH.$A = function (a) {
     var r = [];
     for (var i = 0, len = a.length; i < len; ++i) {
@@ -455,8 +430,6 @@ $WH.rf = function() {
 
 // Return false only if no control key is pressed
 $WH.rf2 = function(e) {
-    e = $WH.$E(e);
-
     if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) {
         return;
     }
@@ -487,15 +460,6 @@ $WH.dE = function(z, y, x) {
     else if (z.detachEvent) {
         z.detachEvent('on' + y, x);
     }
-}
-
-// Stop propagation
-$WH.sp = function(z) {
-    if (!z) {
-        z = event;
-    }
-
-    z.stopPropagation();
 }
 
 // Set cookie
@@ -2163,7 +2127,6 @@ $WH.Tooltip = {
             }
         }
 
-        e = $WH.$E(e);
         var pos = $WH.g_getCursorPos(e);
 
         $WH.Tooltip.prepare();
@@ -2191,8 +2154,6 @@ $WH.Tooltip = {
         if ($WH.Tooltip.disabled || !$WH.Tooltip.tooltip) {
             return;
         }
-
-        e = $WH.$E(e);
 
         if (!x || x < 10) {
             x = 10;
