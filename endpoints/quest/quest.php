@@ -944,7 +944,7 @@ class QuestBaseResponse extends TemplateResponse implements ICache
         {
             $rewards[3] = true;
 
-            if ($comp)
+            if ($comp > $questMoney)
                 $this->rewardsScaler['coin']['rewardAtCap'] = $comp;
 
             $this->rewardsScaler['coin']['multiplier'] = 1;
