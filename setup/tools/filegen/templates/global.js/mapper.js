@@ -133,7 +133,7 @@ function Mapper(opt, noScroll)
         _.style.position = 'absolute';
         _.style.bottom = _.style.left = '0';
 
-        _.onmouseup = $WH.sp;
+        _.onmouseup = (e) => e.stopPropagation();
 
         $WH.ns(_);
         this.span.appendChild(_);
@@ -895,14 +895,14 @@ Mapper.prototype = {
             {
                 _.a.menu = opt.menu;
                 Menu.add(_.a, _.a.menu, { showAtCursor: true });
-                // _.a.onclick = function() {
+                // _.a.onclick = function(e) {
                     // (Menu.show.bind(this))();
                     // $WH.Tooltip.hide();
                     // this.onmouseout = function() {
                         // Menu.hide();
                         // this.onmouseout = $WH.Tooltip.hide();
                     // }.bind(this);
-                    // $WH.sp();
+                    // e.stopPropagation();
                     // return false;
                 // }.bind(_.a);
             }
@@ -1061,7 +1061,7 @@ Mapper.prototype = {
         _.floor = floor;
         a.onmouseover = this.pinOver;
         a.onmouseout = $WH.Tooltip.hide;
-        a.onclick = $WH.sp;
+        a.onclick = (e) => e.stopPropagation();
 
         this.pins.push(_);
         this.cleanPin(this.pins.length - 1, floor);
