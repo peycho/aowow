@@ -14,6 +14,11 @@ class SpellList extends DBTypeList
     public const int INTERACTIVE_EMBEDDED = 1;              // parse combat ratings to %
     public const int INTERACTIVE_FULL     = 2;              // additionaly allow links and hover tooltips
 
+    private const int TOOLTIP_SCALING_NONE    = 0;          // no scaling
+    private const int TOOLTIP_SCALING_GENERIC = 1;          // buff duration or cast time scaling
+    private const int TOOLTIP_SCALING_LDS     = 2;          // use Level Damage Scaling from gtNPCManaCostScaler.dbc
+    private const int TOOLTIP_SCALING_RPPL    = 3;          // use Effect Real Points Per Level for scaling
+
     public static  int      $type       = Type::SPELL;
     public static  string   $brickFile  = 'spell';
     public static  string   $dataTable  = '::spell';
@@ -216,7 +221,7 @@ class SpellList extends DBTypeList
             // fix missing icons
             $_curTpl['iconString'] = $_curTpl['iconString'] ?: DEFAULT_ICON;
 
-            $this->scaling[$this->id] = false;
+            $this->scaling[$this->id] = self::TOOLTIP_SCALING_NONE;
         }
 
         if ($foo)
@@ -742,7 +747,8 @@ class SpellList extends DBTypeList
                 $modStr  = '<!--ppl'.$base.':'.abs($ctMax).':'.($this->curTpl['castTime'] / 1000).':'.floor($ctpl / 10).'-->$1';
                 $timeStr = preg_replace('/\b(\d)/', $modStr, $timeStr);
 
-                $this->scaling[$this->id] = true;
+                if ($this->scaling[$this->id] < self::TOOLTIP_SCALING_GENERIC)
+                    $this->scaling[$this->id] = self::TOOLTIP_SCALING_GENERIC;
             }
 
             return $timeStr;
@@ -784,16 +790,14 @@ class SpellList extends DBTypeList
         $level    = $this->charLevel;
         $maxBase  = 0;
         $rppl     = $this->getField('effect'.$effIdx.'RealPointsPerLevel');
+        $base     = $this->getField('effect'.$effIdx.'BasePoints');
+        $add      = $this->getField('effect'.$effIdx.'DieSides');
         $maxLvl   = $this->getField('maxLevel');
         $baseLvl  = $this->getField('baseLevel');
         $spellLvl = $this->getField('spellLevel');
         $LDSEffs  = $this->canLevelDamageScale();
         $modMin   =
         $modMax   = null;
-
-        [$min, $max] = $this->getEffectAmount($effIdx);
-        $min *= $nTicks;
-        $max *= $nTicks;
 
         if ($rppl)
         {
@@ -850,7 +854,9 @@ class SpellList extends DBTypeList
             }
         }
 
-        return [$min, $max, $modMin, $modMax];
+        $scaling = $rppl ? self::TOOLTIP_SCALING_RPPL :
+            (($this->getField('attributes0') & SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION && in_array($effIdx, $LDSEffs) && $spellLvl) ? self::TOOLTIP_SCALING_LDS : self::TOOLTIP_SCALING_NONE);
+        return [$min, $max, $modMin, $modMax, $scaling];
     }
 
 
@@ -1470,7 +1476,7 @@ class SpellList extends DBTypeList
                 if (!in_array($op, $signs) || !is_numeric($oparg))
                     $op = $oparg = null;
 
-                [$min, $max, $modStrMin, $modStrMax] = $srcSpell->calculateAmountForCurrent($effIdx, $op, $oparg);
+                [$min, $max, $modStrMin, $modStrMax, $scalingType] = $srcSpell->calculateAmountForCurrent($effIdx, $op, $oparg);
 
                 $mv   = $srcSpell->getField('effect'.$effIdx.'MiscValue');
                 $aura = $srcSpell->getField('effect'.$effIdx.'AuraId');
@@ -1479,21 +1485,21 @@ class SpellList extends DBTypeList
                 $stats = [];
                 if ($aura == SPELL_AURA_MOD_RATING)
                     if ($stats = StatsContainer::convertCombatRating($mv))
-                        $this->scaling[$this->id] = true;
+                        $scalingType = max($scalingType, self::TOOLTIP_SCALING_GENERIC);
                 // Aura end
+
+                if ($this->scaling[$this->id] < $scalingType)
+                    $this->scaling[$this->id] = $scalingType;
 
                 if ($stats && $this->interactive >= self::INTERACTIVE_EMBEDDED)
                 {
-                    $fmtStringMin = '<!--rtg%s-->%s&nbsp;<small>(%s)</small>';
+                    $fmtStringMin = '<!--rtg%s-->'.$modStrMin.'%s&nbsp;<small>(%s)</small>';
                     $statId = $stats[0];                    // could be multiple ratings in theory, but not expected to be
                 }
                 /*
                     todo: export to and solve formulas in javascript e.g.: spell 10187 - ${$42213m1*8*$<mult>} with $mult = ${${$?s31678[${1.05}][${${$?s31677[${1.04}][${${$?s31676[${1.03}][${${$?s31675[${1.02}][${${$?s31674[${1.01}][${1}]}}]}}]}}]}}]}*${$?s12953[${1.06}][${${$?s12952[${1.04}][${${$?s11151[${1.02}][${1}]}}]}}]}}
                     else if ($this->interactive == self::INTERACTIVE_FULL && ($modStrMin || $modStrMax))
-                    {
-                        $this->scaling[$this->id] = true;
                         $fmtStringMin = $modStrMin.'%s';
-                    }
                 */
                 $minPoints = ctype_lower($var) ? $min : $max;
                 break;
@@ -1513,12 +1519,13 @@ class SpellList extends DBTypeList
                 if (!in_array($op, $signs) || !is_numeric($oparg))
                     $op = $oparg = null;
 
-                [$min, $max, $modStrMin, $modStrMax] = $srcSpell->calculateAmountForCurrent($effIdx, $op, $oparg, intVal($duration / $periode));
+                [$min, $max, $modStrMin, $modStrMax, $scalingType] = $srcSpell->calculateAmountForCurrent($effIdx, $op, $oparg, intVal($duration / $periode));
+
+                if ($this->scaling[$this->id] < $scalingType)
+                    $this->scaling[$this->id] = $scalingType;
 
                 if ($this->interactive >= self::INTERACTIVE_EMBEDDED && ($modStrMin || $modStrMax))
                 {
-                    $this->scaling[$this->id] = true;
-
                     $fmtStringMin = $modStrMin.'%s';
                     $fmtStringMax = $modStrMax.'%s';
                 }
@@ -1534,23 +1541,25 @@ class SpellList extends DBTypeList
                 if (!in_array($op, $signs) || !is_numeric($oparg))
                     $op = $oparg = null;
 
-                [$min, $max, $modStrMin, $modStrMax] = $srcSpell->calculateAmountForCurrent($effIdx, $op, $oparg);
+                [$min, $max, $modStrMin, $modStrMax, $scalingType] = $srcSpell->calculateAmountForCurrent($effIdx, $op, $oparg);
 
                 // Aura giving combat ratings
                 $stats = [];
                 if ($aura == SPELL_AURA_MOD_RATING)
                     if ($stats = StatsContainer::convertCombatRating($mv))
-                        $this->scaling[$this->id] = true;
+                        $scalingType = max($scalingType, self::TOOLTIP_SCALING_GENERIC);
                 // Aura end
+
+                if ($this->scaling[$this->id] < $scalingType)
+                    $this->scaling[$this->id] = $scalingType;
 
                 if ($stats && $this->interactive >= self::INTERACTIVE_EMBEDDED)
                 {
-                    $fmtStringMin = '<!--rtg%s-->%s&nbsp;<small>(%s)</small>';
+                    $fmtStringMin = '<!--rtg%s-->'.$modStrMin.'%s&nbsp;<small>(%s)</small>';
                     $statId = $stats[0];                    // could be multiple ratings in theory, but not expected to be
                 }
                 else if (($modStrMin || $modStrMax) && $this->interactive == self::INTERACTIVE_FULL)
                 {
-                    $this->scaling[$this->id] = true;
                     $fmtStringMin = $modStrMin.'%s';
                     $fmtStringMax = $modStrMax.'%s';
                 }
@@ -1971,7 +1980,7 @@ class SpellList extends DBTypeList
 
                 $x .= '<span class="q">'.preg_replace('/\b(\d)/', $modStr, Lang::formatTime($time, 'spell', 'timeRemaining')).'<span>';
 
-                $this->scaling[$this->id] = true;
+                $this->scaling[$this->id] = self::TOOLTIP_SCALING_GENERIC;
             }
             else if ($md > 0)
                 $x .= '<span class="q">'.($modStr ?? '').Lang::formatTime($md, 'spell', 'timeRemaining').'<span>';
@@ -1979,11 +1988,23 @@ class SpellList extends DBTypeList
 
         $x .= '</td></tr></table>';
 
-        // scaling information - spellId:min:max:curr
+        // scaling information - spellId:min:max:curr[:scalingDistribution:ScalingFlags]
         $min = $this->scaling[$this->id] ? $baseLevel : 1;
         $max = $this->scaling[$this->id] ? $maxLevel  : 1;
 
-        $x .= '<!--?'.$this->id.':'.$min.':'.$max.':'.clamp($this->charLevel, $min, $max).'-->';
+        $scalingInfo = array(
+            $this->id,
+            $min,
+            $max,
+            clamp($this->charLevel, $min, $max)
+        );
+
+        // in 4.x+ proper scaling information; for us just to flag a npc spell as level damage scaling
+        // also; we're only exposing npcmanacostscaler to js, so calculated values are always at base level
+        if ($this->scaling[$this->id] == self::TOOLTIP_SCALING_LDS)
+            array_splice($scalingInfo, 3, replacement: [$baseLevel, 1, 1]);
+
+        $x .= '<!--?'.implode(':', $scalingInfo).'-->';
 
         return $x;
     }
@@ -2211,7 +2232,7 @@ class SpellList extends DBTypeList
 
         // in 4.x+ proper scaling information; for us just to flag a npc spell as level damage scaling
         // also; we're only exposing npcmanacostscaler to js, so calculated values are always at base level
-        if ($this->getField('attributes0') & SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION)
+        if ($this->scaling[$this->id] == self::TOOLTIP_SCALING_LDS)
             array_splice($scalingInfo, 3, replacement: [$baseLevel, 1, 1]);
 
         $x .= '<!--?'.implode(':', $scalingInfo).'-->';
