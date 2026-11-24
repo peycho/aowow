@@ -39,6 +39,8 @@ if ($error)
     die($error);
 }
 
+if (CLI)
+    require_once 'includes/setup/cli.class.php';
 
 require_once 'includes/defines.php';
 require_once 'includes/locale.class.php';
