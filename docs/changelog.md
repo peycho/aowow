@@ -8,6 +8,173 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-11-25 — Sarjuuk integration and compatibility (revision 77)
+
+Reviewed [Sarjuuk/aowow](https://github.com/Sarjuuk/aowow) `master` at
+`7d5ffe5d21f094ae6fa336f28a4e482c3050c450`, starting from fork `dev` at
+`1be935c7c900084a85cf62f50ef757a0fccf7b30`. Integration branch:
+`upstream-sync/20261125`. Of 71 source commits after the October 26 reviewed tip
+`04a008bd99fce7c30b5dda6f8a7af23201347779`, 66 are imported or adapted with
+`cherry-pick -x`, one is already covered and four are deferred. Original authors,
+author dates, coauthors, differing original committer credit and source-SHA
+provenance are retained. The 59 older ancestry-absent commits remain accounted
+for by earlier imports and review records; historical migrations are not replayed.
+
+The profile-save handler now requires authentication and restricts existing
+updates to owned, undeleted custom profiles. Foreign, deleted and unavailable
+profiles fail before inventory writes. Inventory validation checks the selected
+random suffix rather than the base item ID. GET arrays are rejected; POST inventory
+arrays, hyphenated routes, locale repair and canonical URL handling remain.
+SQL profiling details are excluded from shared page caches.
+
+Spell, item, creature and quest tooltips incorporate the upstream renderer and
+DBC changes while preserving the fork's numeric expression parser, full-amount
+arithmetic, raw coefficients, display precision, signed cache protocol, disabled
+sound behavior and retired model-viewer policy. Browser scaling retains signed
+and fractional coefficients and repeatable combat-rating conversion. Sliders
+retain selected levels when initialized hidden and keep fixed-level ranges finite.
+Quest XP
+and money remain visible in the initial HTML, including level-cap compensation
+and arena-only gains. Search guards inspect the sanitized token; plural parsing
+retains grouped numbers, decimal fractions and cascading locale rules. Nested
+spell groups terminate for cycles, self-references and missing groups.
+
+The new difficulty migration annotates existing rows and inserts missing stock
+mappings without replacing operator/custom data. Spell timing conversion archives
+all original `id`, `castTime` and `duration` values in
+`aowow_spell_timing_legacy` before introducing the new DBC ID columns. Permanent
+negative durations and large numeric timings are retained without narrowing.
+The archive remains in the schema for inspection/rollback and is not automatically
+removed. Explicit `spellrange`, `spellduration` and `spellcasttimes` generators
+keep the auxiliary tables visible to read-only schema validation. The reference
+now contains 110 application tables and 21 discoverable DBC-copy declarations.
+The new `1795564800_01.sql` integrator migration queues the auxiliary SQL tables
+and `profiler pets` builds, appending to existing pending work.
+
+External menu placeholders default to disabled. Explicit operator URLs, enabled
+choices and Discord configuration retain their existing behavior. Private
+logging, fail-stop journaled updates, CMS ownership, locale/map fallbacks and
+existing deployment boundaries remain in place.
+
+| Upstream revision | Result revision | Decision and rationale |
+| --- | --- | --- |
+| `9b3df86b788efa0e971715bfface71a01c024924` | `6a74d39c62c208b73be05cbeabc3911327804a42` | Incorporate: Exclude request-specific dbProfiles during PageTemplate serialization; verify wakeup rebuilds them for each viewer. |
+| `6b04da1af218a7930c193ab666d8762832d9fcce` | `8dfc1aaca531e0f6682e646f7d4b061e616643c7` | Adapt: Reject all parsed GET arrays while retaining POST inventory arrays, numeric-key guards, hyphenated routes, early locale repair and canonical redirects. |
+| `e36a9d31d054c6bc468fd60a7e2db511ea7bff02` | `d3224ec5662ad587a64a1d96c44e225798f1f823` | Incorporate: Read the actual skill column when finding starter profession spells during profile sync. |
+| `7734449426c271f80bbcb77d1de58e7508d1eb75` | `f775568b656d7d5b1eb57a2306ee8e1ddfdf75c9` | Adapt: Use raw entity titles for metadata; preserve fork SEO schema, keyword arrays, output escaping and request-time normalization. |
+| `cde5eec4406ebb58a62a60f2cd3b17768fd8e406` | `9983e8db5451b99128dc0c0fb0c9191eb16cfb40` | Incorporate: Add the missing localized guides tab title. |
+| `0c0fd0247e0672a35df27e0262ed500533e4e9e5` | `e5b87402d50950ca37837d7bf7e1efe5cb8b4010` | Incorporate: Priority: require login and restrict update targets to owned, undeleted custom profiles; retain POST/CSRF protection. |
+| `6c2047ddcca5464c5269409871736a107071b676` | `43c4265d12a123fd5a11d1f90326c44e76447826` | Adapt: Keep custom profiles when their original realm disappears, mark empty remote lists correctly, retain fork realm/access behavior. |
+| `d189fbb17ce804e55ad1634cdb3ac91ff1572b76` | `c838209408c4679c6f78f4d7a2e0f07d4512d060` | Incorporate: Pair with 0c0fd024: return failure before inventory work when the target is unavailable or unowned. |
+| `e138e113e0594f00c6e2d5a1278bf7c0b93cbb15` | `20b54ec2f83ebac1f26f6323af19b9f0292b42bd` | Incorporate: Do not divide percentage Rage/Runic Power effects by 10; carry this distinction into the later refactor. |
+| `266e1b0df500e44b049e97b840409e6e4f210bb9` | `c23931d90f374a207399adb7c5beab10c2e67b60` | Adapt: Import expanded effect/aura descriptions and six-locale keys with preserved staff checks, numeric formatting, scaling and safe rendering. |
+| `12f128454cf1110d728051ed554c9cbe39cb94b6` | `2a6793260bed79cae5c98f327ddbaa7bcec11bb4` | Adapt: Add TeamContributionPoints DBC/generator and honor lookup; reconcile fresh-schema accounting and test generator scheduling and missing-data behavior. |
+| `49bec7b44222c5c5403d3385995a2f52cda7b421` | `ae70fa6f1f50415c09b0a831c40a28df94c79271` | Adapt: Large effect-renderer refactor: preserve NumericExpression, complete-amount arithmetic, raw coefficients, precision, periodic-aura rules and sound-disable behavior. |
+| `47c242b81a02da72984557bcfc543202b8df4e74` | `5f85851d0388a9246505044a63b9268ef1d400ef` | Adapt: Patch is incomplete: it tests original $string rather than sanitized $str. Check the sanitized value before indexing; percent-only input still warns at the upstream tip. |
+| `106c22ba4e36d26d2ab2c7a6a718d8058fbb9f21` | `a99295241291b6af1327597c351bbe9e3713270a` | Incorporate: Resolve talent ranks from local talents when absent from world.spell_ranks; pair with ca14bfe0 missing-first-rank guard. |
+| `c608b6883074b46c4467b57d98da6e4aba9d6388` | `b27b39e42dd107b6c7e2f50440187fbc60090c45` | Adapt: Locale/UI-sequence changes need correction: upstream renders both 1,000 and 1.5 with singular English nouns; retain safe HTML/markup handling. |
+| `aef76402304005b094f5773c60c50f6db10f1565` | `e8de3b64728988cb1c6743186e10d25d3b0ec01a` | Adapt: Keep cascading plural and Russian-declension support, with corrected number capture and locale regressions alongside c608b688. |
+| `453d7cff01467eb3d8a531b997fdd2c4c7ca4d20` | `25269215468068af32083bfb198a34695049b84a` | Adapt: Large item-tooltip/flag/enchantment rewrite: preserve item classes, safe markup/serialization and external tooltip behavior; migrate every renamed-constant caller and enchantment-condition schema. |
+| `708dc0607a00b64ac9ebb5a0b5dfbfbccff3bd0c` | `eb66fced5c8766f703ee0c0cdd6838f62be09608` | Incorporate: Include on-use enchantment spells, cooldowns and charges after the item-tooltip prerequisites. |
+| `0f7cd76972aa95fce617772c19f0cf733f4603fe` | `a2692c22fe7ffe7b5a5c8c10e14f3a2b3f087863` | Adapt: Lock reagent export changes shared tuple data: update every caller and validate HTML, markup and raw formats, missing spells/items and reagent IDs. |
+| `c87f8c752c2f7c6fe111ad9a87bdec4ffde0b0ab` | `18b4cae05341919feb04b0a1c7efba045ee0505b` | Incorporate: Required companion migration for the new itemenchantmentcondition DBC layout; preserve pending generator work. |
+| `dd03e79c701129a6b57c32ca871449681aeeadb2` | `dfccb218615c833d08007a2e6e3d03cae352a3c3` | Incorporate: Preserve random-subitem keys when splitting the item variants display into columns. |
+| `94119c5e69fe6e2160542489b53ee9fd1fc050c4` | `bace2a65ab93d76203581925dc530581c9345add` | Adapt: Creature tooltip PvP/faction flags require schema, DBC and creature/faction generator updates; reconcile the fresh-install marker with fork migrations. |
+| `f8732e2e0a96e762e62fe8908511326474bf826d` | `fafddbbb095515b854e4317871a3ee4c9e16c933` | Incorporate: Achievement tooltip cleanup and localized colon output; preserve fork escaping and rendering helpers. |
+| `417ee23e7296efd096341a11d25eb1932543570c` | `ace10d2edbebc79126b2707ba91c12511566a26b` | Adapt: Import quest difficulty and shared breakpoint changes, but inspect/correct the max(19, level/5) table index and preserve all shared formatter consumers. |
+| `ca14bfe0ee1f8b9bea6f3b02fa0dc10fc5868aaf` | `d8581130a74e228fc475d8d76a07c4b50066efb2` | Incorporate: Guard absent first-rank entries and normalize empty talent results after 106c22ba. |
+| `d7b747ecb1c1c891cef4e18cd9fb3b6f2db8d555` | `090b7ced29f884dbe5b3268840d6b197ac30115b` | Incorporate: Fix nested skill/category label lookups; effect-method hunk depends on 49bec7b4. |
+| `6aa6b4bb8352bc4bbf97836e8be022942333d5ce` | `2bba02496492221f324c91a8df5967c23de6fe65` | Incorporate: Correct itemset content-group/type row selection and heroic text. |
+| `b7bbc3551b22643555f846ce4222ae271ca67c3e` | `1fac8008ab8f1d3b7c0c25fd189cb9c746f62837` | Incorporate: Guard unknown gem enchantments, missing titles and empty achievement data during profile sync. |
+| `836f53e6080dccbf87c07b036c84811886a1a0ae` | `12100eecabf837685e00e05069e5411847f6816a` | Incorporate: Use empty labels when referenced entity names are absent instead of passing null to IconElement. |
+| `baaf642e1d24e5bcadfe7aec771f195e656947ed` | `0b9ac3c3207f75af8b665e43459261d45d23a714` | Incorporate: Guard absent or zero ammunition DPS when building metadata; coordinate with raw-title changes. |
+| `4a27d7848ac564b8cbfd1acc6e6cbdc80b46c0b1` | `b9808140a90b89993747aa27a8e1f7f994f4f285` | Adapt: Propagate nested item scaling through by-reference enhancement data; audit callers for non-variable arguments and preserve zero-valued positions. |
+| `6c493aa3e1141c2195d6c70c6f9ffc52f473a7ca` | `94dc9cbb32f0a50c06dd103b3acc5a1a3505091d` | Adapt: Spell duration/cast-time table redesign changes units, fields, generators and JS markers. Reconcile schema/migration markers and preserve fork arithmetic; include all follow-up fixes. |
+| `1d73cf9a96f42612edf8e5d87cece0a899a0502d` | `df0d20490d224029b8e0c121be808b0beb02fa2b` | Adapt: Batch zone quest/SOM lookup with its changed getSOMData API while retaining fork zone/map/guide behavior and all callers. |
+| `e87b9cf84eb40651f2adb3276da83b4b9b543dd9` | `5744a386ba045dc202f8a8faf94bd64682bad84d` | Incorporate: Correct missing-start/end quest filtering, including quests with no relation rows. |
+| `e5c3303b439506024a7740933aa3c3e1a1f130d6` | `5fe0ebf98a729d644a49cf922efcf8a869b3ea66` | Incorporate: Use the normal requirement-link color for world-event item prerequisites. |
+| `078a480c4afdd1d14893c721ca067c05132a7a37` | `b837db0e8d88ab112548b8916f9562ad179fccef` | Incorporate: Listviews need four skill breakpoints after the shared formatter moves to five. |
+| `57cef45a5f5c9d190537605ec1925fea6ab6b297` | `91f7e37e11e5184cc7e35f734998deab09410815` | Adapt: Reagent amount/missing-item rendering depends on the lock and item changes; verify the resulting tuple shapes and HTML escaping. |
+| `db3f03e88c6e49596ba1943dcaec11d64fb05a11` | `3a3b50edddcf42f52e87e6575126761e5f89b986` | Adapt: Lock information now returns four-element tuples keyed by LockType; update all item/object consumers and preserve staff visibility and safe formatting. |
+| `0251902f245c8ce6778465f23100091680b7031a` | `27a2062b774a4d46e338359a0e7b5ab46cb79fee` | Adapt: Only defer actual issue notes; audit nullable getNotes consumers while retaining private logging and the fork error handlers. |
+| `fecec26a1bdbbe0259e7be24d556c9fca0b88bc2` | `fb8176e7833f74f8ce1ddc1ddc4d6afec9fcd6e4` | Incorporate: Pair with spell redesign: guard absent duration and zero cast-time slope to prevent rendering crashes. |
+| `7d658bf5e6208a9c16d814419c3b545b852b8203` | `e1560890a498fda52b0eb3efdead6c87a0f42443` | Incorporate: Fix arena-only quest gain rendering; retain when adapting the subsequent quest template rewrite. |
+| `8272e4f6126304b4987ab9355a042edbf57d55d0` | `eb141e609c767a67e5a00b3baf141c051f90e6f0` | Incorporate: Escape NPC subnames before rendering the detail-page heading. |
+| `07a03801a913a449661c668b52fadee056ee667b` | `5256c58b4a2c37a32fc804f42f4c803efa2faff3` | Incorporate: Default missing duration join fields to zero after the spell schema redesign. |
+| `8e00e4d1c1aa2df2f0c98f858cc31d2856788e13` | `1392035bbf9ca95d57fedee2baa60c55f95c830a` | Incorporate: Fill missing zhCN stance labels so the locale does not pass null labels to renderers. |
+| `e451b93a1ccc1bdffe5f2bb14b09043b771433b0` | `6d83e53fd04c6641734a86fa79fe53c78cdf20fa` | Incorporate: Map TrinityCore summoner types to AoWoW entity types before building SmartAI links. |
+| `f87f4dd821699c814f78bf479a1c40e0232da44f` | `025cbb26b765d8c994208d99f3abcebc61ffad5e` | Adapt: Respect deployment-owned ExternalLinks configuration and Discord support. Upstream menu commenting cannot replace the fork configurable menu wholesale. |
+| `31b8c501aea1e7497362ab560497aeb3651b72a0` | `8304e43b6f82a70be5209605f377fa49a497e7dc` | Incorporate: Correct civilian tooltip wording across six locales for Wrath rules. |
+| `6edb542b2a2dc7357581322e58c45b41a04c2890` | `748bb7ffe13ffba774364a9f99177feadd8c2658` | Adapt: Migrate native event handling across all consumers, preserve fork CSRF/media/map behavior, and include 9580641b before regenerating globaljs/tooltips. |
+| `060e5a2d344e5c585be2244309b5bacd0c5a22cd` | `3b1906ce89729da3b8fd6d941a2147a0b3077f75` | Adapt: Slider rewrite changes DOM, CSS and accessors; review all level-picker callers and validate desktop/mobile, keyboard, drag and hidden layouts. |
+| `f5cf6a6addc42c1c676b74a21882e3cba673a595` | `dc95037da4e5b852a9f4db79d8744103fdefa176` | Adapt: Update object difficulty data/comment schema while preserving operator/custom rows and fork fresh-install migration accounting; avoid blind table replacement. |
+| `d7b7396676da35bbaec96cc413d3efe2809294cb` | `2021d78f8a37948f8b1af0f8ad2abff987d2d513` | Incorporate: Format skill breakpoints with separators appropriate to HTML, markup or raw output. |
+| `b457eaf02785054cde7a2dfe65f67b4ee6910dc4` | `2e2f238733bbbe3a8f9a69f7a9c7bfc940425873` | Adapt: Use separate numeric talk-text presence and string content parameters across all six locales; retain earlier translation/conditional repairs. |
+| `bd401194696eb7118e0517720a06d3da4c263a3b` | `d165dd364688e05658a828dd6c287dbca32906f8` | Incorporate: Fix quest currency/money sorting and queue globaljs regeneration without losing pending work. |
+| `d6c2ee0ffa0284c53f85e077ca95f27c650a155b` | `2ca258357576de022996454fc79d815015ea3cb6` | Incorporate: Pass currency type/ID to the Links button and cap the currency-for item list; retain deployment link policy. |
+| `0ba4972de2b2474935a9429e4c4073016d4e72d1` | `feddd0acd2f1340473403cbb7dbde30e2ee72f02` | Adapt: Quest reward scaling requires schema, generator, JS and template changes; retain server-rendered readable XP/money and correct cap/zero-value behavior. |
+| `9e1844df166194b729d1b0f5f50364614da74544` | `a02e4479b3366fcaac9647f930b92d90d102259a` | Adapt: Clamp tooltip levels and synchronize displayed level with slider while preserving nested-item and fork scaling markers. |
+| `578957c7aa7d1b61f9b16b6a818b87962d3d92fc` | `cdf4e46e162ff001a7cdc485182b478ba007c054` | Adapt: Required companion quest.js and cap-money fix for 0ba4972d; test together with server-rendered fallback and slider dependencies. |
+| `a73a7efb267b6ad4a6a9661af2453840bb099343` | `2e8f5e08a5bf4091c14a0f635b99d7d9ddfa83e2` | Adapt: Correct nested spell-group expansion with cycle/termination protection for malformed world data; upstream explicitly leaves circular references unchecked. |
+| `9580641bd411af90e554f00490f5a3cfe3acc6b4` | `0e58d01f7e93e1eb167c2702e6be65dd1654a078` | Incorporate: Required mapper event follow-up for the event-helper removal; queue globaljs rebuild. |
+| `f9eca72c0c77b84ceea5c5e5320fe47a68ab04e4` | `6dc27865e06aab09ae0e1a988c8703b113011543` | Incorporate: Correct Kneeling labels in five locales. |
+| `a6f882b822c68f1291c27427558e9f3a57c9ebb5` | `762f4476825493176675a433bf5df9dc05e1ee5f` | Adapt: Integrate explicit scaling modes and combat-rating scaling into the fork coefficient/operation pipeline rather than reverting to integer-only markers. |
+| `0d04a182f7c87231967cbe904a3774cf0d35db8b` | Already present | Already covered: Fork SqlUpdate executes native SQL and catches Throwable, journals failures and stops; retain the stronger updater. |
+| `cbba47c7b7915bea384c9d296a10e3e3842efe4f` | `81cd622a6f395b1efd34eefade4f5a5da8b7f759` | Adapt: Companion spell scaling-mode/mana-cost corrections after a6f882b8; keep fork arithmetic and precision. |
+| `920ac73ad0962edf877851c319379e4b67027ee7` | `3e85d47f8f34e0c395ba510f36890d5440ef563e` | Incorporate: Add missing target position to SUMMON_CREATURE action text in all six locales. |
+| `5ee22c86e701f0c7cafd1f5706392e0cd4530245` | `7cb10f462f56d9d65dd587dc6c5ca7d5d484b13c` | Adapt: Import quest-text gender/token parsing with format-specific output; correct the HTML countdown branch that currently emits markup and preserve sanitized UI rendering. |
+| `6f0b8e3cc4ec45954a1340e05727ed4dc733744b` | `52b537b5a4f214a8548399443498891599df69ec` | Adapt: Keep early CLI logging availability where needed without replacing the fork setup-first bootstrap or verified schema/config loading behavior. |
+| `81a6949c0922625a7e2547846c64e6c37e87b287` | `4a0721de8308f3978ee210525776f1754552b8ce` | Incorporate: Required profiler dataset generator rename from castTime to castTimeId after 6c493aa3. |
+| `ad61bf389b4af752dff6f227d44a0d5df8bcb522` | Defer | Defer: Separate spawn migration project: splits storage, changes coordinates/GUIDs and deletes virtual overrides; upstream tip also has a broken object-summon query. Require migration preservation and generator/consumer coverage. |
+| `8b79162445373bd64d9cb9ba48331b9e2a3e6d73` | Defer | Defer: Depends on deferred per-type spawn schema and transport metadata; include map indexes and 7d5ffe5d guard when that bundle is repaired. |
+| `08fea3f90b5d77a43794e698454663eb60ef1734` | Defer | Defer: Transport waypoint coordinate correction depends on the deferred spawn rewrite; retain as its required fixup. |
+| `7d5ffe5d21f094ae6fa336f28a4e482c3050c450` | Defer | Defer: Missing transport-map guard depends on the deferred passenger tabs; retain as its required fixup. |
+
+Separate integrator adaptation
+`99ce8deafa8303c69181cd9f2f02846f3f8626a6` contains the compatibility fixes,
+preservation migrations and regression fixtures described above.
+
+Validation passed in the local Docker development environment using PHP 8.5.12,
+Node 24.22.3, Chromium 156.0.8078.47 and disposable MySQL 8.4.10. The initial
+`make dev-test` runs exposed invalid generated-template syntax, a nullable-notes
+caller mismatch and outdated timing/routing/schema fixtures. SQL follow-ups
+also exposed legacy seed/replay assumptions and an early CLI dependency in the
+retention fixture. These were corrected; final focused runs of
+`make dev-test ARGS=lint`, `php`, `javascript`, `browser`, `sql` and `apache`
+(each value passed as `ARGS`) all completed successfully.
+
+Focused checks passed 738 spell/filter cases, 283 expression cases, 254 cache
+cases, 161 locale/quest/search cases, 20 profile authorization/inventory cases,
+five quest server-HTML cases, 29 lock/fishing/spell-group cases, 16 real
+front-controller cases, 46 PHP-generated scaling cases and 17 actual slider
+browser cases. The browser gate passed all responsive, map, navigation, editor,
+CSRF, structured-data, discovery and retirement fixtures. SQL passed 801 update,
+1,090 legacy-upgrade, 100 reconciliation/parity and 691 contribution/retention
+checks, plus all remaining SQL suites. All eight Apache combinations passed
+1,835 HTTP checks each (14,680 total). Composer platform requirements,
+`git diff --check` and attribution/provenance for all 66 imports passed.
+Every pre-existing migration remains byte-for-byte unchanged. No applicable
+regression gate remains failing; full operator-data setup/regeneration and
+production-image smoke tests were not run.
+
+Operational follow-up: deploy the matching source, SQL migrations and shipped
+JavaScript together, then follow the normal verified `php aowow --update`
+procedure with compatible TrinityCore and extracted client inputs available.
+There are 53 archived and 119 current migrations; this integration adds 11
+upstream migrations and one integrator migration. Update queues the affected
+spell/item/creature/faction/quest data and generated JavaScript/tooltips plus
+profiler/pet datasets. Revision 77 invalidates earlier application caches.
+Fresh installs carry the current marker and retain pending
+`globaljs guidereferences tooltips profiler pets` builds. Preserve the timing
+archive until any later cleanup is explicitly reviewed.
+
+The four deferred spawn commits require a separate preservation/remapping plan
+for negative-GUID overrides and a repair to the object-summon query (removed
+`type` column and mismatched SQL arguments at the reviewed tip). Do not apply
+their destructive migration as part of this integration. Full operator-data
+setup/regeneration, production-image smoke tests and deployment are separate
+acceptance steps; no retained/live database was updated here.
+
 ## 2026-10-26 — Sarjuuk integration and compatibility (revision 76)
 
 Reviewed [Sarjuuk/aowow](https://github.com/Sarjuuk/aowow) `master` at
