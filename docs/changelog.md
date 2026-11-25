@@ -8,6 +8,30 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-11-25 — Recognize generated quest XP during schema validation
+
+`--validate-schema` now recognizes the permanent `aowow_questxp` DBC copy created
+inside the quest generator. A completed November update could previously pass
+all generators and then fail validation with one extra table, despite all 110
+reference tables matching. Static discovery now covers explicit permanent
+`DBCReader` destinations as well as `TrDBCcopy` declarations, without loading or
+executing setup scripts. The catalog contains 22 declared DBC-copy tables;
+temporary, dynamic, unrelated and unknown-format declarations cannot classify
+unexpected tables as generated inputs. Their absent reference structures remain
+explicitly unvalidated.
+
+This changes validation only. After deploying the source fix, rerun
+`php8.5 aowow --validate-schema`. Existing `questxp` data remains in place; no SQL
+migration, game-data rebuild or cache revision change is required.
+
+Validation passed with `make dev-test ARGS=php` and `make dev-test ARGS=sql`
+using the local PHP 8.5.12 development image and disposable MySQL 8.4.10.
+The parser/read-only CLI suite passed 198 checks; the real-schema suite passed
+29 checks, including a completed quest XP table, a SELECT-only account, unchanged
+reward/community data, and continued failure for genuinely unexpected tables.
+The remaining PHP/HTTP, migration, legacy-upgrade, reconciliation and SQL suites
+also passed. `git diff --check` passed. No retained database was changed.
+
 ## 2026-11-25 — Sarjuuk integration and compatibility (revision 77)
 
 Reviewed [Sarjuuk/aowow](https://github.com/Sarjuuk/aowow) `master` at

@@ -82,8 +82,8 @@ namespace {
     $reference = SchemaValidator::parse(file_get_contents(SchemaValidator::REFERENCE));
     check(count($reference) === 110, 'Complete initial schema is parsed');
     $copies = SchemaValidator::generatedTables();
-    check(count($copies) === 21 && $copies['soundemitters'] === 'soundemitters' && $copies['dungeonmap'] === 'dungeonmap', 'DBC-copy tables discovered from literal generator declarations');
-    foreach (['teamcontributionpoints','spellrange','spellduration','spellcasttimes'] as $name)
+    check(count($copies) === 22 && $copies['soundemitters'] === 'soundemitters' && $copies['dungeonmap'] === 'dungeonmap', 'DBC-copy tables discovered from literal generator declarations');
+    foreach (['teamcontributionpoints','spellrange','spellduration','spellcasttimes','questxp'] as $name)
         check(($copies[$name] ?? null) === $name, 'Auxiliary game-data tables remain discoverable without executing generators');
     $directory = sys_get_temp_dir().'/aowow-schema-declarations-'.bin2hex(random_bytes(6)); mkdir($directory,0700);
     try {
@@ -92,6 +92,19 @@ namespace {
         file_put_contents($directory.'/import.ss.php', '<?php namespace Aowow; use TrDBCcopy; class Fixture { protected string $command="fake_import"; protected array $dbcSourceFiles=["dungeonmap"]; }');
         file_put_contents($directory.'/unknown.ss.php', '<?php namespace Aowow; class Fixture { use TrDBCcopy; protected string $command="unknown_copy"; protected array $dbcSourceFiles=["nonexistent_dbc"]; }');
         check(SchemaValidator::generatedTables($directory) === ['fixture_copy'=>'dungeonmap'], 'Comments, namespace imports and unknown formats cannot classify arbitrary extra tables; generator code never executes');
+        file_put_contents($directory.'/inline.ss.php', '<?php namespace Aowow; class InlineFixture { public function generate() { (new DBCReader("questxp", ["tableName"=>"aowow_questxp", "temporary"=>false,]))->readFile(); } } throw new \\RuntimeException("Generator must never execute");');
+        check(SchemaValidator::generatedTables($directory) === ['questxp'=>'questxp','fixture_copy'=>'dungeonmap'], 'Permanent inline DBC copies are discovered without executing the generator, regardless of option order');
+        foreach ([
+            'new DBCReader("questxp", ["temporary"=>true,"tableName"=>"aowow_temporary"])',
+            'new DBCReader("questxp", ["tableName"=>"aowow_unspecified"])',
+            'new DBCReader("questxp", ["temporary"=>false,"tableName"=>$dynamic])',
+            'new DBCReader("questxp", ["temporary"=>false,"tableName"=>"other_namespace"])',
+            'new DBCReader("nonexistent_dbc", ["temporary"=>false,"tableName"=>"aowow_unknown"])',
+            'new OtherReader("questxp", ["temporary"=>false,"tableName"=>"aowow_other_reader"])',
+        ] as $call) {
+            file_put_contents($directory.'/ignored.ss.php', '<?php namespace Aowow; class IgnoredFixture { public function generate() { '.$call.'; } }');
+            check(SchemaValidator::generatedTables($directory) === ['questxp'=>'questxp','fixture_copy'=>'dungeonmap'], 'Temporary, implicit, dynamic, unrelated and unknown DBC declarations cannot hide unexpected tables');
+        }
     } finally {
         foreach (glob($directory.'/*') as $file) unlink($file);
         rmdir($directory);
@@ -160,7 +173,7 @@ SQL;
                 check(str_contains($out, 'aowow_config: 1 attribute differences') && str_contains($out, 'initial-schema drift'), 'Default output gives compact table totals without implying migration failure');
                 check(str_contains($out, 'column default: missing') === $debug, 'Debug output retains individual missing-column findings');
             }
-            if ($mode === 'generated') check(str_contains($out, '21 declared DBC-copy tables recognized') && !str_contains($out, 'extra (absent'), 'Completed setup DBC-copy tables are identified as unvalidated inputs rather than unexplained extras');
+            if ($mode === 'generated') check(str_contains($out, '22 declared DBC-copy tables recognized') && !str_contains($out, 'extra (absent'), 'Completed setup DBC-copy tables are identified as unvalidated inputs rather than unexplained extras');
         }
     }
     foreach ([['--update'], ['--sql=spell'], ['--build=globaljs'], ['--force'], ['--delete'], ['--datasrc=/fixture/']] as $options) {

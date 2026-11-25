@@ -291,7 +291,10 @@ regeneration require acceptance separately. See
 normalization, column/index/FK/generated-column differences, safe diagnostics and
 the real read-only CLI initialization/dispatcher. It also checks token-based
 discovery of DBC-copy declarations without executing generators, generated-table
-classification and compact versus detailed reports. It runs in the PHP CI group.
+classification and compact versus detailed reports. This includes literal
+permanent `DBCReader` destinations such as the quest generator's `questxp` table,
+as well as `TrDBCcopy` declarations. Temporary, dynamic and unknown sources remain
+excluded. It runs in the PHP CI group.
 
 The SQL group also runs `tests/schema-validator-sql.php`, guarded to require
 `AOWOW_TEST_DATABASE=aowow_security_test_schema` on an isolated localhost fixture.
@@ -299,8 +302,8 @@ It creates the complete 110-table initial schema, then checks real metadata with
 a SELECT-only account and invokes the actual `aowow --validate-schema` entrypoint.
 It covers MyISAM/InnoDB metadata, legacy config without `default`, missing/extra
 tables, generated DBC-copy inputs, column/index/FK drift, configured prefixes,
-help, mixed-option rejection
-and unchanged community/config/version/journal records. MySQL fixture loading
+the inline `questxp` table after successful regeneration, help, mixed-option
+rejection and unchanged community/config/version/journal records. MySQL fixture loading
 uses equivalent parenthesized literal TEXT defaults and temporarily permits the
 shipped historical nonunique foreign-key targets only on its disposable importer
 connection. No deployment configuration or production data is accessed.

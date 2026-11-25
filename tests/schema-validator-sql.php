@@ -106,6 +106,16 @@ try {
     check($code === 0 && str_contains($out, '110/110 reference tables compared; 0 differences'), 'Real kernel/entrypoint needs only SELECT and no world DB, config load or extracted inputs: '.$out);
     check(snapshot() == $before, 'Successful validation preserves accounts/content/uploads, config/maintenance, marker, journal and errors');
 
+    // The quest generator creates this permanent table inline, outside TrDBCcopy.
+    $db->query('CREATE TABLE ::questxp (id int PRIMARY KEY, Field1 int NOT NULL)');
+    $db->query('INSERT INTO ::questxp VALUES (80, 22000)');
+    $report = SchemaValidator::inspect($reader, $root.'/setup/sql/01-db_structure.sql');
+    check($report['checked'] === 110 && !$report['issues'] && $report['generated'] === ['aowow_questxp'=>'questxp'], 'Completed quest regeneration does not produce false schema drift for its permanent XP table');
+    [$code, $out] = invoke($temp, ['--validate-schema']);
+    check($code === 0 && str_contains($out, '110/110 reference tables compared; 0 differences') &&
+        str_contains($out, '1 declared DBC-copy tables recognized'), 'SELECT-only real CLI recognizes the inline quest XP table without loading game inputs: '.$out);
+    check(snapshot() == $before && (int)$db->query('SELECT Field1 FROM ::questxp WHERE id=80')->fetchSingle() === 22000, 'Quest XP classification changes neither generated rewards nor retained application data');
+
     // Real legacy incompatibility: no configuration default, and MyISAM version metadata.
     $db->query('ALTER TABLE ::config DROP COLUMN `default`');
     $db->query('ALTER TABLE ::dbversion ENGINE=MyISAM');
@@ -134,10 +144,10 @@ try {
         check(in_array($issue, $report['issues'], true), 'Detect actual table/column/index/FK drift');
     check(!in_array('unrelated_fixture', array_column($report['issues'],0), true) && !in_array('dbc_fixture', array_column($report['issues'],0), true), 'Other table namespaces are excluded');
     ksort($report['generated']);
-    check($report['generated'] === ['aowow_dungeonmap'=>'dungeonmap', 'aowow_soundemitters'=>'soundemitters'] &&
+    check($report['generated'] === ['aowow_dungeonmap'=>'dungeonmap', 'aowow_questxp'=>'questxp', 'aowow_soundemitters'=>'soundemitters'] &&
         !in_array('aowow_dungeonmap', array_column($report['issues'],0), true), 'Real DBC-copy tables are recognized separately without pretending to validate their absent reference structures');
     [$code, $out] = invoke($temp, ['--validate-schema']);
-    check($code === 1 && str_contains($out, '2 declared DBC-copy tables recognized') && str_contains($out, 'aowow_spell:') &&
+    check($code === 1 && str_contains($out, '3 declared DBC-copy tables recognized') && str_contains($out, 'aowow_spell:') &&
         !str_contains($out, 'column rank_loc0:'), 'Real CLI produces compact summaries and keeps structural failures visible');
 
     // Prefix translation applies to both table names and FK targets, never to literal defaults.
