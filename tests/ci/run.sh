@@ -47,6 +47,7 @@ PY
     php tests/security-upstream-november-profiles.php
     php tests/security-upstream-november-ui.php
     php tests/item-tooltip-levels.php
+    php tests/asset-versions.php
     php tests/security-upstream-routing.php
     php tests/schema-validator.php
     php tests/maintenance-response.php
@@ -110,6 +111,7 @@ PY
     python3 tests/seo-rendering-browser.py "$fixture_root/seo-home-navigation.html" "$browser" home
     node tests/browser-cdp-navigation.mjs
     node tests/upstream-slider.mjs
+    node tests/tooltip-cache.mjs
     node tests/maps-fallback.mjs --browser
     node tests/seo-responsive.mjs
     node tests/seo-performance.mjs

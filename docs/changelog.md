@@ -8,6 +8,34 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-11-25 — Refresh scripts together after updates (revision 79)
+
+Returning visitors could retain the old generated `power.js` alongside the new
+`basic.js`, causing every item hover to throw `$WH.$E is not a function` and
+preventing tooltips from appearing. A clean browser cache concealed the failure.
+Page-generated JavaScript and stylesheet URLs now include the application
+revision as well as their file timestamps, refreshing the release together even
+when a deployment preserves timestamps. Locale hints remain first in widget
+URLs, and explicitly unversioned assets and inline scripts retain their behavior.
+Each asset also starts with an empty query suffix so it cannot inherit the
+previous asset's version or locale parameters.
+
+Deploy the matching PHP source, including revision 79. After the completed
+November `--update` has generated the current `global.js` and `power.js`, normal
+page navigation fetches fresh scripts automatically; visitors do not need private
+windows or cache-clearing instructions. No SQL migration or game-data rebuild
+is required. This does not change scripts in an already-open page until the next
+navigation or reload.
+
+The new Chromium fixture uses an actual warm HTTP cache: the previous timestamp
+policy reproduces the reported exception, while a release change restores both
+icon and name tooltips with ordinary navigation and no cache clearing.
+Validation passed with `make dev-test ARGS=php` and
+`make dev-test ARGS=browser` in the local development containers, including five
+asset URL checks, 11 warm-cache tooltip checks and the existing responsive,
+navigation, map and root/subdirectory widget suites. `git diff --check` passed.
+No retained database or deployed files were changed.
+
 ## 2026-11-25 — Limit item level controls to usable ranges (revision 78)
 
 Items requiring level 80 no longer show a level 1–80 slider or an inactive

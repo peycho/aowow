@@ -214,6 +214,14 @@ it directly; the Chromium slider suite consumes its actual tooltip HTML to
 check slider visibility, selected levels and inactive rating links at desktop
 and mobile widths.
 
+`php tests/asset-versions.php` checks the page renderer's release revision and
+file timestamp in shipped/generated asset URLs, locale prefixes and explicit
+unversioned assets. `node tests/tooltip-cache.mjs` keeps Chromium's HTTP cache
+enabled across simulated releases. It reproduces the old widget calling the
+removed `$WH.$E()` helper, then verifies ordinary navigation downloads the current
+widget and restores item-icon/name tooltips without clearing the visitor's cache.
+These run in the PHP and browser gates respectively.
+
 Sticky screenshots/videos are tested at metadata index zero, with keyword arrays
 preserved. Guide/profile integer bounds use the actual endpoint definitions.
 Mixed-case markup and file-cache initialization are covered by the cache suite.
