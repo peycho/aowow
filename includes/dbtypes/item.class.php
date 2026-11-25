@@ -1406,15 +1406,18 @@ class ItemList extends DBTypeList
 
 
         // tooltip scaling
+        $scaleMaxLevel = max($craftItemEnh['x'][2] ?? 1, $this->ssd[$this->id]['maxLevel'] ?? ($causesScaling ? MAX_LEVEL : 1));
+        $scaleMinLevel = min($scaleMaxLevel, max(1, $_reqLvl));
+        $scaleCurLevel = min($craftItemEnh['x'][3] ?? MAX_LEVEL, $this->ssd[$this->id]['maxLevel'] ?? ($_reqLvl ?: MAX_LEVEL));
         $scale = array(
             // itemId
             $this->id,
             // scaleMinLevel
-            1,
+            $scaleMinLevel,
             // scaleMaxLevel
-            max($craftItemEnh['x'][2] ?? 1, $this->ssd[$this->id]['maxLevel'] ?? ($causesScaling ? MAX_LEVEL : 1)),
+            $scaleMaxLevel,
             // scaleCurLevel
-            min($craftItemEnh['x'][3] ?? MAX_LEVEL, $this->ssd[$this->id]['maxLevel'] ?? ($_reqLvl ?: MAX_LEVEL)),
+            max($scaleMinLevel, min($scaleMaxLevel, $scaleCurLevel)),
             // scaleDist (may be omitted)
             $craftItemEnh['x'][4] ?? $this->curTpl['scalingStatDistribution'],
             // scaleFlags (may be omitted)
@@ -1669,7 +1672,7 @@ class ItemList extends DBTypeList
         // rating-Bonuses
         $scaling = true;
 
-        if ($interactive)
+        if ($interactive && $this->curTpl['requiredLevel'] < MAX_LEVEL)
             $js = '&nbsp;<small>('.sprintf(Util::$changeLevelString, Util::setRatingLevel($level, $statId, $qty)).')</small>';
         else
             $js = '&nbsp;<small>('.Util::setRatingLevel($level, $statId, $qty).')</small>';

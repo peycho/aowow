@@ -46,6 +46,7 @@ PY
     php tests/security-upstream-profiles.php
     php tests/security-upstream-november-profiles.php
     php tests/security-upstream-november-ui.php
+    php tests/item-tooltip-levels.php
     php tests/security-upstream-routing.php
     php tests/schema-validator.php
     php tests/maintenance-response.php

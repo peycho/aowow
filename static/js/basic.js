@@ -1643,9 +1643,12 @@ $WH.g_enhanceTooltip = function(tooltip, isStatic, useGets, showSlider, buff, kn
         });
 
         // Add links (scaling items and ratings)
-        tooltip = tooltip.replace(/\(([^\)]*?<!--lvl-->[^\(]*?)\)/gi, function(_all, inner) {
-            return '(<a href="javascript:;" onmousedown="return false" class="tip" style="color: white; cursor: pointer" onclick="$WH.g_staticTooltipLevelClick(this, null, 0)" onmouseover="$WH.Tooltip.showAtCursor(event, \'<span class=\\\'q2\\\'>\' + LANG.tooltip_changelevel + \'</span>\')" onmousemove="$WH.Tooltip.cursorUpdate(event)" onmouseout="$WH.Tooltip.hide()">' + inner + '</a>)';
-        });
+        var levelRange = tooltip.match(/<!--\?\d+:(\d+):(\d+):\d+/);
+        if (levelRange && Number(levelRange[1]) < Number(levelRange[2])) {
+            tooltip = tooltip.replace(/\(([^\)]*?<!--lvl-->[^\(]*?)\)/gi, function(_all, inner) {
+                return '(<a href="javascript:;" onmousedown="return false" class="tip" style="color: white; cursor: pointer" onclick="$WH.g_staticTooltipLevelClick(this, null, 0)" onmouseover="$WH.Tooltip.showAtCursor(event, \'<span class=\\\'q2\\\'>\' + LANG.tooltip_changelevel + \'</span>\')" onmousemove="$WH.Tooltip.cursorUpdate(event)" onmouseout="$WH.Tooltip.hide()">' + inner + '</a>)';
+            });
+        }
     }
 
     if (showSlider && Slider) { // Make sure the class exists

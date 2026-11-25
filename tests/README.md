@@ -207,6 +207,13 @@ Chromium at desktop and mobile widths. It checks editable input, clamping,
 invalid text, drag/tap, resize, hidden initialization and fixed-level ranges.
 It runs in the browser gate.
 
+`php tests/item-tooltip-levels.php` uses the real item tooltip renderer and all
+six locales with synthetic item rows. It verifies fixed level-80 ratings,
+level-70 rating conversion, static items and heirloom ranges. The PHP gate runs
+it directly; the Chromium slider suite consumes its actual tooltip HTML to
+check slider visibility, selected levels and inactive rating links at desktop
+and mobile widths.
+
 Sticky screenshots/videos are tested at metadata index zero, with keyword arrays
 preserved. Guide/profile integer bounds use the actual endpoint definitions.
 Mixed-case markup and file-cache initialization are covered by the cache suite.

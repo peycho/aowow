@@ -8,6 +8,28 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-11-25 — Limit item level controls to usable ranges (revision 78)
+
+Items requiring level 80 no longer show a level 1–80 slider or an inactive
+change-level link in their combat-rating percentages. The imported tooltip
+metadata hard-coded level 1 as the minimum whenever a rating or effect could
+vary with character level. The range now respects the item's required level,
+and its current value stays within that range. Fixed-level items have no level
+control; level-70 rating items still allow comparison at levels 70–80, while
+heirlooms retain their actual scaling range. This does not turn fixed item stats
+into scaling stats; rating percentages remain character-level dependent.
+
+Deploy the matching PHP source and `static/js/basic.js` together. Revision 78
+invalidates the earlier cached tooltip metadata. No SQL migration, full setup
+or game-data regeneration is required.
+
+Validation passed with `make dev-test ARGS=php` and
+`make dev-test ARGS=javascript` in the local development containers. The new
+real-renderer fixture passed 30 checks across six locales, and the focused
+Chromium slider suite passed 37 checks at desktop/mobile widths using its actual
+PHP-generated tooltip HTML. The previous renderer reproduced the level-80 item
+failure before the fix. `git diff --check` passed. No retained data was changed.
+
 ## 2026-11-25 — Recognize generated quest XP during schema validation
 
 `--validate-schema` now recognizes the permanent `aowow_questxp` DBC copy created
