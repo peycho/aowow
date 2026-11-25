@@ -5,6 +5,13 @@
 
     /** @var PageTemplate $this */
 
+    $scale = $this->rewardsScaler;
+    $rewardLevel = $scale['maxLevel'] ?? MAX_LEVEL;
+    $rewardMoney = $scale['coin']['levels'][$rewardLevel] ?? 0;
+    if ($rewardLevel >= MAX_LEVEL && isset($scale['coin']['rewardAtCap']))
+        $rewardMoney = $scale['coin']['rewardAtCap'];
+    $rewardXP = $scale['xp']['levels'][$rewardLevel] ?? 0;
+
     $this->brick('header');
 ?>
 
@@ -161,7 +168,7 @@ if ([$spells, $items, $choice, $hasMoney] = $this->rewards):
             'rewTitle' => $choice ? Lang::quest('rewardAlso') : Lang::quest('rewardItems'),
             'rewards'  => $items ?: null,
             'offset'   => $iconOffset,
-            'extra'    => $hasMoney ? '<span id="quest-reward-coin"></span>' : null
+            'extra'    => $hasMoney ? '<span id="quest-reward-coin">'.\Aowow\Util::formatMoney((int)$rewardMoney).'</span>' : null
         ));
     endif;
 
@@ -176,7 +183,7 @@ if ([$hasXP, $rep, $title, $tp, $honor, $arena] = $this->gains):
 
 <?php
     if ($hasXP):
-        echo '                        <li><div id="quest-reward-xp"></div></li>'.PHP_EOL;
+        echo '                        <li><div id="quest-reward-xp">'.Lang::nf((int)$rewardXP).' '.Lang::quest('experience').'</div></li>'.PHP_EOL;
     endif;
 
     if ($rep):
@@ -193,7 +200,8 @@ if ([$hasXP, $rep, $title, $tp, $honor, $arena] = $this->gains):
         echo '                        <li><div>'.Lang::quest('bonusTalents', [$tp]).'</div></li>'.PHP_EOL;
     endif;
 
-    if (([$hPoints, $hSide] = $honor) || $arena):
+    [$hPoints, $hSide] = $honor ?? [0, SIDE_BOTH];
+    if ($hPoints || $arena):
         echo '                        <li><div>';
         if ($hPoints):
             $a = '<a href="?currency=104">'.$hPoints.'</a>';

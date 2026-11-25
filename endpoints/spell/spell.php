@@ -960,17 +960,27 @@ class SpellBaseResponse extends TemplateResponse implements ICache
         if (!DB::World()->selectCell('SELECT 1 FROM spell_group WHERE `spell_id` = %i', $this->firstRank))
             return [];
 
-        // unpack recursion (circular references are the responsibility of the server core *waves hand*)
+        // Expand each group independently; malformed cyclic references must terminate.
         $groups = DB::World()->selectCol('SELECT `id` AS ARRAY_KEY, `spell_id` AS ARRAY_KEY2, `spell_id` FROM spell_group');
-        $refs   = [];
-        while ($i = array_find_key($groups, function($grp) use (&$refs) { return $refs = array_filter($grp, fn($x) => $x < 0); }))
+        $sourceGroups = $groups;
+        foreach ($groups as $groupId => &$spells)
         {
-            foreach ($refs as $j => $ref)
+            $pending = [$groupId];
+            $seen = $spells = [];
+            while ($pending)
             {
-                unset($groups[$i][$j]);
-                $groups[$i] = array_replace($groups[$i], $groups[-$ref] ?? []);
+                $id = array_pop($pending);
+                if (isset($seen[$id]))
+                    continue;
+                $seen[$id] = true;
+                foreach ($sourceGroups[$id] ?? [] as $spell)
+                    if ($spell < 0)
+                        $pending[] = -$spell;
+                    else if ($spell > 0)
+                        $spells[$spell] = $spell;
             }
         }
+        unset($spells);
 
         // find ourselves
         if (!($filtered = array_filter($groups, fn($x) => in_array($this->firstRank, $x))))
@@ -2390,6 +2400,17 @@ class SpellBaseResponse extends TemplateResponse implements ICache
                     $_footer['procCD'] ??= Lang::game('cooldown', [DateTime::formatTimeElapsed($procData['cooldown'])]);
             }
 
+            if (in_array($effId, [SPELL_EFFECT_KNOCK_BACK, SPELL_EFFECT_KNOCK_BACK_DEST, SPELL_EFFECT_LEAP_BACK]))
+            {
+                $effRPPL /= 10;
+                $effPPCP /= 10;
+                if ($_nameMV)
+                {
+                    $_footer['speedXY'] = $_nameMV;
+                    $_nameMV = null;
+                }
+            }
+
             if (!empty($_footer['value'][1]))
             {
                 [$min, $max, $valFmt, $suffix] = $_footer['value'];
@@ -2980,7 +3001,7 @@ class SpellBaseResponse extends TemplateResponse implements ICache
         // TC uses hardcoded summon property 67
         if ($effIdOrAura == SPELL_EFFECT_SUMMON || $effIdOrAura == SPELL_EFFECT_SUMMON_PET)
             if (($sp = DB::Aowow()->selectRow('SELECT `control`, `slot` FROM ::summonproperties WHERE `id` = %i', $effIdOrAura == SPELL_EFFECT_SUMMON_PET ? 67 : $effMVB)))
-                    $nameMVB = $this->fmtStaffTip(Lang::spell('summonControl', $sp['control']).' &ndash; '.Lang::spell('summonSlot', $sp['slot']) , 'SummonProperty: '.$effIdOrAura == SPELL_EFFECT_SUMMON_PET ? 67 : $effMVB);
+                    $nameMVB = $this->fmtStaffTip(Lang::spell('summonControl', $sp['control']).' &ndash; '.Lang::spell('summonSlot', $sp['slot']) , 'SummonProperty: '.($effIdOrAura == SPELL_EFFECT_SUMMON_PET ? 67 : $effMVB));
 
         if ($_ = CreatureList::makeLink($effMV))
             $nameMV = $_;

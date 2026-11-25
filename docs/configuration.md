@@ -195,7 +195,8 @@ queries or character-database availability checks. See the
 Configure Community-menu links and the homepage GitHub link through
 `$AoWoWconf['externalLinks']` in `config/config.php`. Entries support an `enabled`
 boolean and an absolute HTTP/HTTPS `url`; disabled, empty or invalid entries are
-hidden. See the [complete configuration example](changelog.md#external-navigation-configuration).
+hidden. Placeholder forum, blog, IRC, Facebook and Twitter destinations are disabled
+by default; explicit operator configuration still takes precedence. See the [complete configuration example](changelog.md#external-navigation-configuration).
 
 ## Tooltips and widgets
 

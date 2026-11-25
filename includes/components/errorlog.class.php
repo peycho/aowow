@@ -52,7 +52,7 @@ final class ErrorLog
             if (($e = error_get_last()) && ($e['type'] & (E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR)))
                 self::record($e['type'], 'FATAL_ERROR', $e['file'], $e['line'], LOG_LEVEL_ERROR);
 
-            if (!CLI && ($n = Util::getNotes()))
+            if (!CLI && ($n = Util::getNotes())[0])
                 $_SESSION['notes'][] = [$n[0], $n[1], 'Deferred issues from previous request'];
         });
     }

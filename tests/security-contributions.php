@@ -36,6 +36,7 @@ namespace {
         require $root.'/includes/locale.class.php';
         require $root.'/includes/components/cacheenvelope.class.php';
         require $root.'/includes/components/errorlog.class.php';
+        require $root.'/includes/setup/cli.class.php';
         return;
     } // Continue into the real CLI entrypoint with synthetic configuration only.
     if(($argv[1]??'')==='--worker') { User::$id=(int)$argv[2]; echo ContributionBudget::reserve($argv[3],1)?'yes':'no'; exit; }

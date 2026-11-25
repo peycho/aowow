@@ -426,7 +426,7 @@ $WH.Wow = new function()
 {
     const _self = this;
 
-    this.getMaxPlayerLevel = x => /*setup:maxLevel*/;
+    this.getMaxPlayerLevel = () => { return /*setup:maxLevel*/; };
 };
 
 $WH.Wow.Quest = new function()

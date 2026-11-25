@@ -19,7 +19,7 @@ CLISetup::registerSetup("sql", new class extends SetupScript
 
     protected array $dbcSourceFiles  = ['spell', 'spellradius', 'spellduration', 'spellrange', 'spellrunecost', 'spellcasttimes', 'skillline', 'skilllineability', 'skillraceclassinfo', 'talent', 'talenttab', 'glyphproperties', 'spellicon', 'itemdisplayinfo'];
     protected array $worldDependency = ['item_template', 'creature_template', 'creature_template_addon', 'creature_template_spell', 'smart_scripts', 'trainer_spell', 'disables', 'spell_ranks', 'spell_dbc', 'skill_discovery_template'];
-    protected array $setupAfter      = [['icons'], []];
+    protected array $setupAfter      = [['icons', 'spellrange', 'spellduration', 'spellcasttimes'], []];
 
     public function generate() : bool
     {
@@ -205,9 +205,6 @@ CLISetup::registerSetup("sql", new class extends SetupScript
 
         CLI::write('[spell] - copying aux spell DBCs into tables');
 
-        (new DBCReader('spellrange',     ['temporary' => false, 'tableName' => 'aowow_spellrange']))->readFile();
-        (new DBCReader('spellduration',  ['temporary' => false, 'tableName' => 'aowow_spellduration']))->readFile();
-        (new DBCReader('spellcasttimes', ['temporary' => false, 'tableName' => 'aowow_spellcasttimes']))->readFile();
 
         CLI::write('[spell] - copying serverside spells into aowow_spell');
 

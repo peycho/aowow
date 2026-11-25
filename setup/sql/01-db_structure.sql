@@ -1748,7 +1748,7 @@ CREATE TABLE `aowow_objectdifficulty` (
   `heroic10` mediumint(8) unsigned NOT NULL,
   `heroic25` mediumint(8) unsigned NOT NULL,
   `mapType` tinyint(3) unsigned NOT NULL,
-  `comment` varchar(100) NOT NULL,
+  `comment` varchar(100) NOT NULL DEFAULT '',
   KEY `normal10` (`normal10`),
   KEY `normal25` (`normal25`),
   KEY `heroic10` (`heroic10`),
@@ -2903,7 +2903,7 @@ CREATE TABLE `aowow_spell` (
   `targetAuraSpell` mediumint(8) unsigned NOT NULL,
   `casterAuraSpellNot` mediumint(8) unsigned NOT NULL,
   `targetAuraSpellNot` mediumint(8) unsigned NOT NULL,
-  `castTimeId` smallint(5) unsigned NOT NULL,
+  `castTimeId` smallint(5) unsigned NOT NULL DEFAULT 0,
   `recoveryTime` int(10) unsigned NOT NULL,
   `recoveryCategory` int(10) unsigned NOT NULL,
   `startRecoveryTime` mediumint(8) unsigned NOT NULL,
@@ -2916,7 +2916,7 @@ CREATE TABLE `aowow_spell` (
   `baseLevel` smallint(5) unsigned NOT NULL,
   `spellLevel` smallint(5) unsigned NOT NULL,
   `talentLevel` tinyint(3) unsigned NOT NULL,
-  `durationId` smallint(5) unsigned NOT NULL,
+  `durationId` smallint(5) unsigned NOT NULL DEFAULT 0,
   `powerType` smallint(6) NOT NULL,
   `powerCost` smallint(5) unsigned NOT NULL,
   `powerCostPerLevel` tinyint(3) unsigned NOT NULL,
@@ -3400,3 +3400,12 @@ CREATE TABLE `aowow_zones_sounds` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2025-09-22 23:29:16
+
+-- Retained timing values from installations upgraded before the DBC ID split.
+DROP TABLE IF EXISTS `aowow_spell_timing_legacy`;
+CREATE TABLE `aowow_spell_timing_legacy` (
+  `id` mediumint(8) unsigned NOT NULL,
+  `castTime` float unsigned NOT NULL,
+  `duration` int NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

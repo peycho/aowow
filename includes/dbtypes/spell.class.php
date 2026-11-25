@@ -698,7 +698,7 @@ class SpellList extends DBTypeList
             if ($this->curTpl['attributes0'] & SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION)
             {
                 $str .= '<!--pts'.$this->curTpl['baseLevel'].':'.$pc.'-->';
-                if ($this->scaling[$this->id] < self::TOOLTIP_SCALING_LDC)
+                if (($this->scaling[$this->id] ?? self::TOOLTIP_SCALING_NONE) < self::TOOLTIP_SCALING_LDC)
                     $this->scaling[$this->id] = self::TOOLTIP_SCALING_LDC;
             }
 
@@ -751,7 +751,7 @@ class SpellList extends DBTypeList
                 $modStr  = '<!--ppl'.$base.':'.abs($ctMax).':'.($this->curTpl['castTime'] / 1000).':'.floor($ctpl / 10).'-->$1';
                 $timeStr = preg_replace('/\b(\d)/', $modStr, $timeStr);
 
-                if ($this->scaling[$this->id] < self::TOOLTIP_SCALING_GENERIC)
+                if (($this->scaling[$this->id] ?? self::TOOLTIP_SCALING_NONE) < self::TOOLTIP_SCALING_GENERIC)
                     $this->scaling[$this->id] = self::TOOLTIP_SCALING_GENERIC;
             }
 
@@ -823,13 +823,13 @@ class SpellList extends DBTypeList
 
         if ($rppl)
         {
-            $modMin = '<!--ppl'.$baseLvl.':'.($maxLvl ?: $level).':'.abs($min).':'.(abs($rppl) * 100 * $nTicks).'-->';
-            $modMax = '<!--ppl'.$baseLvl.':'.($maxLvl ?: $level).':'.abs($max).':'.(abs($rppl) * 100 * $nTicks).'-->';
+            $modMin = '<!--ppl'.$baseLvl.':'.($maxLvl ?: $level).':'.$min.':'.($rppl * 100 * $nTicks).'-->';
+            $modMax = '<!--ppl'.$baseLvl.':'.($maxLvl ?: $level).':'.$max.':'.($rppl * 100 * $nTicks).'-->';
         }
         else if ($this->getField('attributes0') & SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION && in_array($effIdx, $LDCEffs) && $spellLvl)
         {
-            $modMin = '<!--pts'.$spellLvl.':'.abs($min).'-->';
-            $modMax = '<!--pts'.$spellLvl.':'.abs($max).'-->';
+            $modMin = '<!--pts'.$spellLvl.':'.$min.'-->';
+            $modMax = '<!--pts'.$spellLvl.':'.$max.'-->';
         }
 
         $min += $maxBase;
@@ -859,7 +859,7 @@ class SpellList extends DBTypeList
         }
 
         $scaling = $rppl ? self::TOOLTIP_SCALING_RPPL :
-            (($this->getField('attributes0') & SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION && in_array($effIdx, $LDSEffs) && $spellLvl) ? self::TOOLTIP_SCALING_LDC : self::TOOLTIP_SCALING_NONE);
+            (($this->getField('attributes0') & SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION && in_array($effIdx, $LDCEffs) && $spellLvl) ? self::TOOLTIP_SCALING_LDC : self::TOOLTIP_SCALING_NONE);
         return [$min, $max, $modMin, $modMax, $scaling];
     }
 
@@ -1492,7 +1492,7 @@ class SpellList extends DBTypeList
                         $scalingType = max($scalingType, self::TOOLTIP_SCALING_GENERIC);
                 // Aura end
 
-                if ($this->scaling[$this->id] < $scalingType)
+                if (($this->scaling[$this->id] ?? self::TOOLTIP_SCALING_NONE) < $scalingType)
                     $this->scaling[$this->id] = $scalingType;
 
                 if ($stats && $this->interactive >= self::INTERACTIVE_EMBEDDED)
@@ -1525,7 +1525,7 @@ class SpellList extends DBTypeList
 
                 [$min, $max, $modStrMin, $modStrMax, $scalingType] = $srcSpell->calculateAmountForCurrent($effIdx, $op, $oparg, intVal($duration / $periode));
 
-                if ($this->scaling[$this->id] < $scalingType)
+                if (($this->scaling[$this->id] ?? self::TOOLTIP_SCALING_NONE) < $scalingType)
                     $this->scaling[$this->id] = $scalingType;
 
                 if ($this->interactive >= self::INTERACTIVE_EMBEDDED && ($modStrMin || $modStrMax))
@@ -1554,7 +1554,7 @@ class SpellList extends DBTypeList
                         $scalingType = max($scalingType, self::TOOLTIP_SCALING_GENERIC);
                 // Aura end
 
-                if ($this->scaling[$this->id] < $scalingType)
+                if (($this->scaling[$this->id] ?? self::TOOLTIP_SCALING_NONE) < $scalingType)
                     $this->scaling[$this->id] = $scalingType;
 
                 if ($stats && $this->interactive >= self::INTERACTIVE_EMBEDDED)
@@ -1984,7 +1984,7 @@ class SpellList extends DBTypeList
 
                 $x .= '<span class="q">'.preg_replace('/\b(\d)/', $modStr, Lang::formatTime($time, 'spell', 'timeRemaining')).'<span>';
 
-                if ($this->scaling[$this->id] < self::TOOLTIP_SCALING_GENERIC)
+                if (($this->scaling[$this->id] ?? self::TOOLTIP_SCALING_NONE) < self::TOOLTIP_SCALING_GENERIC)
                     $this->scaling[$this->id] = self::TOOLTIP_SCALING_GENERIC;
             }
             else if ($md > 0)

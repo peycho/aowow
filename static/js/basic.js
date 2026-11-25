@@ -1517,14 +1517,14 @@ $WH.g_setTooltipLevel = function(tooltip, level) {
 
             // Spell effects
             // aowow - custom: spell level damage calculation
-            tooltip = tooltip.replace(/(<!--pts(\d+):(\d+(?:\.\d+)?)(?::([+*/-]):(\d+))?(?::f:([01]))?-->)\s*\d+(?:\.\d+)?/gi, function(_all, marker, spellLvl, base, op, operand, precision) {
+            tooltip = tooltip.replace(/(<!--pts(\d+):(-?\d+(?:\.\d+)?)(?::([+*/-]):(\d+))?(?::f:([01]))?-->)\s*-?\d+(?:\.\d+)?/gi, function(_all, marker, spellLvl, base, op, operand, precision) {
                 return marker + formatSpellAmount(modifySpellAmount($WH.g_convertScalingSpell(Number(base), Number(spellLvl), level), op, operand), precision);
             });
         }
     }
 
     // Points per level
-    tooltip = tooltip.replace(/(<!--ppl(\d+):(\d+):(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)(?::([+*/-]):(\d+))?(?::f:([01]))?-->)\s*\d+(?:\.\d+)?/gi, function(_all, marker, minLvl, maxLvl, base, ppl, op, operand, precision) {
+    tooltip = tooltip.replace(/(<!--ppl(\d+):(\d+):(-?\d+(?:\.\d+)?):(-?\d+(?:\.\d+)?)(?::([+*/-]):(\d+))?(?::f:([01]))?-->)\s*-?\d+(?:\.\d+)?/gi, function(_all, marker, minLvl, maxLvl, base, ppl, op, operand, precision) {
         var amount = Number(base) + (Math.min(Math.max(level, minLvl), maxLvl) - minLvl) * Number(ppl) / 100;
         return marker + formatSpellAmount(modifySpellAmount(amount, op, operand), precision);
     });
@@ -1543,12 +1543,13 @@ $WH.g_setTooltipLevel = function(tooltip, level) {
         if (!nMatch[ratingId])
             nMatch[ratingId] = 0;
 
-        _ = tooltip.match(new RegExp('<!--rtg' + ratingId + '-->(\\d+)', 'g'))[nMatch[ratingId]++];
+        var matches = tooltip.match(new RegExp('<!--rtg' + ratingId + '-->(?:<!--(?:ppl|pts)[^>]*-->)*(-?\\d+(?:\\.\\d+)?)', 'g')) || [];
+        _ = matches[nMatch[ratingId]++];
         if (!_) {
             return _all;
         }
 
-        return prefix + Math.round($WH.g_convertRatingToPercent(level, ratingId, _.split('>')[1]) * 100) / 100;
+        return prefix + Math.round($WH.g_convertRatingToPercent(level, ratingId, _.match(/-?\d+(?:\.\d+)?$/)[0]) * 100) / 100;
     });
 
     // Level

@@ -76,7 +76,7 @@ UNLOCK TABLES;
 
 LOCK TABLES `aowow_dbversion` WRITE;
 /*!40000 ALTER TABLE `aowow_dbversion` DISABLE KEYS */;
-INSERT INTO `aowow_dbversion` VALUES (1794586689,1,NULL,'globaljs guidereferences');
+INSERT INTO `aowow_dbversion` VALUES (1795564800,1,NULL,'globaljs guidereferences tooltips profiler pets');
 /*!40000 ALTER TABLE `aowow_dbversion` ENABLE KEYS */;
 UNLOCK TABLES;
 

@@ -122,7 +122,7 @@ class GameObjectList extends DBTypeList
                 LOCK_TYPE_SKILL => Lang::item($miscInfo ? 'reqSkillValue' : 'reqSkill', [$str, $miscInfo])
             }.'</td></tr>';
 
-            if ($type == Type::SPELL && $miscInfo && !($reagents = new ItemList(array(['id', array_keys($miscInfo)])))->error)
+            if ($type == LOCK_TYPE_SPELL && $miscInfo && !($reagents = new ItemList(array(['id', array_column($miscInfo, 0)])))->error)
             {
                 $reqReag  = [];
                 foreach ($miscInfo as [$itemId, $qty])

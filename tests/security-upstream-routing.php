@@ -18,7 +18,7 @@ class Util { public static function lower(string $text) : string { return strtol
 class Type { public const int IDX_FILE_STR=1; public static function getIndexFrom(int $index, string $page) : int { return 0; } }
 class TemplateResponse {
     public function __construct(private string $param) {}
-    public function process() : void { header('Content-Type: application/json'); echo json_encode(['param'=>$this->param, 'get'=>$_GET], JSON_THROW_ON_ERROR); }
+    public function process() : void { header('Content-Type: application/json'); echo json_encode(['param'=>$this->param, 'get'=>$_GET, 'post'=>$_POST], JSON_THROW_ON_ERROR); }
 }
 KERNEL);
     foreach (['profile'=>['profile'=>'ProfileBase', 'save'=>'ProfileSave'], 'arena-team'=>['arena-team'=>'ArenaTeamBase']] as $route=>$files) {
@@ -35,9 +35,9 @@ KERNEL);
         if ($socket) { fclose($socket); break; }
         usleep(20000);
     }
-    function request(string $query) : array {
+    function request(string $query, array $post = []) : array {
         global $address;
-        $context = stream_context_create(['http'=>['ignore_errors'=>true, 'follow_location'=>0, 'timeout'=>5]]);
+        $context = stream_context_create(['http'=>['ignore_errors'=>true, 'follow_location'=>0, 'timeout'=>5,'method'=>$post ? 'POST' : 'GET','header'=>'Content-Type: application/x-www-form-urlencoded','content'=>http_build_query($post)]]);
         $body = file_get_contents('http://'.$address.'/index.php?'.$query, false, $context);
         preg_match('/\s(\d{3})\s/', $http_response_header[0], $status);
         $location = null;
@@ -48,18 +48,20 @@ KERNEL);
         [$status, $location] = request($query);
         check($status === 302 && $location === '.', 'Malformed first routing pair is rejected: '.$query);
     }
-    foreach (['Profile=save&items[]=1&items[]=2', '%50rofile=save&items[]=1&items[]=2'] as $query) {
-        [$status, $location] = request($query);
-        check($status === 302 && $location === '/index.php?profile=save&items[]=1&items[]=2', 'Uppercase/encoded route redirect retains custom-profile arrays');
+    foreach (['Profile=save&items[]=1', 'profile=save&inventory[head][item]=19019', 'arena-team=1&items[]=1'] as $query) {
+        [$status,$location] = request($query);
+        check($status === 302 && $location === '.', 'GET arrays are rejected before dispatch or case redirects');
     }
-    [$status, $location] = request('Profile&x=?Profile&items[]=1');
-    check($status === 302 && $location === '/index.php?profile&x=?Profile&items[]=1', 'Only the first routing key changes, including valueless routes');
-    foreach (['profile=save&items[]=1&items[]=2', 'profile=1&inventory[head][item]=19019', 'arena-team=1&items[]=1'] as $query) {
-        [$status, $location, $body] = request($query);
-        $data = json_decode($body, true, flags: JSON_THROW_ON_ERROR);
-        check($status === 200 && $location === null && $data['get'] !== [], 'Later arrays and hyphenated routes reach their handlers');
-        parse_str($query, $expected);
-        check($data['get'] === $expected, 'Dispatch preserves the complete profile inventory payload');
+    foreach (['Profile=save', '%50rofile=save'] as $query) {
+        [$status,$location] = request($query);
+        check($status === 302 && $location === '/index.php?profile=save', 'Scalar uppercase and encoded routes retain case normalization');
+    }
+    foreach (['profile=save', 'arena-team=1'] as $query) {
+        $inventory = ['inv'=>['head'=>[19019,1]]];
+        [$status,$location,$body] = request($query, $inventory);
+        $data=json_decode($body,true,flags:JSON_THROW_ON_ERROR);
+        check($status === 200 && $location === null, 'Scalar profile and hyphenated routes reach their handlers');
+        check($data['post'] === ['inv'=>['head'=>['19019','1']]], 'POST inventory arrays reach the handler unchanged');
     }
     [$status, $location] = request('locale=3&spell=133');
     check($status === 301 && $location === '?spell=133&locale=3', 'Early locale repair still runs before bootstrap');

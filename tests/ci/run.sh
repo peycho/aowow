@@ -44,6 +44,8 @@ PY
     php tests/security-upstream-content.php
     php tests/security-upstream-october.php
     php tests/security-upstream-profiles.php
+    php tests/security-upstream-november-profiles.php
+    php tests/security-upstream-november-ui.php
     php tests/security-upstream-routing.php
     php tests/schema-validator.php
     php tests/maintenance-response.php
@@ -106,6 +108,7 @@ PY
     python3 tests/seo-rendering-browser.py "$fixture_root/seo-rendering.html" "$browser"
     python3 tests/seo-rendering-browser.py "$fixture_root/seo-home-navigation.html" "$browser" home
     node tests/browser-cdp-navigation.mjs
+    node tests/upstream-slider.mjs
     node tests/maps-fallback.mjs --browser
     node tests/seo-responsive.mjs
     node tests/seo-performance.mjs

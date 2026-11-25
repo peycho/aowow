@@ -32,6 +32,8 @@ final class ExternalLinks
         foreach (self::DEFAULTS as $key => $default)
         {
             $entry = is_array($config) ? (array_key_exists($key, $config) ? $config[$key] : $default) : null;
+            if (is_array($entry) && array_key_exists('url', $entry) && !array_key_exists('enabled', $entry))
+                $entry['enabled'] = true; // retain existing URL-only operator configuration
             $entry = is_array($entry) ? array_replace($default, $entry) : [];
             $url = $entry['url'] ?? null;
             $enabled = $entry['enabled'] ?? false;

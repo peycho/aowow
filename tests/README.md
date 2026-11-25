@@ -190,6 +190,23 @@ loopback synthetic handlers: malformed first routing pairs, uppercase/encoded
 routes, custom-profile inventory arrays, hyphenated routes and early locale
 redirects. Both run in the PHP gate.
 
+The November imports reject array-valued GET parameters while retaining POST
+inventory arrays. `php tests/security-upstream-november-profiles.php` calls the
+real save handler with synthetic identities to check login, ownership, deleted
+and noncustom profiles, creation limits and rejected-write behavior.
+`php tests/security-upstream-november-ui.php` renders the actual quest template
+without JavaScript, checking readable XP/money, level-cap compensation, zero
+rewards and arena-only gains. Both run in the PHP gate. Shared fixtures also
+cover sanitized empty search tokens, grouped/fractional plurals, bounded quest
+difficulty and signed spell coefficients through repeated browser scaling.
+The SQL gate checks preservation of custom difficulty mappings and archives old
+spell timings before converting to DBC IDs, including negative permanent
+durations and values outside the new ID range.
+`node tests/upstream-slider.mjs` uses actual slider code, DOM helpers and CSS in
+Chromium at desktop and mobile widths. It checks editable input, clamping,
+invalid text, drag/tap, resize, hidden initialization and fixed-level ranges.
+It runs in the browser gate.
+
 Sticky screenshots/videos are tested at metadata index zero, with keyword arrays
 preserved. Guide/profile integer bounds use the actual endpoint definitions.
 Mixed-case markup and file-cache initialization are covered by the cache suite.
@@ -257,16 +274,18 @@ damage from forced text normalization.
 `AOWOW_TEST_DATABASE=aowow_security_test_reconciliation` on an isolated localhost
 database. Its sanitized historical structure fixture contains no rows, comments,
 auto-increment counters or environment headers. Synthetic records exercise the
-real update entrypoint, 109-table fresh/legacy schema agreement, enum ordinal
+real update entrypoint, 110-table fresh/legacy schema agreement, enum ordinal
 mapping, long captions/text and community/upload preservation. Data preflight
 rejection, strict-mode restoration, concurrency, maintenance handling and refusal
 to replay partial SQL are covered. Its guarded `fixtures/taxi-generator.php`
 helper runs the real generator with synthetic DBC/world inputs under strict SQL
 mode, verifying scripted nodes, nearest-flightmaster selection and map filtering.
 SQL data production is synthetic in the reconciliation fixture; its real updater
-still dispatches and acknowledges the newly requested `items`, `stats`, `spell` and `taxi`
-tasks. Actual client extraction and deployed regeneration require acceptance
-separately. See [schema reconciliation](../docs/schema-reconciliation.md).
+still dispatches and acknowledges requested SQL/build tasks, including the new
+spell auxiliary tables and profiler/pet datasets. Operator-input producers are
+replaced only inside this fixture. Actual client extraction and deployed
+regeneration require acceptance separately. See
+[schema reconciliation](../docs/schema-reconciliation.md).
 
 `php tests/schema-validator.php` exercises the complete initial-schema parser,
 normalization, column/index/FK/generated-column differences, safe diagnostics and
@@ -276,7 +295,7 @@ classification and compact versus detailed reports. It runs in the PHP CI group.
 
 The SQL group also runs `tests/schema-validator-sql.php`, guarded to require
 `AOWOW_TEST_DATABASE=aowow_security_test_schema` on an isolated localhost fixture.
-It creates the complete 109-table initial schema, then checks real metadata with
+It creates the complete 110-table initial schema, then checks real metadata with
 a SELECT-only account and invokes the actual `aowow --validate-schema` entrypoint.
 It covers MyISAM/InnoDB metadata, legacy config without `default`, missing/extra
 tables, generated DBC-copy inputs, column/index/FK drift, configured prefixes,

@@ -1111,6 +1111,7 @@ class ItemList extends DBTypeList
 
                 $createSpell = [];
                 $createsItem = false;
+                $scaling = false;
 
                 $cd     = $this->curTpl['spellCooldown'.$i];
                 $catgCd = $this->curTpl['spellCategoryCooldown'.$i];
@@ -1423,7 +1424,7 @@ class ItemList extends DBTypeList
         if ($subOf)
             $enhance['x'] = array_slice($scale, 2, null, true);
         else
-            $x .= '<!--?'.implode(':', array_filter($scale)).'-->';
+            $x .= '<!--?'.implode(':', $scale).'-->';
 
         return $x;
     }
@@ -1431,7 +1432,7 @@ class ItemList extends DBTypeList
     // test availability and existence
     public function getRandEnchantForItem(int $randId) : array
     {
-        return $this->enhanceR ??= (function (int $randId) : array
+        return $this->enhanceR = (function (int $randId) : array
         {
             if (!$randId || !DB::World()->selectCell('SELECT 1 FROM item_enchantment_template WHERE `entry` = %i AND `ench` = %i', abs($this->getField('randomEnchant')), abs($randId)))
                 return [];

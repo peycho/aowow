@@ -245,7 +245,7 @@ final class UIText
             '<span class="q0">'.Lang::main('parensFmt', ['WorldState -#\1', Lang::game('duration')]).'</span>',
             '<span class="q0">WorldState -#\1</span>',
             '&lt;\1/\2&gt;',
-            '[span class=q0]'.Lang::main('parensFmt', ['WorldState -#\1', 'Countdown']).'[/span]',
+            '<span class="q0">'.Lang::main('parensFmt', ['WorldState -#\1', 'Countdown']).'</span>',
             '&lt;'.Lang::main('name').'&gt;',
             '&lt;'.Lang::game('race').'&gt;',
             '&lt;\1/\2&gt;',
@@ -432,7 +432,7 @@ final class UIText
                     if (str_starts_with($word, $find))
                         return $pad . substr_replace($word, $replace, 0, strlen($find));
 
-                if (self::languageRule2IsVowel($word[0]) || $word[0] == 'h' || $word[0] == 'H' ||
+                if (self::languageRule2IsVowel(mb_substr($word, 0, 1)) || $word[0] == 'h' || $word[0] == 'H' ||
                     ($word[0] == 'y' && self::languageRule2IsVowel($word[1])) ||
                     ($word[0] == 'Y' && self::languageRule2IsVowel($word[1])))
                     return "d'" . $pad . $word;
@@ -460,7 +460,7 @@ final class UIText
         $n = 0;
         do
         {
-            $text = preg_replace_callback('/\b([\d\.\,]*?\d+)\b([^\|]*)(?<!\|)\|4([^:]*):([^:;]+)(?::([^;]+))?;/is', function ($m)
+            $text = preg_replace_callback('/(?<![\d.,])(\d+(?:[.,]\d+)*)([^\d|]*)(?<!\|)\|4([^:]*):([^:;]+)(?::([^;]+))?;/is', function ($m)
                 {
                     [, $num, $pad, $singular, $plural1, $plural2] = array_pad($m, 6, null);
 
@@ -468,7 +468,7 @@ final class UIText
                     {
                         0 => $singular,
                         1 => $plural1,                          // ruRU: genitive singular
-                        2 => $plural2                           // ruRU: genitive plural
+                        2 => $plural2 ?? $plural1               // ruRU: genitive plural
                     };
                 }, $text, count: $n);
         }
@@ -479,8 +479,11 @@ final class UIText
     }
 
 
-    private static function getPluralIndex(int $num) : int
+    private static function getPluralIndex(string $num) : int
     {
+        // Preserve the full number: grouped thousands and decimal fractions must
+        // not select a form using only the first digit.
+        $num = (float)str_replace(',', '.', preg_replace('/[.,](?=\d{3}(?:[.,]|$))/', '', $num));
         $pluralRule = match (Lang::getLocale())
         {
             Locale::KR, Locale::FR,
@@ -495,6 +498,10 @@ final class UIText
         if ($pluralRule == 1)
             return $num > 1;
 
+        if ($num != floor($num))
+            return 2;
+
+        $num = (int)$num;
         if ($num % 100 >= 11 && $num % 100 <= 14)
             return 2;
 
@@ -525,7 +532,7 @@ final class UIText
         }
 
         // ASCII number offset
-        if ($lastChar - 48 <= 9)
+        if ($lastChar >= 48 && $lastChar <= 57)
             return self::DIGIT_HAS_FINAL_CONSONANT[$lastChar - 48] ? $consonantForm : $vowelForm;
 
         // ASCII letter offsets lc

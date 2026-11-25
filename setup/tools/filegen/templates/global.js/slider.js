@@ -10,6 +10,8 @@ var Slider = new function()
     function onMouseDown(e)
     {
         handleObj = this;
+        // Layout may have changed since initialization in a hidden tooltip.
+        setPosition(handleObj, getMaxPosition(handleObj) * handleObj._percent);
         start     = $WH.g_getCursorPos(e);
 
         $WH.aE(document, 'mousemove', onMouseMove);
@@ -124,15 +126,13 @@ var Slider = new function()
             outside = true;
         }
 
-        let handleWidth = getHandleWidth(obj);
-        if (!handleWidth && typeof percent === 'number')
-            percent = Math.min(Math.max(percent, 0), 100);
-        else
-        {
-            percent  = parseFloat(offset) / maxPos;
-            percent -= handleWidth / getTrackerWidth(obj) * percent;
-            percent *= 100;
-        }
+        // Keep logical position independently of pixels: hidden layouts have
+        // zero width, but must retain the value selected before they are shown.
+        let fraction = maxPos > 0 ? offset / maxPos :
+            (typeof percent === 'number' ? percent / 100 : obj._percent);
+        obj._percent = Math.min(Math.max(fraction, 0), 1);
+        let trackerWidth = getTrackerWidth(obj);
+        percent = obj._percent * (trackerWidth > 0 ? 1 - getHandleWidth(obj) / trackerWidth : 1) * 100;
 
         obj.elements.trackBarProgress.style.width = percent + '%';
         obj.style.left = percent + '%';
@@ -143,13 +143,13 @@ var Slider = new function()
 
     function getMaxPosition(obj)
     {
-        return getTrackerWidth(obj) - getHandleWidth(obj);
+        return Math.max(0, getTrackerWidth(obj) - getHandleWidth(obj));
     }
 
     function getCurrentPosition(obj)
     {
         var
-            percent = obj._pos / getMaxPosition(obj),
+            percent = obj._percent,
             value   = Math.round(percent * (obj._max - obj._min) + obj._min),
             result  = [percent, value];
 
@@ -216,7 +216,7 @@ var Slider = new function()
         if (obj.elements.input)
             obj.elements.input.value = value;
 
-        let pct = (value - obj._min) / (obj._max - obj._min);
+        let pct = obj._max > obj._min ? (value - obj._min) / (obj._max - obj._min) : 0;
 
         setPosition(obj, getMaxPosition(obj) * pct, 100 * pct);
     };
@@ -297,6 +297,7 @@ var Slider = new function()
         obj._min = 1;
         obj._max = 100;
         obj._pos = 0;
+        obj._percent = 0;
         obj._tsz = 0;
         obj._hsz = null;
 
