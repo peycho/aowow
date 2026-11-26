@@ -98,17 +98,64 @@ class GameObjectList extends DBTypeList
             return null;
 
         $x  = '<table>';
+
+        # Name #
+
         $x .= '<tr><td><b class="q">'.UIText::unescapeUISequences($this->getField('name', true), Lang::FMT_HTML).'</b></td></tr>';
+
+        // WH - non standard
         if ($this->curTpl['typeCat'])
             if ($_ = Lang::gameObject('type', $this->curTpl['typeCat']))
                 $x .= '<tr><td>'.$_.'</td></tr>';
 
-        if (isset($this->curTpl['lockId']))
-            if ($locks = Lang::getLocks($this->curTpl['lockId']))
-                foreach ($locks as $l)
-                    $x .= '<tr><td>'.Lang::game('requires', [$l]).'</td></tr>';
+        # Locked #
+
+        if ($this->curTpl['flags'] & GO_FLAG_LOCKED)
+            $x .= '<tr><td>'.Lang::item('locked').'</td></tr>';
+
+        foreach (Lang::getLocks($this->curTpl['lockId'] ?? 0) as [$type, , $str, $miscInfo])
+        {
+            $x .= '<tr><td>'.match($type)
+            {
+                LOCK_TYPE_ITEM  => Lang::item('lockedByItem',  [$str]),
+                LOCK_TYPE_SPELL => Lang::item('lockedBySpell', [$str]),
+                LOCK_TYPE_SKILL => Lang::item($miscInfo ? 'reqSkillValue' : 'reqSkill', [$str, $miscInfo])
+            }.'</td></tr>';
+
+            if ($type == LOCK_TYPE_SPELL && $miscInfo && !($reagents = new ItemList(array(['id', array_column($miscInfo, 0)])))->error)
+            {
+                $reqReag  = [];
+                foreach ($miscInfo as [$itemId, $qty])
+                {
+                    if ($item = $reagents->getEntry($itemId))
+                        $_ = '<a href="?item='.$itemId.'">'.new LocString($item).'</a>';
+                    else
+                        $_ = 'Item #'.$itemId;
+
+                    $reqReag[] = ($qty > 1) ? Lang::main('parensFmt', [$_, $qty]) : $_;
+                }
+
+                $x .= '<tr class="q1 whtt-reagents"><td><br />'.Lang::item('reqSkill', [Lang::concat($reqReag, Lang::CONCAT_NONE)]).'</td></tr>';
+            }
+        }
+
+        # Quest Tracking Info #
+
+        // unsure, if should be displayed
+        // QUEST_TOOLTIP_REQUIREMENTS
+        // QuestTitle cssClass: 'q'
+        // " - ItemName" from gameobject_questitem
+        // QUEST_OBJECTS_FOUND_NOPROGRESS
+        // QUEST_MONSTERS_KILLED_NOPROGRESS
+        // QUEST_ITEMS_NEEDED_NOPROGRESS
 
         $x .= '</table>';
+
+        # Health Bar #
+
+        // should not display (also the tooltip BG is rendered behind the progress bar, which it shouldn't)
+        // if ($this->curTpl['type'] == OBJECT_DESTRUCTIBLE_BUILDING)
+        //     $x .= '<div><a href="javascript:;" class="progressbar" style="width:auto;"><div class="progressbar-text"></div><div class="progressbar-green" style="width:100%;"> </div></a></div>';
 
         return $x;
     }

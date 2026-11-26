@@ -722,6 +722,31 @@ CODE;
         check($db->selectCell("SELECT article FROM ::articles WHERE url='help=commenting-and-you' AND locale=2") === $deletion, 'comment-deletion correction preserves translations');
         check($db->selectCell("SELECT article FROM ::articles WHERE url='help=commenting-and-you' AND locale=0 AND rev=1") === $deletion, 'comment-deletion correction preserves other revisions');
 
+        // November migrations preserve operator mappings and pre-conversion timing.
+        resetDb();
+        $db->nativeQuery('CREATE TABLE aowow_objectdifficulty (normal10 mediumint unsigned NOT NULL, normal25 mediumint unsigned NOT NULL, heroic10 mediumint unsigned NOT NULL, heroic25 mediumint unsigned NOT NULL, mapType tinyint unsigned NOT NULL) ENGINE=InnoDB');
+        $db->nativeQuery('INSERT INTO aowow_objectdifficulty VALUES (900001,900002,900003,900004,2),(181366,193426,0,0,2)');
+        $difficulty = files(['1794586689_01.sql'=>file_get_contents($root.'/setup/sql/updates/1794586689_01.sql')]);
+        SqlUpdate::apply($db,$difficulty);
+        check((int)$db->selectCell('SELECT COUNT(*) FROM ::objectdifficulty WHERE normal10=900001 AND normal25=900002 AND heroic10=900003 AND heroic25=900004')===1, 'Difficulty migration preserves operator tuples');
+        check((int)$db->selectCell('SELECT COUNT(*) FROM ::objectdifficulty WHERE normal10=181366')===1, 'Existing stock difficulty tuple is not duplicated');
+        check((int)$db->selectCell('SELECT COUNT(*) FROM ::objectdifficulty WHERE normal10=201873')===1, 'Missing alliance gunship mapping is added');
+        check((int)$db->selectCell('SELECT COUNT(*) FROM ::objectdifficulty WHERE normal10=194324')===3, 'All three Freya hard modes are retained');
+        $beforeDifficulty=$db->selectAssoc('SELECT * FROM ::objectdifficulty ORDER BY normal10,heroic10');
+        SqlUpdate::apply($db,$difficulty);
+        check($beforeDifficulty===$db->selectAssoc('SELECT * FROM ::objectdifficulty ORDER BY normal10,heroic10'), 'Journal replay never duplicates or changes difficulty rows');
+
+        resetDb();
+        $db->nativeQuery('CREATE TABLE aowow_spell (id mediumint unsigned NOT NULL PRIMARY KEY, targetAuraSpellNot mediumint unsigned NOT NULL, castTime float unsigned NOT NULL, talentLevel tinyint unsigned NOT NULL, duration int NOT NULL, damageClass tinyint unsigned NOT NULL) ENGINE=InnoDB');
+        $db->nativeQuery('INSERT INTO aowow_spell VALUES (1,0,1.5,0,-1,2),(2,0,0,0,600000,1)');
+        $timings=$db->selectAssoc('SELECT id,castTime,duration FROM ::spell ORDER BY id');
+        $spellStorage=files(['1793974556_01.sql'=>file_get_contents($root.'/setup/sql/updates/1793974556_01.sql')]);
+        SqlUpdate::apply($db,$spellStorage);
+        check($db->selectCol('SELECT id FROM ::spell ORDER BY id')===[1,2], 'Spell migration retains identities with infinite and long durations');
+        check($db->selectAssoc('SELECT id,castTime,duration FROM ::spell_timing_legacy ORDER BY id')===$timings, 'Every original timing value is preserved exactly in the archive');
+        check((int)$db->selectCell('SELECT SUM(castTimeId + durationId) FROM ::spell')===0, 'New DBC IDs start unset until regeneration');
+        check(str_contains($db->selectCell('SELECT `sql` FROM ::dbversion'),'spell'), 'Spell regeneration remains queued after the storage conversion');
+
         echo "\n$checks update checks passed.\n";
     }
     finally { cleanup($temp); }

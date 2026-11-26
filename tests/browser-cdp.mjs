@@ -3,9 +3,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-export async function browser(binary = process.env.AOWOW_TEST_CHROME || 'google-chrome') {
+export async function browser(binary = process.env.AOWOW_TEST_CHROME || 'google-chrome', prefixArgs = []) {
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'aowow-browser-'));
-    const chrome = spawn(binary, ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--disable-background-networking', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', '--user-data-dir=' + profile, 'about:blank'], { stdio: 'ignore' });
+    const chrome = spawn(binary, [...prefixArgs, '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--disable-background-networking', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', '--user-data-dir=' + profile, 'about:blank'], { stdio: 'ignore' });
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     let socket, sequence = 0;
     const pending = new Map(), errors = [], loads = new Set();
@@ -16,11 +16,21 @@ export async function browser(binary = process.env.AOWOW_TEST_CHROME || 'google-
         fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
     }
     try {
-        for (let i = 0; i < 200 && !fs.existsSync(profile + '/DevToolsActivePort'); ++i) {
+        let port;
+        for (let i = 0; i < 200; ++i) {
             if (chrome.exitCode !== null) throw new Error('Chrome exited before debugging was ready');
+            try {
+                // Chrome creates this file before it finishes writing it. An empty
+                // port silently becomes HTTP port 80 when interpolated into a URL.
+                const [candidate, endpoint] = fs.readFileSync(profile + '/DevToolsActivePort', 'utf8').split('\n');
+                if (/^[1-9]\d{0,4}$/.test(candidate) && Number(candidate) <= 65535 && /^\/devtools\/browser\/.+/.test(endpoint || '')) {
+                    port = Number(candidate); break;
+                }
+            }
+            catch (error) { if (error.code !== 'ENOENT') throw error; }
             await sleep(50);
         }
-        const port = fs.readFileSync(profile + '/DevToolsActivePort', 'utf8').split('\n')[0];
+        if (!port) throw new Error('Timed out waiting for Chrome to publish a complete debugging endpoint');
         // Own the test page instead of racing Chrome's first startup target.
         const response = await fetch('http://127.0.0.1:' + port + '/json/new?about:blank', { method: 'PUT' });
         if (!response.ok) throw new Error('Cannot create browser test page: HTTP ' + response.status);

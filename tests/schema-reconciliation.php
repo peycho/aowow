@@ -39,7 +39,15 @@ function resetSchema(string $file) : void {
     preg_match_all('/^CREATE TABLE .*?^\).*?;/ms',file_get_contents($file),$matches);
     foreach ($matches[0] as $ddl) $db->nativeQuery($ddl);
     preg_match_all('/^INSERT INTO .*;$/m',file_get_contents($root.'/setup/sql/02-db_initial_data.sql'),$seeds);
-    foreach ($seeds[0] as $sql) $db->nativeQuery($sql);
+    foreach ($seeds[0] as $sql) {
+        // Historical difficulty rows predate the descriptive comment column.
+        if (str_starts_with($sql, 'INSERT INTO `aowow_objectdifficulty`') &&
+            !$db->query("SHOW COLUMNS FROM ::objectdifficulty LIKE 'comment'")->fetch()) {
+            preg_match_all('/\((\d+,\d+,\d+,\d+,\d+),/', $sql, $rows);
+            $sql = 'INSERT INTO `aowow_objectdifficulty` VALUES ('.implode('),(', $rows[1]).');';
+        }
+        $db->nativeQuery($sql);
+    }
     $db->query('SET FOREIGN_KEY_CHECKS=1');
     $db->query("UPDATE ::config SET value='0' WHERE `key`='maintenance'");
     $db->query("UPDATE ::dbversion SET `sql`='', build=''");
@@ -69,6 +77,20 @@ function clean(string $dir) : void { foreach(new DirectoryIterator($dir) as $f) 
 $temp=sys_get_temp_dir().'/aowow-reconciliation-'.bin2hex(random_bytes(8)); mkdir($temp,0700);
 $migration=$root.'/setup/sql/updates/'.SchemaUpdate::DATE.'_01.sql';
 $fixture=$root.'/tests/fixtures/schema-before-reconciliation.sql';
+$updateDir=$temp.'/setup/sql/updates';
+// Retain the pre-November reference for repeated historical reconciliation tests.
+// The complete November upgrade and current-schema parity are checked separately below.
+$historicalSql=file_get_contents($root.'/setup/sql/01-db_structure.sql');
+$historicalSql=preg_replace('/^DROP TABLE IF EXISTS `aowow_spell_timing_legacy`;.*?^\) ENGINE=.*?;\n/ms','',$historicalSql);
+foreach (['pvpFlags','flags','comment','rewardXPId','minFactionId','minReputation'] as $column) {
+    $table=match($column){'pvpFlags'=>'creature','flags'=>'factiontemplate','comment'=>'objectdifficulty','rewardXPId'=>'quests',default=>'spell'};
+    $historicalSql=preg_replace_callback('/^CREATE TABLE `aowow_'.$table.'`.*?^\) ENGINE=.*?;/ms',fn($m)=>preg_replace('/^  `'.$column.'`.*\n/m','',$m[0]),$historicalSql);
+}
+$historicalSql=str_replace('`castTimeId` smallint(5) unsigned NOT NULL DEFAULT 0','`castTime` float unsigned NOT NULL',$historicalSql);
+$historicalSql=str_replace('`durationId` smallint(5) unsigned NOT NULL DEFAULT 0','`duration` int(11) NOT NULL DEFAULT 0',$historicalSql);
+$historicalSql=preg_replace('/^  KEY `idx_(?:casttime|duration)`.*\n/m','',$historicalSql);
+$historicalReference=$temp.'/historical-reference.sql';
+file_put_contents($historicalReference,$historicalSql);
 try {
     mkdir($temp.'/config'); copy($root.'/aowow',$temp.'/aowow');
     foreach(['includes','localization'] as $name)symlink($root.'/'.$name,$temp.'/'.$name);
@@ -77,9 +99,24 @@ try {
     // fixture has no client extraction and must not rebuild its retained spell rows.
     mkdir($temp.'/setup'); mkdir($temp.'/setup/tools'); mkdir($temp.'/setup/tools/clisetup');
     foreach(new DirectoryIterator($root.'/setup') as $file)
-        if(!$file->isDot() && $file->getFilename()!=='tools')symlink($file->getPathname(),$temp.'/setup/'.$file->getFilename());
+        if(!$file->isDot() && !in_array($file->getFilename(),['tools','sql'],true))symlink($file->getPathname(),$temp.'/setup/'.$file->getFilename());
+    mkdir($temp.'/setup/sql'); mkdir($updateDir);
+    foreach(new DirectoryIterator($root.'/setup/sql') as $file)
+        if(!$file->isDot() && $file->getFilename()!=='updates')symlink($file->getPathname(),$temp.'/setup/sql/'.$file->getFilename());
+    foreach(glob($root.'/setup/sql/updates/*.sql') as $file)
+        if(basename($file)<'1793000000')symlink($file,$updateDir.'/'.basename($file));
     foreach(new DirectoryIterator($root.'/setup/tools') as $file)
-        if(!$file->isDot() && $file->getFilename()!=='clisetup')symlink($file->getPathname(),$temp.'/setup/tools/'.$file->getFilename());
+        if(!$file->isDot() && $file->getFilename()!=='clisetup' && $file->getFilename()!=='filegen')symlink($file->getPathname(),$temp.'/setup/tools/'.$file->getFilename());
+    // Keep dataset registration and acknowledgement; operator-input production
+    // is replaced only inside this disposable fixture checkout.
+    mkdir($temp.'/setup/tools/filegen');
+    foreach(new DirectoryIterator($root.'/setup/tools/filegen') as $file) {
+        if($file->isDot()) continue;
+        if(in_array($file->getFilename(), ['profiler.ss.php','pets.ss.php'], true)) {
+            $name=basename($file->getFilename(), '.ss.php');
+            file_put_contents($temp.'/setup/tools/filegen/'.$file->getFilename(), '<?php namespace Aowow; CLISetup::registerSetup("build", new class extends SetupScript { protected array $info = ["'.$name.'" => [[], CLISetup::ARGV_PARAM, "Disposable dataset fixture"]]; public function generate():bool{return true;} });');
+        } else symlink($file->getPathname(),$temp.'/setup/tools/filegen/'.$file->getFilename());
+    }
     foreach(new DirectoryIterator($root.'/setup/tools/clisetup') as $file)
         if(!$file->isDot() && $file->getFilename()!=='datagen.us.php')symlink($file->getPathname(),$temp.'/setup/tools/clisetup/'.$file->getFilename());
     file_put_contents($temp.'/setup/tools/clisetup/datagen.us.php', <<<'PHP'
@@ -94,7 +131,7 @@ CLISetup::registerUtility(new class extends UtilityScript {
     }
     public function run(array &$args):bool {
         $tasks=(array)$args['doSql'];
-        if(array_diff($tasks,['items','stats','spell','taxi']) || Cfg::get('MAINTENANCE')!==1)
+        if(array_diff($tasks,['items','stats','spell','taxi','teamcontributionpoints','itemenchantmentcondition','factions','creature','quests','spellrange','spellduration','spellcasttimes']) || Cfg::get('MAINTENANCE')!==1)
             throw new \RuntimeException('Unexpected schema fixture generation request');
         file_put_contents('sql-tasks.jsonl',json_encode($tasks,JSON_THROW_ON_ERROR)."\n",FILE_APPEND);
         $args['doneSql']=$tasks;
@@ -170,10 +207,10 @@ PHP);
     [$code,$out]=invoke($temp);
     check($code===0 && str_contains($out,'schema reconciliation data preflight passed'),'Real --update completes the guarded reconciliation: '.$out);
     $tasks=json_decode(trim(file_get_contents($temp.'/sql-tasks.jsonl')),true,flags:JSON_THROW_ON_ERROR);
-    check(!array_diff(['items','stats','spell','taxi'],$tasks),'real update dispatches every newly scheduled SQL generator');
+    check(!array_diff(['items','stats','spell','taxi'],$tasks),'real historical update dispatches every newly scheduled SQL generator');
     check($db->query('SELECT `sql` FROM ::dbversion')->fetchSingle()==='','only reported-complete synthetic generation clears pending SQL work');
-    $after=SchemaValidator::inspect($db,$root.'/setup/sql/01-db_structure.sql');
-    check($after['checked']===109 && !$after['issues'],'All 109 current application table definitions converge exactly with the corrected initial schema: '.json_encode($after['issues']));
+    $after=SchemaValidator::inspect($db,$historicalReference);
+    check($after['checked']===109 && !$after['issues'],'All 109 pre-November application table definitions converge exactly: '.json_encode($after['issues']));
     check(snapshot()==$rows,'Accounts, passwords, community text, ownership, favorites, profiles, ratings and long legacy content survive');
     check(file_get_contents($temp.'/static/uploads/screenshots/normal/1001.jpg')==='SYNTHETIC_UPLOAD_BYTES','Upload files remain unchanged');
     // Execute the generator's actual INSERTs against DBC-shaped empty-string input.
@@ -235,8 +272,8 @@ PHP);
         check(snapshot()==$data && $db->query('SELECT @@SESSION.sql_mode')->fetchSingle()===$mode,'Verification failure preserves rows and restores SQL mode');
     }
 
-    resetSchema($root.'/setup/sql/01-db_structure.sql');
-    $fresh=SchemaValidator::inspect($db,$root.'/setup/sql/01-db_structure.sql');
+    resetSchema($historicalReference);
+    $fresh=SchemaValidator::inspect($db,$historicalReference);
     check(!$fresh['issues'],'Fresh install imports natively on this engine and matches the same baseline');
     $flags=$db->query("SELECT `key`, value, `default`, cat, flags FROM ::config WHERE `key` IN ('searchplugins_enable','searchbox_enable') ORDER BY `key`")->fetchAll();
     check(count($flags)===2 && array_reduce($flags,fn($ok,$row)=>$ok && $row->value==='1' && $row->default==='1' && (int)$row->cat===1 && (int)$row->flags===132,true),'Fresh install seeds both goodies as persistent, enabled site booleans');
@@ -246,10 +283,10 @@ PHP);
     check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key`='sounds_enable' AND value='1' AND `default`='1' AND cat=1 AND flags=132")->fetchSingle()===1,'Fresh install enables sounds with persistent boolean metadata');
     check((int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key`='header_image_enable' AND value='0' AND `default`='0' AND cat=1 AND flags=132")->fetchSingle()===1 &&
         (int)$db->query("SELECT COUNT(*) FROM ::config WHERE `key` IN ('header_image_url','header_image_link') AND value='' AND `default`='' AND cat=1 AND flags=136")->fetchSingle()===2, 'Fresh install seeds disabled header image and empty persistent URL settings');
-    SqlUpdate::apply($db);
+    SqlUpdate::apply($db,$updateDir);
     check(!(int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle(),'Fresh version metadata already includes reconciliation');
-    $db->query('UPDATE ::dbversion SET date=1791244800');SqlUpdate::apply($db);
-    check(!SchemaValidator::inspect($db,$root.'/setup/sql/01-db_structure.sql')['issues'],'Reconciliation also supports an already-matching schema at the preceding marker');
+    $db->query('UPDATE ::dbversion SET date=1791244800');SqlUpdate::apply($db,$updateDir);
+    check(!SchemaValidator::inspect($db,$historicalReference)['issues'],'Reconciliation also supports an already-matching schema at the preceding marker');
     $db->query("UPDATE ::config SET value='0' WHERE `key`='searchplugins_enable'");
     $db->query("DELETE FROM ::config WHERE `key`='searchbox_enable'");
     $db->query("UPDATE ::dbversion SET date=1791331200, part=1");
@@ -350,5 +387,27 @@ PHP);
     $journalCount=(int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle();
     [$code,$out]=invoke($temp);
     check($code===0 && (int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle()===$journalCount, 'Already-current header image update does not replay');
+    // Finally run the full historical-to-current path once, with all real migrations.
+    foreach(glob($root.'/setup/sql/updates/*.sql') as $file)
+        if(!file_exists($updateDir.'/'.basename($file)))symlink($file,$updateDir.'/'.basename($file));
+    resetSchema($fixture);
+    $db->query('UPDATE ::dbversion SET date=1791244800, part=1');
+    seed('account',['id'=>1001,'login'=>'november','username'=>'November fixture','email'=>'november@example.test']);
+    seed('spell',['id'=>1001,'castTime'=>1.5,'duration'=>-1,'description_loc0'=>'Preserved spell text']);
+    [$code,$out]=invoke($temp);
+    check($code===0,'Real --update completes the full November upgrade: '.$out);
+    $after=SchemaValidator::inspect($db,$root.'/setup/sql/01-db_structure.sql');
+    check($after['checked']===110 && !$after['issues'],'All 110 current table definitions converge exactly: '.json_encode($after['issues']));
+    check($db->query('SELECT castTime,duration FROM ::spell_timing_legacy WHERE id=1001')->fetch()->toArray()===['castTime'=>1.5,'duration'=>-1], 'Full upgrade preserves legacy timing values in the archive');
+    check($db->query('SELECT description_loc0 FROM ::spell WHERE id=1001')->fetchSingle()==='Preserved spell text' &&
+        $db->query('SELECT username FROM ::account WHERE id=1001')->fetchSingle()==='November fixture','Full upgrade retains spell content and account ownership');
+    $taskLines=file($temp.'/sql-tasks.jsonl',FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES);
+    $tasks=json_decode(end($taskLines),true,flags:JSON_THROW_ON_ERROR);
+    check(!array_diff(['teamcontributionpoints','itemenchantmentcondition','factions','creature','quests','spellrange','spellduration','spellcasttimes'],$tasks),'Full update dispatches every November SQL generator');
+    check(!$db->query('SELECT `sql` FROM ::dbversion')->fetchSingle() && !$db->query('SELECT build FROM ::dbversion')->fetchSingle(),'Full update acknowledges completed SQL and build tasks');
+    resetSchema($root.'/setup/sql/01-db_structure.sql');
+    check(!SchemaValidator::inspect($db)['issues'],'Current fresh installation matches the same 110-table reference');
+    SqlUpdate::apply($db,$updateDir);
+    check(!(int)$db->query('SELECT COUNT(*) FROM ::sql_update_journal')->fetchSingle(),'Current fresh marker skips all included migrations');
     echo 'PASS: '.$checks.' guarded reconciliation/parity/community/enum/concurrency checks ('.$db->query('SELECT VERSION()')->fetchSingle().")\n";
 } finally { clean($temp); }

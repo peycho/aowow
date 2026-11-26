@@ -99,7 +99,7 @@ class CurrencyBaseResponse extends TemplateResponse implements ICache
 
         $this->headIcons  = $hi;
         $this->redButtons = array(
-            BUTTON_LINKS   => true
+            BUTTON_LINKS   => ['type' => $this->type, 'typeId' => $this->typeId]
         );
 
         if ($_ = $this->subject->getField('description', true))
@@ -239,7 +239,7 @@ class CurrencyBaseResponse extends TemplateResponse implements ICache
         $boughtBy = $xCosts ? DB::World()->selectCol('SELECT `item` FROM npc_vendor WHERE `extendedCost` IN %in UNION SELECT `item` FROM game_event_npc_vendor WHERE `extendedCost` IN %in', $xCosts, $xCosts) : [];
         if ($boughtBy)
         {
-            $boughtBy = new ItemList(array(['id', $boughtBy]));
+            $boughtBy = new ItemList(array(Listview::DEFAULT_SIZE, ['id', $boughtBy]));
             if (!$boughtBy->error)
             {
                 $tabData = array(

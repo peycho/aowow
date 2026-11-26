@@ -514,7 +514,9 @@ class TemplateResponse extends BaseResponse
         $notes = $_SESSION['notes'] ?? [];
         unset($_SESSION['notes']);
 
-        $notes[] = [...Util::getNotes(), 'One or more issues occured during page generation'];
+        [$msg, $severity] = Util::getNotes();
+        if ($msg)
+            $notes[] = [$msg, $severity, 'One or more issues occured during page generation'];
 
         foreach ($notes as $i => [$messages, $logLevel, $head])
         {

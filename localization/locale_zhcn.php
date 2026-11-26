@@ -338,7 +338,7 @@ $lang = array(
         'customProfile' => "（自定义概况）",
         'resync'        => "重新同步",
         'guildRoster'   => "公会成员名单 &lt;%s&gt;",
-        'arenaRoster'   => "竞技场战队名单 &lt;%s&gt",
+        'arenaRoster'   => "竞技场战队名单 &lt;%s&gt;",
         'atCaptain'     => "竞技场战队队长",
         'atSize'        => "团队规模：",
         'profiler'      => "角色概况",
@@ -531,12 +531,12 @@ $lang = array(
         'ra'            => [-2 => "部落", -1 => "联盟", null, "人类", "兽人", "矮人", "暗夜精灵", "亡灵", "牛头人", "侏儒", "巨魔", null, "血精灵", "德莱尼"],
         'rep'           => ["仇恨", "敌对", "冷淡", "中立", "友善", "尊敬", "崇敬", "崇拜"],
         'st'            => array(
-            "Default",                      "猎豹形态",                     "生命之树形态",                 "旅行形态",                  "水生形态",                 "熊形态",
-            null,                           null,                           "巨熊形态",               null,                           null,                           null,
-            null,                           "暗影之舞",                  null,                           null,                           "幽魂之狼",                    "战斗姿态",
-            "防御姿态",             "狂暴姿态",             null,                           null,                           "恶魔变身",                null,
-            null,                           null,                           null,                           "迅捷飞行形态",            "暗影形态",                  "飞行形态",
-            "潜行",                      "枭兽形态",                 "救赎之魂"
+            "Default", "猎豹形态", "生命之树形态", "旅行形态", "水生形态", "熊形态",
+            "小动物", "食尸鬼", "巨熊形态", "斯蒂文的食尸鬼", "萨隆亚的骷髅", "Darkmoon - Test of Strength",
+            "BLB Player", "暗影之舞", "Creature - Bear", "Creature - Cat", "幽魂之狼", "战斗姿态",
+            "防御姿态", "狂暴姿态", "测试", "僵尸", "恶魔变身", null,
+            null, "亡灵", "狂乱", "迅捷飞行形态", "暗影形态", "飞行形态",
+            "潜行", "枭兽形态", "救赎之魂"
         ),
         'me'            => array(
             null,                           "被魅惑",                      "混乱",                  "缴械",                     "扰乱",                   "感觉",
@@ -579,6 +579,17 @@ $lang = array(
             ["石头守卫", "骑士"],                           ["血卫士", "骑士中尉"],                 ["军团士兵", "骑士队长"],
             ["百夫长", "护卫骑士"],                         ["勇士", "少校"],                       ["中将", "司令"],
             ["将军", "统帅"],                               ["督军", "元帅"],                       ["高阶督军", "大元帅"]
+        ),
+        'cityRank'      => array(                           // PVP_MEDAL\d
+            null,
+            "暴风城守卫者",
+            "奥格瑞玛的领主",
+            "铁炉堡领主",
+            "达纳苏斯高阶哨兵",
+            "幽暗城的死亡领主",
+            "雷霆崖酋长",
+            "诺莫瑞根复仇者",
+            "巫毒领袖森金"
         ),
         'orientation'   => ['North', 'Northeast', 'East', 'Southeast', 'South', 'Southwest', 'West', 'Northwest']
     ),
@@ -657,7 +668,7 @@ $lang = array(
                 UNIT_STAND_STATE_SIT_MEDIUM_CHAIR => 'Sitting on medium chair',
                 UNIT_STAND_STATE_SIT_HIGH_CHAIR   => 'Sitting on high chair',
                 UNIT_STAND_STATE_DEAD             => 'Dead',
-                UNIT_STAND_STATE_KNEEL            => 'Kneeing',
+                UNIT_STAND_STATE_KNEEL            => 'Kneeling',
                 UNIT_STAND_STATE_SUBMERGED        => 'Submerged'
             ),
             null,
@@ -790,7 +801,7 @@ $lang = array(
         'actionTT'      => '[b class=q1]ActionType %d[/b][br][table][tr][td]Param1[/td][td=header]%d[/td][/tr][tr][td]Param2[/td][td=header]%d[/td][/tr][tr][td]Param3[/td][td=header]%d[/td][/tr][tr][td]Param4[/td][td=header]%d[/td][/tr][tr][td]Param5[/td][td=header]%d[/td][/tr][tr][td]Param6[/td][td=header]%d[/td][/tr][/table]',
         'actions'       => array(                           // [body, footer]
             null,
-            SmartAction::ACTION_TALK                               => ['(%3$d)?Say:#target# says; (%11$s)?TextGroup:[span class=q10]unknown text[/span]; #[b]%1$d[/b] to (%3$d)?#target#:invoker;%11$s', 'Duration: %s'],
+            SmartAction::ACTION_TALK                               => ['(%3$d)?Say:#target# says; (%11$d)?TextGroup:[span class=q10]unknown text[/span]; #[b]%1$d[/b] to (%3$d)?#target#:invoker;%12$s', 'Duration: %s'],
             SmartAction::ACTION_SET_FACTION                        => ['(%1$d)?Set faction of #target# to [faction=%11$d]:Reset faction of #target#;.', ''],
             SmartAction::ACTION_MORPH_TO_ENTRY_OR_MODEL            => ['(%11$d)?Reset apperance.:Take the appearance of;(%1$d)? [npc=%1$d].:;(%2$d)?[model npc=%2$d border=1 float=right][/model]:;', ''],
             SmartAction::ACTION_SOUND                              => ['Play sound to (%2$d)?invoking player:all players in sight;:[div][sound=%1$d][/div]', 'Played by environment.'],
@@ -801,7 +812,7 @@ $lang = array(
             SmartAction::ACTION_ACTIVATE_GOBJECT                   => ['#target# becomes activated.', ''],
 /* 10*/     SmartAction::ACTION_RANDOM_EMOTE                       => ['Emote %11$s to #target#.', ''],
             SmartAction::ACTION_CAST                               => ['Cast [spell=%1$d] at #target#.', '%1$s'],
-            SmartAction::ACTION_SUMMON_CREATURE                    => ['Summon [npc=%1$d](%3$d)? for %11$s:;(%4$d)?, attacking invoker.:;', '%1$s'],
+            SmartAction::ACTION_SUMMON_CREATURE                    => ['Summon [npc=%1$d](%3$d)? for %11$s:;(%4$d)?, attacking invoker:; at #target#.', '%1$s'],
             SmartAction::ACTION_THREAT_SINGLE_PCT                  => ['Modify #target#\'s threat by %11$+d%%.', ''],
             SmartAction::ACTION_THREAT_ALL_PCT                     => ['Modify the threat of all opponents by %11$+d%%.', ''],
             SmartAction::ACTION_CALL_AREAEXPLOREDOREVENTHAPPENS    => ['Satisfy exploration event of [quest=%1$d] for #target#.', ''],
@@ -873,7 +884,7 @@ $lang = array(
             SmartAction::ACTION_SET_NPC_FLAG                       => ['Set #target#\'s npc flags to %11$s.', ''],
             SmartAction::ACTION_ADD_NPC_FLAG                       => ['Add %11$s npc flags to #target#.', ''],
             SmartAction::ACTION_REMOVE_NPC_FLAG                    => ['Remove %11$s npc flags from #target#.', ''],
-            SmartAction::ACTION_SIMPLE_TALK                        => ['#target# says (%11$s)?TextGroup:[span class=q10]unknown text[/span]; #[b]%1$d[/b] %11$s', ''],
+            SmartAction::ACTION_SIMPLE_TALK                        => ['#target# says (%11$d)?TextGroup:[span class=q10]unknown text[/span]; #[b]%1$d[/b] %12$s', ''],
             SmartAction::ACTION_SELF_CAST                          => ['#target# casts [spell=%1$d] at #target#.(%4$d)? (max. %4$d |4target:targets;):;', '%1$s'],
             SmartAction::ACTION_CROSS_CAST                         => ['%11$s casts [spell=%1$d] at #target#.', '%1$s'],
             SmartAction::ACTION_CALL_RANDOM_TIMED_ACTIONLIST       => ['Call Timed Actionlist at random: %11$s', ''],
@@ -1317,6 +1328,7 @@ $lang = array(
         'mechanicimmune'=> '[Not affected by mechanic]：%s',
         '_extraFlags'   => '[Extra Flags]：',
         'versions'      => '[Difficulty Versions]：',
+        'pvpLeader'     => '阵营领袖',
         'level'         => array(
             "等级 %s",
             "等级 %s %s",
@@ -1355,7 +1367,7 @@ $lang = array(
         ),
         'extraFlags'    => array(
             CREATURE_FLAG_EXTRA_INSTANCE_BIND                   => 'Binds attacker to instance on death',
-            CREATURE_FLAG_EXTRA_CIVILIAN                        => "[tooltip name=civilian]- does not aggro\n- death costs Honor[/tooltip][span class=tip tooltip=civilian]Civilian[/span]",
+            CREATURE_FLAG_EXTRA_CIVILIAN                        => "[tooltip name=civilian]does not aggro[/tooltip][span class=tip tooltip=civilian]Civilian[/span]",
             CREATURE_FLAG_EXTRA_NO_PARRY                        => 'Cannot use [spell=3127]',
             CREATURE_FLAG_EXTRA_NO_PARRY_HASTEN                 => 'Does not gain Parry Haste',
             CREATURE_FLAG_EXTRA_NO_BLOCK                        => 'Cannot use [spell=107]',
@@ -1525,7 +1537,7 @@ $lang = array(
         'notFound'      => "这个任务不存在。",
         '_transfer'     => '这个任务将被转换到<a href="?quest=%d" class="q1">%s</a>，如果你转移到<span class="icon-%s">%s</span>。',
         'questLevel'    => "等级%s",
-        'requirements'  => "要求",
+        'requirements'  => "要求：",
         'reqMoney'      => "需要金钱：%s",
         'money'         => "金钱",
         'additionalReq' => "获得这个任务的额外要求",
@@ -1568,8 +1580,8 @@ $lang = array(
         'gainsDesc'     => "完成这个任务后，你将获得",
         'unavailable'   => "这项任务已被标记为过时，无法获得或完成。",
         'experience'    => "经验",
-        'expConvert'    => "（或%s如果在等级%d完成）",
-        'expConvert2'   => "%s如果在等级%d完成",
+     // 'expConvert'    => "（或%s如果在等级%d完成）",
+     // 'expConvert2'   => "%s如果在等级%d完成",
         'rewardChoices' => "你可以从这些奖励品中选择一件：",               // REWARD_CHOICES
         'rewardItems'   => "你将得到：",                                 // REWARD_ITEMS_ONLY
         'rewardAlso'    => "你还将得到：",                               // REWARD_ITEMS
@@ -1673,6 +1685,7 @@ $lang = array(
     'skill' => array(
         'id'            => "技能ID：",
         'notFound'      => "这个技能不存在。",
+        'tiers'         => ["初级", "中级", "高级", "专家级", "大师级", "宗师级"],
         'cat'           => array(
             -6 => "伙伴",         -5 => "坐骑",             -4 => "种族特性",      5 => "属性",          6 => "武器技能",       7 => "职业技能",        8 => "护甲精通",
              9 => "辅助技能",   10 => "语言",          11 => "专业",             12 => "不显示"
@@ -1770,14 +1783,14 @@ $lang = array(
         '_cooldown'     => "冷却时间",
         '_distUnit'     => "码",
         '_regenPer5Sec' => array(                           // GlobalStrings.lua ITEM_MOD_POWER_REGEN<n>_SHORT, ITEM_MOD_HEALTH_REGEN_SHORT; keyed as 'powerTypes'
-             0 => "每5秒的法力值恢复 %s",
-             1 => "每5秒的怒气增长 %s",
-             2 => "每5秒的专注获得 %s",
-             3 => "每5秒的能量恢复 %s",
-             4 => "每5秒的快乐值获得 %s",
-             5 => "每5秒的符文恢复 %s",
-             6 => "每5秒的符文能量恢复 %s",
-            -2 => "每5秒的生命值恢复 %s",
+            POWER_MANA        => "每5秒的法力值恢复 %s",
+            POWER_RAGE        => "每5秒的怒气增长 %s",
+            POWER_FOCUS       => "每5秒的专注获得 %s",
+            POWER_ENERGY      => "每5秒的能量恢复 %s",
+            POWER_HAPPINESS   => "每5秒的快乐值获得 %s",
+            POWER_RUNE        => "每5秒的符文恢复 %s",
+            POWER_RUNIC_POWER => "每5秒的符文能量恢复 %s",
+            POWER_HEALTH      => "每5秒的生命值恢复 %s",
         ),
         '_forms'        => "形态",
         '_aura'         => "光环",
@@ -1791,6 +1804,13 @@ $lang = array(
         '_speedZ'       => "垂直速度",
         '_speedUnit'    => "码/秒",
         '_radius'       => "半径：",
+        '_maxTargetLevel' => "目标最高等级",   // charm / possess level cap
+        '_seat'         => "座位",   // control vehicle
+        '_ppmUnit'      => "次触发/分钟",   // flat procs per minute modifier
+        '_totemBarSlots' => "图腾栏位置",   // cast button
+        '_arcHeight'    => "弧线高度", // jump effects
+        '_honorKills'   => "%d荣誉击杀",
+        '_honorPoints'  => "%d荣誉 @ L%d",
         '_interval'     => "间隔：", //Interval
         '_inSlot'       => "在插槽中：",
         '_collapseAll'  => "折叠全部",
@@ -1800,12 +1820,16 @@ $lang = array(
         '_seeMore'      => "[See more]",
         '_rankRange'    => "排名:&nbsp;%d&nbsp;-&nbsp;%d",
         '_showXmore'    => "[Show %d More]",
+        'chanceToBlock' => "%.2f%%格挡几率",
+        'chanceToCrit'  => "%.2f%%爆击几率",
+        'chanceToDodge' => "%.2f%%闪躲几率",
+        'chanceToParry' => "%.2f%%招架几率",
         'casterAura'    => "[Caster Aura]",
         'targetAura'    => "[Target Aura]",
-
         'normal'        => "普通",
         'special'       => "特殊",
-
+        'onNextMelee'   => "下一次近战武器攻击",
+        'onNextRanged'  => "攻击速度",
         'currentArea'   => '&lt;当前区域&gt;',
         'durabilityItems' => [-2 => '&lt;所有物品，已装备及背包中&gt;', -1 => '&lt;所有已装备物品&gt;'],
         'discovered'    => "通过发现学习",
@@ -1813,6 +1837,8 @@ $lang = array(
         'procChance'    => "触发几率：%.4g%%",
         'starter'       => "初始法术",
         'trainingCost'  => "训练成本：",
+        'reqEquipItem'  => "需要%s",
+        'reqForm'       => "需要%s",
         'channeled'     => "需引导",
         'range'         => "%s码范围",
         'meleeRange'    => "近战范围",
@@ -1857,14 +1883,14 @@ $lang = array(
             "剩余%d天"
         ),
         'powerCost'     => array(
-            -2 => ["%d生命值",   "%d生命值，每秒增加%d"     ],
-             0 => ["%d法力值",   "%d点法力值，外加每秒%d点" ],
-             1 => ["%d怒气",     "%d怒气，外加每秒%d"       ],
-             2 => ["%d集中",     "%d集中，外加每秒%d"       ],
-             3 => ["%d能量",     "%d能量，外加每秒%d"       ],
-             6 => ["%d符文能量", "%d点符文能量，外加每秒%d点"],
+            POWER_HEALTH      => ["%d生命值", "%d生命值，每秒增加%d", "使用全部生命值"],
+            POWER_MANA        => ["%d法力值", "%d点法力值，外加每秒%d点", "使用全部法力值"],
+            POWER_RAGE        => ["%d怒气", "%d怒气，外加每秒%d", "使用全部怒气值"],
+            POWER_FOCUS       => ["%d集中", "%d集中，外加每秒%d", "使用全部集中值"],
+            POWER_ENERGY      => ["%d能量", "%d能量，外加每秒%d", "使用100%的能量值"],
+            POWER_RUNIC_POWER => ["%d符文能量", "%d点符文能量，外加每秒%d点", ""]
         ),
-        'powerDisplayCost' => ["%d %s", "%d %s，再加上每秒%d"],
+        'powerDisplayCost' => ["%d %s", "%d %s，再加上每秒%d", "使用100%的%s"],
         'powerCostRunes'=> ["%d鲜血", "%d邪恶", "%d冰霜"],
         'powerRunes'    => ["鲜血", "邪恶", "冰霜", "死亡"],
         'powerTypes'    => array(                           // POWER_TYPE_*
@@ -1966,6 +1992,14 @@ $lang = array(
         'summonControl' => ['[Uncontrolled]', "守护者", "宠物", "被魅惑", '[Possessed Vehicle]', '[Uncontrolled Vehicle]'],
         'summonSlot'    => ["宠物", "火焰图腾", "大地图腾", "水图腾", "空气图腾", "非战斗宠物", "任务"],
         'unkEffect'     => '未知效果 (%1$d)',
+        // AuraStateType, as checked by SPELL_AURA_MOD_DAMAGE_DONE_VERSUS_AURASTATE; labels are English in all locales
+        'auraStates'    => array(
+             1 => "Dodged, parried or blocked",     2 => "Health below 20%",               3 => "Berserking",                     4 => "Frozen",
+             5 => "Judgement",                      7 => "Hunter parry",                  10 => "Victory Rush",                  12 => "Faerie Fire",
+            13 => "Health below 35%",              14 => "Immolate (Conflagrate)",        15 => "Rejuvenation / Regrowth (Swiftmend)", 16 => "Deadly Poison",
+            17 => "Enraged",                       18 => "Bleeding",                      23 => "Health above 75%"
+        ),
+        'destructibleState' => ["完好", "受损", "被摧毁", "重建中"], // GameObjectDestructibleState
         'effects'       => array(
 /*0-5    */ '无',                     '杀死',                '类型伤害',            'Dummy',                    '传送门',          '传送单位',
 /*6+     */ '应用光环',               '环境伤害',     'Drain Power',              'Drain Health',             'Heal',                     'Bind',
@@ -2051,7 +2085,7 @@ $lang = array(
 /*250+ */   'Mod Maximum Health - Flat (stacking)', 'Mod Enemy Dodge Chance',               'Mod Haste % (loss)',                   'Mod Critical Block Chance',            'Disarm Offhand',
             'Mod Mechanic Damage Taken %',          'No Reagent Cost',                      'Mod Target Resistance by Spell Class', 'Mod Spell Visual',                     'Mod Periodic Healing Taken %',
             'Screen Effect',                        'Phase',                                'Ability Ignore Aurastate',             'Allow Only Ability',                   '',
-            '',                                     '',                                     'Cancel Aura Buffer at % of Caster Health','Mod Attack Power by % of Stat',     'Ignore Target Resistance',
+            '',                                     '',                                     'Immune to Harmful Auras of School','Mod Attack Power by % of Stat',     'Ignore Target Resistance',
             'Ignore Target Resistance for Ability', 'Mod Damage Taken % from Caster',       'Ignore Swing Timer Reset',             'X-Ray',                                'Ability Consume No Ammo',
 /*275+ */   'Mod Ability Ignore Shapeshift',        'Mod Mechanic Damage Done %',           'Mod Max Affected Targets',             'Disarm Ranged Weapon',                 'Spawn Effect',
             'Mod Armor Penetration %',              'Mod Honor Gain %',                     'Mod Base Health %',                    'Mod Healing Taken % from Caster',      'Linked Aura',
@@ -2371,19 +2405,25 @@ $lang = array(
         'block'         => "%d格挡",
         'charges'       => "%d次",
         'locked'        => "已锁",
+        'lockedByItem'  => "需要 %s",
+        'lockedBySpell' => "需要 %s",
+        'encrypted'     => "已加密",
         'ratingString'  => '<!--rtg%%%1$d-->%2$s&nbsp;@&nbsp;Lvl<!--lvl-->%3$d',
         'heroic'        => "英雄级别",
         'startQuest'    => "该物品将触发一个任务",
         'containerSlots'=> "%d格%s",
-        'fap'           => "在猎豹、熊、巨熊和枭兽形态下的攻击强度",
+     // 'fap'           => "在猎豹、熊、巨熊和枭兽形态下的攻击强度",
+        'feralItemAP'   => "在猎豹、熊、巨熊和枭兽形态下的攻击强度提高<!--fap-->%d点。",
         'durability'    => "耐久度 %d / %d",
         'realTime'      => "实时",
         'conjured'      => "魔法制造的物品",
         'sellPrice'     => "卖价",
         'itemLevel'     => "物品等级%d",
-        'randEnchant'   => "&lt;随机附魔&gt",
-        'readClick'     => "&lt;右键点击阅读&gt",
-        'openClick'     => "&lt;右键点击打开&gt",
+        'randEnchant'   => "&lt;随机附魔&gt;",
+        'readClick'     => "&lt;右键点击阅读&gt;",
+        'openClick'     => "&lt;右键点击打开&gt;",
+        'signClick'     => "&lt;右键点击以了解详情&gt;",
+        'socketClick'   => "&lt;Shift+右键点击打开镶嵌界面&gt;",
         'setBonus'      => "(%d) 套装：%s",
         'setName'       => "%s（%d/%d）",
         'partyLoot'     => "团队拾取",
@@ -2418,8 +2458,11 @@ $lang = array(
         'buyout'        => "一口价",
         'each'          => "每个",
         'tabOther'      => "其他",
+        'reqReputation' => "需要 %s - %s",
         'reqMinLevel'   => "需要等级 %d",
         'reqLevelRange' => "需要等级 %d到%d （%s）",
+        'reqSkillValue' => "需要%s（%d）",
+        'reqSkill'      => "需要%s",
         'unique'        => ["唯一",   "唯一（%d）", "唯一：%s（%d）"   ],
         'uniqueEquipped'=> ["装备唯一", null,     "装备唯一：%s （%d）"],
         'speed'         => "速度",
@@ -2429,6 +2472,9 @@ $lang = array(
         'purchasedIn'   => "[This item can be purchased in]",
         'fishingLoc'    => "钓鱼地点",
         'fishedIn'      => "此物品位于",
+        'resistAll'     => "%c%d 所有抗性",
+        'resistSingle'  => "%c%d %s抗性",
+        'itemSuffixTpl' => '%2$s%1$s',
         'duration'      => array(
             '',
             "持续时间：%d秒",
@@ -2455,7 +2501,7 @@ $lang = array(
             "多彩插槽",                 "红色插槽",             "黄色插槽",                 "蓝色插槽",                 -1 => "棱彩插槽"
         ),
         'gemColors'     => array(
-            "多彩",                   "红色",               "黄色",                   "蓝色"
+            null, "多彩", "红色", "黄色", "蓝色"
         ),
         'gemRequires'   => "需要 ",
         'gemConditions' => array(
@@ -2495,23 +2541,23 @@ $lang = array(
             "投掷",                   null, /*Ranged2*/   "箭袋",                   "圣物"
         ),
         'subClass'      => array(
-            ITEM_CLASS_CONSUMABLE => ["消耗品", "药水", "药剂", "合剂", "卷轴", "食物和饮料", "物品强化", "绷带", "其它"],
-            ITEM_CLASS_CONTAINER  => ["容器", "灵魂袋", "草药袋", "附魔材料袋", "工程学材料袋", "宝石袋", "矿石袋", "制皮材料包", "铭文包"],
-            ITEM_CLASS_WEAPON     => ["斧", "斧", "弓", "枪械", "锤", "锤", "长柄武器", "剑", "剑", "Obsolete", "法杖", "异种武器", "异种武器", "拳套", "其它", "匕首", "投掷武器", "矛", "弩", "魔杖", "鱼竿"],
-            ITEM_CLASS_GEM        => ["红色", "蓝色", "黄色", "紫色", "绿色", "橙色", "多彩", "简易", "棱彩"],
-            ITEM_CLASS_ARMOR      => ["其它", "布甲", "皮甲", "锁甲", "板甲", "小圆盾", "盾牌", "圣契", "神像", "图腾", "魔印"],
-            ITEM_CLASS_REAGENT    => ["材料"],
-            ITEM_CLASS_AMMUNITION => ["无(魔杖)", "矢", "箭", "子弹", "投掷武器"],
-            ITEM_CLASS_TRADEGOOD  => ["商品", "零件", "爆炸物", "装置", "珠宝加工", "布料", "皮革", "金属和矿石", "肉类", "草药", "元素", "其它", "附魔", "原料", "护甲强化", "武器强化"],
-            ITEM_CLASS_GENERIC    => ["Generic(OBSOLETE)"],
-            ITEM_CLASS_RECIPE     => ["书籍", "制皮", "裁缝", "工程学", "锻造", "烹饪", "炼金术", "急救", "附魔", "钓鱼", "珠宝加工", "铭文"],
-            ITEM_CLASS_MONEY      => ["Money(OBSOLETE)"],
-            ITEM_CLASS_QUIVER     => ["箭袋", "箭袋", "箭袋", "弹药袋"],
-            ITEM_CLASS_QUEST      => ["任务"],
-            ITEM_CLASS_KEY        => ["钥匙", "开锁工具"],
-            ITEM_CLASS_PERMANENT  => ["永久"],
-            ITEM_CLASS_MISC       => ["垃圾", "材料", "宠物", "节日", "其它", "坐骑"],
-            ITEM_CLASS_GLYPH      => [null, "战士", "圣骑士", "猎人", "潜行者", "牧师", "死亡骑士", "萨满祭司", "法师", "术士", null, "德鲁伊"]
+            ITEM_CLASS_CONSUMABLE => ["消耗品", ["消耗品", "药水", "药剂", "合剂", "卷轴", "食物和饮料", "物品强化", "绷带", "其它"]],
+            ITEM_CLASS_CONTAINER  => ["容器", ["容器", "灵魂袋", "草药袋", "附魔材料袋", "工程学材料袋", "宝石袋", "矿石袋", "制皮材料包", "铭文包"]],
+            ITEM_CLASS_WEAPON     => ["武器", ["斧", "斧", "弓", "枪械", "锤", "锤", "长柄武器", "剑", "剑", "Obsolete", "法杖", "异种武器", "异种武器", "拳套", "其它", "匕首", "投掷武器", "矛", "弩", "魔杖", "鱼竿"]],
+            ITEM_CLASS_GEM        => ["珠宝", ["红色", "蓝色", "黄色", "紫色", "绿色", "橙色", "多彩", "简易", "棱彩"]],
+            ITEM_CLASS_ARMOR      => ["护甲", ["其它", "布甲", "皮甲", "锁甲", "板甲", "小圆盾", "盾牌", "圣契", "神像", "图腾", "魔印"]],
+            ITEM_CLASS_REAGENT    => ["材料", ["材料"]],
+            ITEM_CLASS_AMMUNITION => ["弹药", ["无(魔杖)", "矢", "箭", "子弹", "投掷武器"]],
+            ITEM_CLASS_TRADEGOOD  => ["商品", ["商品", "零件", "爆炸物", "装置", "珠宝加工", "布料", "皮革", "金属和矿石", "肉类", "草药", "元素", "其它", "附魔", "原料", "护甲强化", "武器强化"]],
+            ITEM_CLASS_GENERIC    => ["Generic(OBSOLETE)", ["Generic(OBSOLETE)"]],
+            ITEM_CLASS_RECIPE     => ["配方", ["书籍", "制皮", "裁缝", "工程学", "锻造", "烹饪", "炼金术", "急救", "附魔", "钓鱼", "珠宝加工", "铭文"]],
+            ITEM_CLASS_MONEY      => ["Money(OBSOLETE)", ["Money(OBSOLETE)"]],
+            ITEM_CLASS_QUIVER     => ["箭袋", ["箭袋", "箭袋", "箭袋", "弹药袋"]],
+            ITEM_CLASS_QUEST      => ["任务", ["任务"]],
+            ITEM_CLASS_KEY        => ["钥匙", ["钥匙", "开锁工具"]],
+            ITEM_CLASS_PERMANENT  => ["永久", ["永久"]],
+            ITEM_CLASS_MISC       => ["其它", ["垃圾", "材料", "宠物", "节日", "其它", "坐骑"]],
+            ITEM_CLASS_GLYPH      => ["雕文", [null, "战士", "圣骑士", "猎人", "潜行者", "牧师", "死亡骑士", "萨满祭司", "法师", "术士", null, "德鲁伊"]]
         ),
         'cat'           => array(                           // ordered by content first, then alphabeticaly
              2 => array("武器", []),                          // filled with self::$spell['weaponSubClass'] on load

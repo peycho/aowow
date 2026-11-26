@@ -19,6 +19,7 @@ CLISetup::registerSetup("sql", new class extends SetupScript
 
     protected array $dbcSourceFiles  = ['questxp', 'questfactionreward'];
     protected array $worldDependency = ['quest_template', 'quest_template_addon', 'quest_template_locale', 'game_event', 'game_event_seasonal_questrelation', 'quest_request_items', 'quest_request_items_locale', 'quest_offer_reward', 'quest_offer_reward_locale',  'disables'];
+    protected array $setupAfter      = [['teamcontributionpoints'], []];
 
     public function generate() : bool
     {
@@ -57,10 +58,11 @@ CLISetup::registerSetup("sql", new class extends SetupScript
                       IFNULL(qa.ProvidedItemCount, 0),
                       IFNULL(qa.SourceSpellId, 0),
                       RewardXPDifficulty,                             -- QuestXP.dbc x level
+                      0 AS "RewardXP",
                       RewardMoney,
                       RewardBonusMoney,
                       RewardDisplaySpell,                 RewardSpell,
-                      RewardHonor + (124 * RewardKillHonor),          -- 124 = 1HK @ L80 (real value per level in TeamContributionPoints.dbc)
+                      CAST(RewardHonor + (%f * RewardKillHonor) AS UNSIGNED),
                       IFNULL(qa.RewardMailTemplateId, 0), IFNULL(qa.RewardMailDelay, 0),
                       RewardTitle,
                       RewardTalents,
@@ -118,7 +120,7 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         DB::Aowow()->qry('TRUNCATE ::quests');
 
         $i = 0;
-        while ($quests = DB::World()->selectAssoc($baseQuery, CLISetup::SQL_BATCH * $i, CLISetup::SQL_BATCH))
+        while ($quests = DB::World()->selectAssoc($baseQuery, Game::getHonorPerKill(), CLISetup::SQL_BATCH * $i, CLISetup::SQL_BATCH))
         {
             CLI::write(' * batch #' . ++$i . ' (' . count($quests) . ')', CLI::LOG_BLANK, true, true);
 
@@ -138,20 +140,23 @@ CLISetup::registerSetup("sql", new class extends SetupScript
 
         CLI::write(' * unpacking XP rewards (1/4)', CLI::LOG_BLANK, true, true);
 
-        // unpack XP-reward
+        // for scaling quest rewards (level < 0)
+        (new DBCReader('questxp', ['temporary' => false, 'tableName' => 'aowow_questxp']))->readFile();
+
+        // for static lookups
         DB::Aowow()->qry(
-           'UPDATE ::quests q, dbc_questxp xp
-            SET    `rewardXP` = (CASE `rewardXP`
+           'UPDATE ::quests q, ::questxp xp
+            SET    `rewardXP` = (CASE `rewardXPId`
                        WHEN 0 THEN xp.`Field1` WHEN 1 THEN xp.`Field2` WHEN 2 THEN xp.`Field3` WHEN 3 THEN xp.`Field4` WHEN 4 THEN xp.`Field5`
                        WHEN 5 THEN xp.`Field6` WHEN 6 THEN xp.`Field7` WHEN 7 THEN xp.`Field8` WHEN 8 THEN xp.`Field9` WHEN 9 THEN xp.`Field10`
                        ELSE 0 END)
-            WHERE  xp.`id` = q.`level`',
+            WHERE  xp.`id` = IF (q.`level` < 0, %i, q.`level`)',
+            MAX_LEVEL
         );
 
 
         CLI::write(' * unpacking reputation gains (2/4)', CLI::LOG_BLANK, true, true);
 
-        // unpack Rep-rewards
         for ($i = 1; $i < 6; $i++)
             DB::Aowow()->qry(
                'UPDATE    ::quests q
@@ -167,7 +172,6 @@ CLISetup::registerSetup("sql", new class extends SetupScript
 
         CLI::write(' * flagging quests series (3/4)', CLI::LOG_BLANK, true, true);
 
-        // set series flags
         DB::Aowow()->qry(
            'UPDATE    ::quests q
             LEFT JOIN ::quests q2 ON q2.`NextQuestIdChain` = q.id

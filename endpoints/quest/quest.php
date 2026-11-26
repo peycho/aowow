@@ -17,7 +17,10 @@ class QuestBaseResponse extends TemplateResponse implements ICache
     protected ?int    $activeTab  = parent::TAB_DATABASE;
     protected  array  $breadcrumb = [0, 3];
 
-    protected  array  $scripts    = [[SC_JS_FILE, 'js/ShowOnMap.js']];
+    protected  array  $scripts    = array(
+        [SC_JS_FILE, 'js/ShowOnMap.js'],
+        [SC_JS_FILE, 'js/quest.js']
+    );
 
     public  int         $type          = Type::QUEST;
     public  int         $typeId        = 0;
@@ -25,7 +28,8 @@ class QuestBaseResponse extends TemplateResponse implements ICache
     public ?IconElement $providedItem  = null;
     public ?Mail        $mail          = null;
     public ?array       $gains         = null;              // why array|null ? because destructuring an array with less elements than expected is an error, destructuring null just returns false
-    public ?array       $rewards       = null;              // so  " if ([$spells, $items, $choice, $money] = $this->rewards): " will either work or cleanly branch to else
+    public ?array       $rewards       = null;              // so  " if ([$spells, $items, $choice, $hasMoney] = $this->rewards): " will either work or cleanly branch to else
+    public  array       $rewardsScaler = [];
     public  string      $objectives    = '';
     public  string      $details       = '';
     public  string      $offerReward   = '';
@@ -56,7 +60,7 @@ class QuestBaseResponse extends TemplateResponse implements ICache
         $this->gPageInfo += array(
             'type'   => $this->type,
             'typeId' => $this->typeId,
-            'name'   => UIText::unescapeUISequences($this->subject->getField('name', true), Lang::FMT_HTML)
+            'name'   => UIText::unescapeUISequences($this->subject->getField('name', true), Lang::FMT_RAW)
         );
 
         $_level        = $this->subject->getField('level');
@@ -247,31 +251,9 @@ class QuestBaseResponse extends TemplateResponse implements ICache
         if ($_flags & QUEST_FLAG_FLAGS_PVP)
             $infobox[] = Lang::quest('keepsPvpFlag');
 
-        // difficulty (todo (low): formula unclear. seems to be [minLevel,] -4, -2, (level), +3, +(9 to 15))
-        if ($_level > 0)
-        {
-            $_ = [];
-
-            // red
-            if ($_minLevel && $_minLevel < $_level - 4)
-                $_[] = '[color=q10]'.$_minLevel.'[/color]';
-
-            // orange
-            if (!$_minLevel || $_minLevel < $_level - 2)
-                $_[] = '[color=r1]'.(!$_ && $_minLevel > $_level - 4 ? $_minLevel : $_level - 4).'[/color]';
-
-            // yellow
-            $_[] = '[color=r2]'.(!$_ && $_minLevel > $_level - 2 ? $_minLevel : $_level - 2).'[/color]';
-
-            // green
-            $_[] = '[color=r3]'.($_level + 3).'[/color]';
-
-            // grey (is about +/-1 level off)
-            $_[] = '[color=r4]'.($_level + 3 + ceil(12 * $_level / MAX_LEVEL)).'[/color]';
-
-            if ($_)
-                $infobox[] = Lang::game('difficulty').implode('[small] &nbsp;[/small]', $_);
-        }
+        // difficulty
+        if ($_ = $this->subject->getColorsForCurrent())
+            $infobox[] = Lang::formatSkillBreakpoints($_);
 
         // id
         $infobox[] = Lang::quest('id') . $this->typeId;
@@ -494,7 +476,7 @@ class QuestBaseResponse extends TemplateResponse implements ICache
         if ($_ = $this->subject->getField('sourceSpellId'))
         {
             $this->extendGlobalIds(Type::SPELL, $_);
-            $this->objectiveList[] = new IconElement(Type::SPELL, $_, SpellList::getName($_), extraText: Lang::quest('provided'), element: 'iconlist-icon', size: IconElement::SIZE_SMALL);
+            $this->objectiveList[] = new IconElement(Type::SPELL, $_, SpellList::getName($_) ?? '', extraText: Lang::quest('provided'), element: 'iconlist-icon', size: IconElement::SIZE_SMALL);
         }
 
         // required money
@@ -854,6 +836,13 @@ class QuestBaseResponse extends TemplateResponse implements ICache
             }
         }
 
+        // add basic scaling info
+        if ($this->rewardsScaler)
+            $this->rewardsScaler += array(
+                'minLevel' => $_minLevel,
+                'maxLevel' => $_level < 0 ? MAX_LEVEL : $_minLevel
+            );
+
 
         /**************/
         /* Extra Tabs */
@@ -943,20 +932,31 @@ class QuestBaseResponse extends TemplateResponse implements ICache
 
     private function createRewards() : ?array
     {
-        $rewards = [[], [], [], ''];                        // [spells, items, choice, money]
+        $rewards = [[], [], [], false];                     // [spells, items, choice, hasMoney]
 
         // moneyReward / maxLevelCompensation
         $comp       = $this->subject->getField('rewardMoneyMaxLevel');
         $questMoney = $this->subject->getField('rewardOrReqMoney');
+        $minLevel   = $this->subject->getField('minLevel');
         $realComp   = max($comp, $questMoney);
-        if ($questMoney > 0)
+
+        if ($realComp > 0)
         {
-            $rewards[3] = Util::formatMoney($questMoney);
-            if ($realComp > $questMoney)
-                $rewards[3] .= '&nbsp;' . Lang::quest('expConvert', [Util::formatMoney($realComp), MAX_LEVEL]);
+            $rewards[3] = true;
+
+            if ($comp > $questMoney)
+                $this->rewardsScaler['coin']['rewardAtCap'] = $comp;
+
+            $this->rewardsScaler['coin']['multiplier'] = 1;
+
+            /* NOTE!
+             * Money should also scale according to QuestMoneyReward.db2 (same structure as QuestXP.dbc, using rewardMoneyId from quest_template), but its NYI by TC
+             */
+            if ($this->subject->getField('level') < 0)
+                $this->rewardsScaler['coin']['levels'] = array_fill_keys(range($minLevel, MAX_LEVEL), max(0, $questMoney));
+            else
+                $this->rewardsScaler['coin']['levels'] = [$minLevel => max(0, $questMoney)];
         }
-        else if ($questMoney <= 0 && $realComp > 0)
-            $rewards[3] = Lang::quest('expConvert2', [Util::formatMoney($realComp), MAX_LEVEL]);
 
         // itemChoices
         if (!empty($this->subject->choices[$this->typeId][Type::ITEM]))
@@ -1122,31 +1122,38 @@ class QuestBaseResponse extends TemplateResponse implements ICache
 
     private function createGains(int $side) : ?array
     {
-        $gains = [];
+        $gains = array(
+            false,                                          // hasXP
+            [],                                             // reputation
+            null,                                           // title id
+            $this->subject->getField('rewardTalents'),
+            null,                                           // honor points
+            $this->subject->getField('rewardArenaPoints')
+        );
 
         // xp
-        $gains[0] = $this->subject->getField('rewardXP');
+        if ($rewardEntry = $this->subject->getField('rewardXPId'))
+        {
+            $minLevel = $this->subject->getField('minLevel');
+            $gains[0] = true;
 
-        // arena points
-        $gains[5] = $this->subject->getField('rewardArenaPoints');
+            $this->rewardsScaler['xp']['multiplier'] = 1;
+
+            if ($this->subject->getField('level') < 0)
+                $this->rewardsScaler['xp']['levels'] = DB::Aowow()->selectCol('SELECT `id` AS ARRAY_KEY, %n FROM ::questxp WHERE `id` BETWEEN %i AND %i', 'field'.(++$rewardEntry), $minLevel, MAX_LEVEL) ?: [];
+            else
+                $this->rewardsScaler['xp']['levels'] = [$minLevel => $this->subject->getField('rewardXP')];
+        }
 
         // honor points
         if ($_ = $this->subject->getField('rewardHonorPoints'))
             $gains[4] = [$_, $side];
-        else
-            $gains[4] = null;
-
-        // talent points
-        $gains[3] = $this->subject->getField('rewardTalents');
 
         // title
         if ($tId = $this->subject->getField('rewardTitleId'))
             $gains[2] = [$tId, (new TitleList(array(['id', $tId])))->getHtmlizedName()];
-        else
-            $gains[2] = null;
 
         // reputation
-        $repGains = [];
         for ($i = 1; $i < 6; $i++)
         {
             $fac = $this->subject->getField('rewardFactionId'.$i);
@@ -1179,9 +1186,8 @@ class QuestBaseResponse extends TemplateResponse implements ICache
             if (User::isInGroup(U_GROUP_STAFF) && $extra)
                 $rep['qty'][1] = $qty . $this->fmtStaffTip(sprintf('%+d', $extra), Lang::faction('customRewRate'));
 
-            $repGains[] = $rep;
+            $gains[1][] = $rep;
         }
-        $gains[1] = $repGains;
 
         if (!array_filter($gains))
             return null;
@@ -1292,10 +1298,12 @@ class QuestBaseResponse extends TemplateResponse implements ICache
 
     protected function generateMetadata(bool $useArticle = true) : void
     {
-        $this->metaTags[] = ['property' => 'og:title', 'content' => $this->h1];
+        $title = UIText::unescapeUISequences($this->subject->getField('name', true), Lang::FMT_RAW);
+
+        $this->metaTags[] = ['property' => 'og:title', 'content' => $title];
         $this->metaTags[] = ['property' => 'og:type',  'content' => 'article'];
 
-        $keywords = [$this->h1, Util::ucFirst(Lang::game('quest'))];
+        $keywords = [$title, Util::ucFirst(Lang::game('quest'))];
         $zone = '';
 
         $c0 = $this->subject->getField('cat2');

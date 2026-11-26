@@ -337,7 +337,7 @@ $lang = array(
         'complexFilter' => "[Complex filter selected! Search results are limited to cached Characters.]",
         'customProfile' => " ([Custom Profile])",
         'resync'        => "Ресинхронизация",
-        'guildRoster'   => "Список членов гильдии &lt;%s&gt",
+        'guildRoster'   => "Список членов гильдии &lt;%s&gt;",
         'arenaRoster'   => "[Arena Team Roster for &lt;%s&gt]",     // string probably lost
         'atCaptain'     => "Капитан команды арены",
         'atSize'        => "Численности: ",
@@ -526,7 +526,7 @@ $lang = array(
         'si'            => array(1 => "Альянс", -1 => "Альянс только", 2 => "Орда", -2 => "Орда только", null, 3 => "Обе"),
         'resistances'   => array(null, "Сопротивление светлой магии", "Сопротивление огню", "Сопротивление силам природы", "Сопротивление магии льда", "Сопротивление темной магии", "Сопротивление тайной магии"),
         'dt'            => array(null, "Магия", "Проклятие", "Болезнь", "Яд", "Незаметность", "Невидимость", "Магия, Проклятие, Болезнь, Яд", "Заклинание (НИП)", "Исступление"),
-        'sc'            => array("Физический урон", "Свет", "Огонь", "природа", "Лед", "Тьма", "Тайная магия"),
+        'sc'            => array("Физический", "Свет", "Огонь", "природа", "Лед", "Тьма", "Тайная магия"),
         'cl'            => array(null, "Воин", "Паладин", "Охотник", "Разбойник", "Жрец", "Рыцарь смерти", "Шаман", "Маг", "Чернокнижник", null, "Друид"),
         'ra'            => array(-2 => "Орда", -1 => "Альянс", null, "Человек", "Орк", "Дворф", "Ночной эльф", "Нежить", "Таурен", "Гном", "Тролль", null, "Эльф крови", "Дреней"),
         'rep'           => array("Ненависть", "Враждебность", "Неприязнь", "Равнодушие", "Дружелюбие", "Уважение", "Почтение", "Превознесение"),
@@ -579,6 +579,17 @@ $lang = array(
             ["Каменный Страж", "Рыцарь"],                                   ["Кровавый страж", "Рыцарь-лейтенант"],                         ["Легионер", "Рыцарь-капитан"],
             ["Центурион", "Рыцарь-защитник"],                               ["Защитник", "Лейтенант-командор"],                             ["Лейтенант-генерал", "Командор"],
             ["Генерал", "Маршал"],                                          ["Вождь", "Фельдмаршал"],                                       ["Верховный вождь", "Главнокомандующий"]
+        ),
+        'cityRank'      => array(                           // PVP_MEDAL\d
+            null,
+            "Протектор Штормграда",
+            "Властитель Оргриммара",
+            "Тан Стальгорна",
+            "Верховный часовой Дарнаса",
+            "Владыка Смерти: Подгород",
+            "Вождь Громового Утеса",
+            "Мститель Гномрегана",
+            "Вождь вуду Сен'Джин"
         ),
         'orientation'   => ['North', 'Northeast', 'East', 'Southeast', 'South', 'Southwest', 'West', 'Northwest']
     ),
@@ -657,7 +668,7 @@ $lang = array(
                 UNIT_STAND_STATE_SIT_MEDIUM_CHAIR => 'Sitting on medium chair',
                 UNIT_STAND_STATE_SIT_HIGH_CHAIR   => 'Sitting on high chair',
                 UNIT_STAND_STATE_DEAD             => 'Dead',
-                UNIT_STAND_STATE_KNEEL            => 'Kneeing',
+                UNIT_STAND_STATE_KNEEL            => 'Kneeling',
                 UNIT_STAND_STATE_SUBMERGED        => 'Submerged'
             ),
             null,
@@ -790,7 +801,7 @@ $lang = array(
         'actionTT'      => '[b class=q1]ActionType %d[/b][br][table][tr][td]Param1[/td][td=header]%d[/td][/tr][tr][td]Param2[/td][td=header]%d[/td][/tr][tr][td]Param3[/td][td=header]%d[/td][/tr][tr][td]Param4[/td][td=header]%d[/td][/tr][tr][td]Param5[/td][td=header]%d[/td][/tr][tr][td]Param6[/td][td=header]%d[/td][/tr][/table]',
         'actions'       => array(                           // [body, footer]
             null,
-            SmartAction::ACTION_TALK                               => ['(%3$d)?Say:#target# says; (%11$s)?TextGroup:[span class=q10]unknown text[/span]; #[b]%1$d[/b] to (%3$d)?#target#:invoker;%11$s', 'Duration: %s'],
+            SmartAction::ACTION_TALK                               => ['(%3$d)?Say:#target# says; (%11$d)?TextGroup:[span class=q10]unknown text[/span]; #[b]%1$d[/b] to (%3$d)?#target#:invoker;%12$s', 'Duration: %s'],
             SmartAction::ACTION_SET_FACTION                        => ['(%1$d)?Set faction of #target# to [faction=%11$d]:Reset faction of #target#;.', ''],
             SmartAction::ACTION_MORPH_TO_ENTRY_OR_MODEL            => ['(%11$d)?Reset apperance.:Take the appearance of;(%1$d)? [npc=%1$d].:;(%2$d)?[model npc=%2$d border=1 float=right][/model]:;', ''],
             SmartAction::ACTION_SOUND                              => ['Play sound to (%2$d)?invoking player:all players in sight;:[div][sound=%1$d][/div]', 'Played by environment.'],
@@ -801,7 +812,7 @@ $lang = array(
             SmartAction::ACTION_ACTIVATE_GOBJECT                   => ['#target# becomes activated.', ''],
 /* 10*/     SmartAction::ACTION_RANDOM_EMOTE                       => ['Emote %11$s to #target#.', ''],
             SmartAction::ACTION_CAST                               => ['Cast [spell=%1$d] at #target#.', '%1$s'],
-            SmartAction::ACTION_SUMMON_CREATURE                    => ['Summon [npc=%1$d](%3$d)? for %11$s:;(%4$d)?, attacking invoker.:;', '%1$s'],
+            SmartAction::ACTION_SUMMON_CREATURE                    => ['Summon [npc=%1$d](%3$d)? for %11$s:;(%4$d)?, attacking invoker:; at #target#.', '%1$s'],
             SmartAction::ACTION_THREAT_SINGLE_PCT                  => ['Modify #target#\'s threat by %11$+d%%.', ''],
             SmartAction::ACTION_THREAT_ALL_PCT                     => ['Modify the threat of all opponents by %11$+d%%.', ''],
             SmartAction::ACTION_CALL_AREAEXPLOREDOREVENTHAPPENS    => ['Satisfy exploration event of [quest=%1$d] for #target#.', ''],
@@ -873,7 +884,7 @@ $lang = array(
             SmartAction::ACTION_SET_NPC_FLAG                       => ['Set #target#\'s npc flags to %11$s.', ''],
             SmartAction::ACTION_ADD_NPC_FLAG                       => ['Add %11$s npc flags to #target#.', ''],
             SmartAction::ACTION_REMOVE_NPC_FLAG                    => ['Remove %11$s npc flags from #target#.', ''],
-            SmartAction::ACTION_SIMPLE_TALK                        => ['#target# says (%11$s)?TextGroup:[span class=q10]unknown text[/span]; #[b]%1$d[/b] %11$s', ''],
+            SmartAction::ACTION_SIMPLE_TALK                        => ['#target# says (%11$d)?TextGroup:[span class=q10]unknown text[/span]; #[b]%1$d[/b] %12$s', ''],
             SmartAction::ACTION_SELF_CAST                          => ['#target# casts [spell=%1$d] at #target#.(%4$d)? (max. %4$d |4target:targets;):;', '%1$s'],
             SmartAction::ACTION_CROSS_CAST                         => ['%11$s casts [spell=%1$d] at #target#.', '%1$s'],
             SmartAction::ACTION_CALL_RANDOM_TIMED_ACTIONLIST       => ['Call Timed Actionlist at random: %11$s', ''],
@@ -1317,6 +1328,7 @@ $lang = array(
         'mechanicimmune'=> '[Not affected by mechanic]: %s',
         '_extraFlags'   => '[Extra Flags]: ',
         'versions'      => '[Difficulty Versions]: ',
+        'pvpLeader'     => 'Лидер',
         'level'         => array(
             'Уровень %s',
             '%2$s %1$s-го уровня',
@@ -1355,7 +1367,7 @@ $lang = array(
         ),
         'extraFlags'    => array(
             CREATURE_FLAG_EXTRA_INSTANCE_BIND                   => 'Binds attacker to instance on death',
-            CREATURE_FLAG_EXTRA_CIVILIAN                        => "[tooltip name=civilian]- does not aggro\n- death costs Honor[/tooltip][span class=tip tooltip=civilian]Civilian[/span]",
+            CREATURE_FLAG_EXTRA_CIVILIAN                        => "[tooltip name=civilian]does not aggro[/tooltip][span class=tip tooltip=civilian]Civilian[/span]",
             CREATURE_FLAG_EXTRA_NO_PARRY                        => 'Cannot use [spell=3127]',
             CREATURE_FLAG_EXTRA_NO_PARRY_HASTEN                 => 'Does not gain Parry Haste',
             CREATURE_FLAG_EXTRA_NO_BLOCK                        => 'Cannot use [spell=107]',
@@ -1525,7 +1537,7 @@ $lang = array(
         'notFound'      => "Такое задание не существует.",
         '_transfer'     => 'Этот предмет превратится в <a href="?quest=%d" class="q1">%s</a>, если вы перейдете за <span class="icon-%s">%s</span>.',
         'questLevel'    => "%s-го уровня",
-        'requirements'  => "Требования",
+        'requirements'  => "Требования:",
         'reqMoney'      => "Требуется денег: %s",
         'money'         => "Деньги",
         'additionalReq' => "Дополнительные условия для получения данного задания",
@@ -1568,8 +1580,8 @@ $lang = array(
         'gainsDesc'     => "По завершении этого задания, вы получите",
         'unavailable'   => "пометили это задание как устаревшее — его нельзя получить или выполнить.",
         'experience'    => "опыта",
-        'expConvert'    => "(или %s на %d-м уровне)",
-        'expConvert2'   => "%s на %d-м уровне",
+     // 'expConvert'    => "(или %s на %d-м уровне)",
+     // 'expConvert2'   => "%s на %d-м уровне",
         'rewardChoices' => "Вы сможете выбрать одну из наград:",                       // REWARD_CHOICES
         'rewardItems'   => "Вы получите:",                                             // REWARD_ITEMS_ONLY
         'rewardAlso'    => "Вы также получите:",                                       // REWARD_ITEMS
@@ -1673,6 +1685,7 @@ $lang = array(
     'skill' => array(
         'id'            => "Навык ID: ",
         'notFound'      => "Этот навык не существует.",
+        'tiers'         => ["Ученик", "Подмастерье", "Умелец", "Мастеровой", "Мастер", "Великий мастер"],
         'cat'           => array(
             -6 => "Спутники",           -5 => "Транспорт",          -4 => "Классовые навыки",   5 => "Характеристики",      6 => "Оружейные навыки",    7 => "Классовые навыки",    8 => "Доспехи",
              9 => "Вторичные навыки",   10 => "Языки",              11 => "Профессии",         12 => "Не отображается"
@@ -1770,14 +1783,14 @@ $lang = array(
         '_cooldown'     => "Восстановление",
         '_distUnit'     => " метров",
         '_regenPer5Sec' => array(                           // GlobalStrings.lua ITEM_MOD_POWER_REGEN<n>_SHORT, ITEM_MOD_HEALTH_REGEN_SHORT; keyed as 'powerTypes'
-             0 => "%s маны в 5 сек.",
-             1 => "%s ярости в 5 сек.",
-             2 => "%s тонуса в 5 сек.",
-             3 => "%s энергии в 5 сек.",
-             4 => "%s настроения в 5 сек.",
-             5 => "%s рун в 5 сек.",
-             6 => "%s силы рун в 5 сек.",
-            -2 => "%s здоровья в 5 сек.",
+            POWER_MANA        => "%s маны в 5 сек.",
+            POWER_RAGE        => "%s ярости в 5 сек.",
+            POWER_FOCUS       => "%s тонуса в 5 сек.",
+            POWER_ENERGY      => "%s энергии в 5 сек.",
+            POWER_HAPPINESS   => "%s настроения в 5 сек.",
+            POWER_RUNE        => "%s рун в 5 сек.",
+            POWER_RUNIC_POWER => "%s силы рун в 5 сек.",
+            POWER_HEALTH      => "%s здоровья в 5 сек.",
         ),
         '_forms'        => "Форма",
         '_aura'         => "аура",
@@ -1791,6 +1804,13 @@ $lang = array(
         '_speedZ'       => "Вертикальная скорость",
         '_speedUnit'    => " м/с",
         '_radius'       => "Радиус действия: ",
+        '_maxTargetLevel' => "Макс. уровень цели",          // charm / possess level cap
+        '_seat'         => "Место",                         // control vehicle
+        '_ppmUnit'      => " срабатываний в минуту",        // flat procs per minute modifier
+        '_totemBarSlots' => "Ячейки панели тотемов",        // cast button
+        '_arcHeight'    => "Высота дуги",                   // jump effects
+        '_honorKills'   => "%d Почетные победы",            // HONORABLE_KILLS
+        '_honorPoints'  => "%d Честь @ L%d",                // HONOR
         '_interval'     => "Интервал: ",
         '_inSlot'       => "в слот: ",
         '_collapseAll'  => "Свернуть все",
@@ -1800,12 +1820,16 @@ $lang = array(
         '_seeMore'      => "[See more]",
         '_rankRange'    => "Ранг:&nbsp;%d&nbsp;-&nbsp;%d",
         '_showXmore'    => "Показать на %d больше",
+        'chanceToBlock' => "Вероятность блокирования: %.2f%%",
+        'chanceToCrit'  => "Критический удар: %.2f%%",
+        'chanceToDodge' => "Вероятность уклонения: %.2f%%",
+        'chanceToParry' => "Вероятность парирования: %.2f%%",
         'casterAura'    => "[Caster Aura]",
         'targetAura'    => "[Target Aura]",
-
         'normal'        => "Обычный",
         'special'       => "Особый",
-
+        'onNextMelee'   => "Следующая атака",
+        'onNextRanged'  => "Скорость атаки",
         'currentArea'   => '&lt;current area&gt;',
         'durabilityItems' => [-2 => '&lt;все предметы, надетые и в сумках&gt;', -1 => '&lt;все надетые предметы&gt;'],
         'discovered'    => "Изучается путём освоения местности",
@@ -1813,6 +1837,8 @@ $lang = array(
         'procChance'    => "Шанс срабатывания: %.4g%%",
         'starter'       => "Начальное заклинание",
         'trainingCost'  => "Цена обучения: ",
+        'reqEquipItem'  => "Требуется: %s",
+        'reqForm'       => "Требуется: %s",
         'channeled'     => "Направляемое",
         'range'         => "Радиус действия: %s м",
         'meleeRange'    => "Дистанция ближнего боя",
@@ -1857,14 +1883,14 @@ $lang = array(
             "Осталось: %d |4день:дня:дней;"
         ),
         'powerCost'     => array(
-            -2 => ["Здоровье: %d",                                    "Здоровье: %d плюс %d/сек."],
-             0 => ["Мана: %d",                                        "Мана: %d плюс %d/сек"     ],
-             1 => ["Ярость: %d",                                      "Ярость: %d плюс %d/сек"   ],
-             2 => ["Тонус: %d",                                       "Тонус: %d плюс %d/сек."   ],
-             3 => ["Энергия: %d",                                     "Энергия: %d плюс %d/сек." ],
-             6 => ["Требуется %d |4единица:единицы:единиц; силы рун", "Cила рун: %d плюс %d/сек" ],
+            POWER_HEALTH      => ["Здоровье: %d",                                    "Здоровье: %d плюс %d/сек.", "Требуется 100% здоровья"],
+            POWER_MANA        => ["Мана: %d",                                        "Мана: %d плюс %d/сек" ,     "Требуется 100% маны"    ],
+            POWER_RAGE        => ["Ярость: %d",                                      "Ярость: %d плюс %d/сек" ,   "Требуется 100% ярости"  ],
+            POWER_FOCUS       => ["Тонус: %d",                                       "Тонус: %d плюс %d/сек.",    "Требуется 100% тонуса"  ],
+            POWER_ENERGY      => ["Энергия: %d",                                     "Энергия: %d плюс %d/сек.",  "Требуется 100% энергии" ],
+            POWER_RUNIC_POWER => ["Требуется %d |4единица:единицы:единиц; силы рун", "Cила рун: %d плюс %d/сек",  ""                       ]
          ),
-        'powerDisplayCost' => ['%2$s: %1$d', "%d %s и %d в сек. дополнительно"],
+        'powerDisplayCost' => ['%2$s: %1$d', "%d %s и %d в сек. дополнительно", "Требуется 100% |3-1 (%s)"],
         'powerCostRunes'=> ["%d |4руна:руны:рун; крови", "%d |4руна:руны:рун; нечестивости", "%d |4руна:руны:рун; льда"],
         'powerRunes'    => ["Руна крови", "Руна льда", "Лед", "Смерти"],
         'powerTypes'    => array(                           // POWER_TYPE_*
@@ -1966,6 +1992,14 @@ $lang = array(
         'summonControl' => ['[Uncontrolled]', "Стражи", "Питомец", "Подчинённый", '[Possessed Vehicle]', '[Uncontrolled Vehicle]'],
         'summonSlot'    => ["Питомец", "Тотем огня", "Тотем земли", "Тотем воды", "Тотем воздуха", "Спутник", "Задание"],
         'unkEffect'     => 'Unknown Effect (%1$d)',
+        // AuraStateType, as checked by SPELL_AURA_MOD_DAMAGE_DONE_VERSUS_AURASTATE; labels are English in all locales
+        'auraStates'    => array(
+             1 => "Dodged, parried or blocked",     2 => "Health below 20%",               3 => "Berserking",                     4 => "Frozen",
+             5 => "Judgement",                      7 => "Hunter parry",                  10 => "Victory Rush",                  12 => "Faerie Fire",
+            13 => "Health below 35%",              14 => "Immolate (Conflagrate)",        15 => "Rejuvenation / Regrowth (Swiftmend)", 16 => "Deadly Poison",
+            17 => "Enraged",                       18 => "Bleeding",                      23 => "Health above 75%"
+        ),
+        'destructibleState' => ["Цело", "Повреждено", "Разрушено", "Восстанавливается"], // GameObjectDestructibleState
         'effects'       => array(
 /*0-5    */ 'None',                     'Instakill',                'School Damage',            'Dummy',                    'Portal Teleport',          'Teleport Units',
 /*6+     */ 'Apply Aura',               'Environmental Damage',     'Drain Power',              'Drain Health',             'Heal',                     'Bind',
@@ -2051,7 +2085,7 @@ $lang = array(
 /*250+ */   'Mod Maximum Health - Flat (stacking)', 'Mod Enemy Dodge Chance',               'Mod Haste % (loss)',                   'Mod Critical Block Chance',            'Disarm Offhand',
             'Mod Mechanic Damage Taken %',          'No Reagent Cost',                      'Mod Target Resistance by Spell Class', 'Mod Spell Visual',                     'Mod Periodic Healing Taken %',
             'Screen Effect',                        'Phase',                                'Ability Ignore Aurastate',             'Allow Only Ability',                   '',
-            '',                                     '',                                     'Cancel Aura Buffer at % of Caster Health','Mod Attack Power by % of Stat',     'Ignore Target Resistance',
+            '',                                     '',                                     'Immune to Harmful Auras of School','Mod Attack Power by % of Stat',     'Ignore Target Resistance',
             'Ignore Target Resistance for Ability', 'Mod Damage Taken % from Caster',       'Ignore Swing Timer Reset',             'X-Ray',                                'Ability Consume No Ammo',
 /*275+ */   'Mod Ability Ignore Shapeshift',        'Mod Mechanic Damage Done %',           'Mod Max Affected Targets',             'Disarm Ranged Weapon',                 'Spawn Effect',
             'Mod Armor Penetration %',              'Mod Honor Gain %',                     'Mod Base Health %',                    'Mod Healing Taken % from Caster',      'Linked Aura',
@@ -2371,19 +2405,25 @@ $lang = array(
         'block'         => "Блок: %s",
         'charges'       => "%d |4заряд:заряда:зарядов;",
         'locked'        => "Заперто",
+        'lockedByItem'  => "Требуется: %s",
+        'lockedBySpell' => "Требуется: %s",
+        'encrypted'     => "Зашифровано",
         'ratingString'  => '<!--rtg%%%1$d-->%2$s&nbsp;на&nbsp;<!--lvl-->%3$d&nbsp;ур.',
         'heroic'        => "Героический",
         'startQuest'    => "Этот предмет позволяет получить задание.",
         'containerSlots'=> '%2$s (%1$d |4ячейка:ячейки:ячеек;)',
-        'fap'           => "Сила атаки зверя",
+     // 'fap'           => "Сила атаки зверя",
+        'feralItemAP'   => "Увеличивает силу атаки на <!--fap-->%d в облике кошки, медведя, лютого медведя и лунного совуха.",
         'durability'    => "Прочность: %d / %d",
         'realTime'      => "реальное время",
         'conjured'      => "Сотворенный предмет",
         'sellPrice'     => "Цена продажи",
         'itemLevel'     => "Уровень предмета: %d",
-        'randEnchant'   => "&lt;Случайное зачарование&gt",
-        'readClick'     => "&lt;Щелкните правой кнопкой мыши, чтобы прочитать.&gt",
-        'openClick'     => "&lt;Щелкните правой кнопкой мыши, чтобы открыть.&gt",
+        'randEnchant'   => "&lt;Случайное зачарование&gt;",
+        'readClick'     => "&lt;Щелкните правой кнопкой мыши, чтобы прочитать.&gt;",
+        'openClick'     => "&lt;Щелкните правой кнопкой мыши, чтобы открыть.&gt;",
+        'signClick'     => "&lt;Щелкните правой кнопкой мыши, чтобы узнать подробнее.&gt;",
+        'socketClick'   => "&lt;Нажмите Shift и щелкните правой кнопкой мыши, чтобы инкрустировать предмет.&gt;",
         'setBonus'      => "Комплект (%d |4предмет:предмета:предметов;): %s",
         'setName'       => "%s (%d/%d)",
         'partyLoot'     => "Добыча группы",
@@ -2418,8 +2458,11 @@ $lang = array(
         'buyout'        => "Цена выкупа",
         'each'          => "каждый",
         'tabOther'      => "Другое",
+        'reqReputation' => 'Требуется: %2$s со стороны |3-7(%1$s)',
         'reqMinLevel'   => "Требуется уровень: %d",
         'reqLevelRange' => "Требуемый уровень: %d – %d (%d)",
+        'reqSkillValue' => "Требуется: %s (%d)",
+        'reqSkill'      => "Требуется: %s",
         'unique'        => ["Уникальный",                   "Уникальный (%d)",  "Уникальный: %s (%d)"                       ],
         'uniqueEquipped'=> ["Уникальный использующийся",    null,               "Уникальный использующийся предмет: %s (%d)"],
         'speed'         => "Скорость",
@@ -2429,6 +2472,9 @@ $lang = array(
         'purchasedIn'   => "Этот предмет приобретается в",
         'fishingLoc'    => "Места рыбной ловли",
         'fishedIn'      => "Этот предмет вылавливается в",
+        'resistAll'     => "%c%d ко всем видам сопротивления",
+        'resistSingle'  => "%c%d к сопротивлению |3-7(%s)",
+        'itemSuffixTpl' => '%s %$s',
         'duration'      => array(
             '',
             "Срок действия: %d |4секунда:секунды:секунд;",
@@ -2456,7 +2502,7 @@ $lang = array(
             "Особое гнездо",        "Красное гнездо",   "Желтое гнездо",        "Синее гнездо",           -1 => "Бесцветное гнездо"
         ),
         'gemColors'     => array(                           // *_GEM
-            "Особый",               "Красный",          "Желтый",               "Синий"
+            null,                   "особый",           "красный",                  "желтый",                   "синий"
         ),
         'gemRequires'   => "Требуется ",                    // ENCHANT_CONDITION_REQUIRES
         'gemConditions' => array(                           // ENCHANT_CONDITION_*
@@ -2496,23 +2542,23 @@ $lang = array(
             "Метательное",          null, /*Спина*/     "Колчан",               "Реликвия"
         ),
         'subClass'      => array(
-            ITEM_CLASS_CONSUMABLE => ["Расходуемые", "Зелья", "Эликсиры", "Настойки", "Свитки", "Еда и напитки", "Улучшения", "Бинты", "Другое"],
-            ITEM_CLASS_CONTAINER  => ["Сумка", "Сумка душ", "Сумка травника", "Сумка зачаровывателя", "Сумка инженера", "Сумка ювелира", "Сумка шахтера", "Сумка кожевника", "Сумка начертателя"],
-            ITEM_CLASS_WEAPON     => ["Топор", "Топор", "Лук", "Огнестрельное", "Дробящее", "Дробящее", "Древковое", "Меч", "Меч", "Устаревшие", "Посох", "Экзотическое", "Экзотическое", "Кистевое", "Разное", "Кинжал", "Метательное", "Копье", "Арбалет", "Жезл", "Удочка"],
-            ITEM_CLASS_GEM        => ["Красные", "Синие", "Желтые", "Фиолетовые", "Зеленые", "Оранжевые", "Особые", "Простые", "Радужные"],
-            ITEM_CLASS_ARMOR      => ["Разное", "Ткань", "Кожа", "Кольчуга", "Латы", "Кулачный щит(НЕ ИСП.)_", "Щит", "Манускрипт", "Идол", "Тотем", "Печати"],
-            ITEM_CLASS_REAGENT    => ["Реагент"],
-            ITEM_CLASS_AMMUNITION => ["Жезл(НЕ ИСП.)", "Болт(НЕ ИСП.)", "Стрелы", "Пули", "Метательное(НЕ ИСП.)"],
-            ITEM_CLASS_TRADEGOOD  => ["Хозяйственные товары", "Детали", "Взрывчатка", "Устройства", "Ювелирное дело", "Ткань", "Кожа", "Металл и камень", "Мясо", "Трава", "Стихии", "Другое", "Наложение чар", "Материалы", "Чары для доспехов", "Чары для оружия"],
-            ITEM_CLASS_GENERIC    => ["Стандартный(НЕ ИСП.)"],
-            ITEM_CLASS_RECIPE     => ["Книга", "Кожевничество", "Портняжное дело", "Инженерное дело", "Кузнечное дело", "Кулинария", "Алхимия", "Первая помощь", "Наложение чар", "Рыбная ловля", "Ювелирное дело", "Начертание"],
-            ITEM_CLASS_MONEY      => ["Деньги (НЕ ИСП.)"],
-            ITEM_CLASS_QUIVER     => ["Колчан(НЕ ИСП.)", "Колчан(НЕ ИСП.)", "Колчан", "Подсумок"],
-            ITEM_CLASS_QUEST      => ["Задания"],
-            ITEM_CLASS_KEY        => ["Ключ", "Отмычка"],
-            ITEM_CLASS_PERMANENT  => ["Постоянные"],
-            ITEM_CLASS_MISC       => ["Хлам", "Реагенты", "Питомцы", "Праздничные предметы", "Другое", "Верховые животные"],
-            ITEM_CLASS_GLYPH      => [null, "Воин", "Паладин", "Охотник", "Разбойник", "Жрец", "Рыцарь смерти", "Шаман", "Маг", "Чернокнижник", null, "Друид"]
+            ITEM_CLASS_CONSUMABLE => ["Расходуемые",          ["Расходуемые", "Зелья", "Эликсиры", "Настойки", "Свитки", "Еда и напитки", "Улучшения", "Бинты", "Другое"]],
+            ITEM_CLASS_CONTAINER  => ["Сумки",                ["Сумка", "Сумка душ", "Сумка травника", "Сумка зачаровывателя", "Сумка инженера", "Сумка ювелира", "Сумка шахтера", "Сумка кожевника", "Сумка начертателя"]],
+            ITEM_CLASS_WEAPON     => ["Оружие",               ["Топор", "Топор", "Лук", "Огнестрельное", "Дробящее", "Дробящее", "Древковое", "Меч", "Меч", "Устаревшие", "Посох", "Экзотическое", "Экзотическое", "Кистевое", "Разное", "Кинжал", "Метательное", "Копье", "Арбалет", "Жезл", "Удочка"]],
+            ITEM_CLASS_GEM        => ["Самоцветы",            ["Красные", "Синие", "Желтые", "Фиолетовые", "Зеленые", "Оранжевые", "Особые", "Простые", "Радужные"]],
+            ITEM_CLASS_ARMOR      => ["Доспехи",              ["Разное", "Ткань", "Кожа", "Кольчуга", "Латы", "Кулачный щит(НЕ ИСП.)_", "Щит", "Манускрипт", "Идол", "Тотем", "Печати"]],
+            ITEM_CLASS_REAGENT    => ["Реагенты",             ["Реагент"]],
+            ITEM_CLASS_AMMUNITION => ["Боеприпасы",           ["Жезл(НЕ ИСП.)", "Болт(НЕ ИСП.)", "Стрелы", "Пули", "Метательное(НЕ ИСП.)"]],
+            ITEM_CLASS_TRADEGOOD  => ["Хозяйственные товары", ["Хозяйственные товары", "Детали", "Взрывчатка", "Устройства", "Ювелирное дело", "Ткань", "Кожа", "Металл и камень", "Мясо", "Трава", "Стихии", "Другое", "Наложение чар", "Материалы", "Чары для доспехов", "Чары для оружия"]],
+            ITEM_CLASS_GENERIC    => ["Стандартные(НЕ ИСП.)", ["Стандартный(НЕ ИСП.)"]],
+            ITEM_CLASS_RECIPE     => ["Рецепты",              ["Книга", "Кожевничество", "Портняжное дело", "Инженерное дело", "Кузнечное дело", "Кулинария", "Алхимия", "Первая помощь", "Наложение чар", "Рыбная ловля", "Ювелирное дело", "Начертание"]],
+            ITEM_CLASS_MONEY      => ["Деньги",               ["Деньги (НЕ ИСП.)"]],
+            ITEM_CLASS_QUIVER     => ["Амуниция",             ["Колчан(НЕ ИСП.)", "Колчан(НЕ ИСП.)", "Колчан", "Подсумок"]],
+            ITEM_CLASS_QUEST      => ["Задания",              ["Задания"]],
+            ITEM_CLASS_KEY        => ["Ключи",                ["Ключ", "Отмычка"]],
+            ITEM_CLASS_PERMANENT  => ["Постоянные(НЕ ИСП.)",  ["Постоянные"]],
+            ITEM_CLASS_MISC       => ["Разное",               ["Хлам", "Реагенты", "Питомцы", "Праздничные предметы", "Другое", "Верховые животные"]],
+            ITEM_CLASS_GLYPH      => ["Символы",              [null, "Воин", "Паладин", "Охотник", "Разбойник", "Жрец", "Рыцарь смерти", "Шаман", "Маг", "Чернокнижник", null, "Друид"]]
         ),
         'cat'           => array(                           // should be ordered by content first, then alphabeticaly
              2 => array("Оружие", []),                      // filled with self::$spell['weaponSubClass'] on load

@@ -132,6 +132,12 @@ application database is needed. These synthetic checks supplement populated-site
 screenshots and physical-device acceptance; they do not measure field performance.
 For manual populated-site sampling, see the [performance guide](../docs/performance.md).
 
+`node tests/browser-cdp-startup.mjs` forces Chrome's debugging-port file to exist
+while empty or partially written, then starts real Chromium. It verifies that
+the helper waits for a valid port and browser endpoint, accepts DevTools commands
+after startup, and still reports an early browser exit. This prevents an empty
+port from becoming an unintended connection to `127.0.0.1:80`.
+
 `node tests/browser-cdp-navigation.mjs` runs before the responsive suite. Its
 15 real-browser checks cover a previous document finishing while the next
 request waits for headers, delayed destination scripts, redirects, same-document
@@ -189,6 +195,38 @@ methods with loaded synthetic real/custom profiles and disabled/anonymous access
 loopback synthetic handlers: malformed first routing pairs, uppercase/encoded
 routes, custom-profile inventory arrays, hyphenated routes and early locale
 redirects. Both run in the PHP gate.
+
+The November imports reject array-valued GET parameters while retaining POST
+inventory arrays. `php tests/security-upstream-november-profiles.php` calls the
+real save handler with synthetic identities to check login, ownership, deleted
+and noncustom profiles, creation limits and rejected-write behavior.
+`php tests/security-upstream-november-ui.php` renders the actual quest template
+without JavaScript, checking readable XP/money, level-cap compensation, zero
+rewards and arena-only gains. Both run in the PHP gate. Shared fixtures also
+cover sanitized empty search tokens, grouped/fractional plurals, bounded quest
+difficulty and signed spell coefficients through repeated browser scaling.
+The SQL gate checks preservation of custom difficulty mappings and archives old
+spell timings before converting to DBC IDs, including negative permanent
+durations and values outside the new ID range.
+`node tests/upstream-slider.mjs` uses actual slider code, DOM helpers and CSS in
+Chromium at desktop and mobile widths. It checks editable input, clamping,
+invalid text, drag/tap, resize, hidden initialization and fixed-level ranges.
+It runs in the browser gate.
+
+`php tests/item-tooltip-levels.php` uses the real item tooltip renderer and all
+six locales with synthetic item rows. It verifies fixed level-80 ratings,
+level-70 rating conversion, static items and heirloom ranges. The PHP gate runs
+it directly; the Chromium slider suite consumes its actual tooltip HTML to
+check slider visibility, selected levels and inactive rating links at desktop
+and mobile widths.
+
+`php tests/asset-versions.php` checks the page renderer's release revision and
+file timestamp in shipped/generated asset URLs, locale prefixes and explicit
+unversioned assets. `node tests/tooltip-cache.mjs` keeps Chromium's HTTP cache
+enabled across simulated releases. It reproduces the old widget calling the
+removed `$WH.$E()` helper, then verifies ordinary navigation downloads the current
+widget and restores item-icon/name tooltips without clearing the visitor's cache.
+These run in the PHP and browser gates respectively.
 
 Sticky screenshots/videos are tested at metadata index zero, with keyword arrays
 preserved. Guide/profile integer bounds use the actual endpoint definitions.
@@ -257,31 +295,36 @@ damage from forced text normalization.
 `AOWOW_TEST_DATABASE=aowow_security_test_reconciliation` on an isolated localhost
 database. Its sanitized historical structure fixture contains no rows, comments,
 auto-increment counters or environment headers. Synthetic records exercise the
-real update entrypoint, 109-table fresh/legacy schema agreement, enum ordinal
+real update entrypoint, 110-table fresh/legacy schema agreement, enum ordinal
 mapping, long captions/text and community/upload preservation. Data preflight
 rejection, strict-mode restoration, concurrency, maintenance handling and refusal
 to replay partial SQL are covered. Its guarded `fixtures/taxi-generator.php`
 helper runs the real generator with synthetic DBC/world inputs under strict SQL
 mode, verifying scripted nodes, nearest-flightmaster selection and map filtering.
 SQL data production is synthetic in the reconciliation fixture; its real updater
-still dispatches and acknowledges the newly requested `items`, `stats`, `spell` and `taxi`
-tasks. Actual client extraction and deployed regeneration require acceptance
-separately. See [schema reconciliation](../docs/schema-reconciliation.md).
+still dispatches and acknowledges requested SQL/build tasks, including the new
+spell auxiliary tables and profiler/pet datasets. Operator-input producers are
+replaced only inside this fixture. Actual client extraction and deployed
+regeneration require acceptance separately. See
+[schema reconciliation](../docs/schema-reconciliation.md).
 
 `php tests/schema-validator.php` exercises the complete initial-schema parser,
 normalization, column/index/FK/generated-column differences, safe diagnostics and
 the real read-only CLI initialization/dispatcher. It also checks token-based
 discovery of DBC-copy declarations without executing generators, generated-table
-classification and compact versus detailed reports. It runs in the PHP CI group.
+classification and compact versus detailed reports. This includes literal
+permanent `DBCReader` destinations such as the quest generator's `questxp` table,
+as well as `TrDBCcopy` declarations. Temporary, dynamic and unknown sources remain
+excluded. It runs in the PHP CI group.
 
 The SQL group also runs `tests/schema-validator-sql.php`, guarded to require
 `AOWOW_TEST_DATABASE=aowow_security_test_schema` on an isolated localhost fixture.
-It creates the complete 109-table initial schema, then checks real metadata with
+It creates the complete 110-table initial schema, then checks real metadata with
 a SELECT-only account and invokes the actual `aowow --validate-schema` entrypoint.
 It covers MyISAM/InnoDB metadata, legacy config without `default`, missing/extra
 tables, generated DBC-copy inputs, column/index/FK drift, configured prefixes,
-help, mixed-option rejection
-and unchanged community/config/version/journal records. MySQL fixture loading
+the inline `questxp` table after successful regeneration, help, mixed-option
+rejection and unchanged community/config/version/journal records. MySQL fixture loading
 uses equivalent parenthesized literal TEXT defaults and temporarily permits the
 shipped historical nonunique foreign-key targets only on its disposable importer
 connection. No deployment configuration or production data is accessed.
@@ -1424,3 +1467,6 @@ preserved operator choices, checksummed migration accounting and the normal
 `--update` command on disposable databases.
 The browser gate renders `php tests/header-image.php --browser` with the real CSS,
 checking the 468×60 geometry, top-right alignment and separation from the logo.
+The same fixture verifies that the shared header adds no extra `<h1>`, cached
+item/detail/list/text templates retain one main heading, the homepage keeps its
+heading, and the item page title remains visible in Chromium.

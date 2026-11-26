@@ -9,11 +9,11 @@ if (!defined('AOWOW_REVISION'))
 final class ExternalLinks
 {
     private const array DEFAULTS = [
-        'forum'    => ['enabled' => true, 'url' => 'http://forums.battle.net'],
-        'blog'     => ['enabled' => true, 'url' => 'http://worldpress.com'],
-        'irc'      => ['enabled' => true, 'url' => 'http://webchat.quakenet.org/'],
-        'facebook' => ['enabled' => true, 'url' => 'http://www.facebook.com'],
-        'twitter'  => ['enabled' => true, 'url' => 'http://twitter.com'],
+        'forum'    => ['enabled' => false, 'url' => 'http://forums.battle.net'],
+        'blog'     => ['enabled' => false, 'url' => 'https://wordpress.com'],
+        'irc'      => ['enabled' => false, 'url' => 'http://webchat.quakenet.org/'],
+        'facebook' => ['enabled' => false, 'url' => 'http://www.facebook.com'],
+        'twitter'  => ['enabled' => false, 'url' => 'http://twitter.com'],
         'discord'  => ['enabled' => false, 'url' => ''],
         'github'   => ['enabled' => true, 'url' => 'https://github.com/Sarjuuk/aowow']
     ];
@@ -25,13 +25,15 @@ final class ExternalLinks
         return self::DEFAULTS;
     }
 
-    // Missing entries retain legacy behavior; disabled, empty or malformed entries never become links.
+    // Missing entries use deployment defaults; disabled, empty or malformed entries never become links.
     public static function load(mixed $config) : void
     {
         self::$urls = [];
         foreach (self::DEFAULTS as $key => $default)
         {
             $entry = is_array($config) ? (array_key_exists($key, $config) ? $config[$key] : $default) : null;
+            if (is_array($entry) && array_key_exists('url', $entry) && !array_key_exists('enabled', $entry))
+                $entry['enabled'] = true; // retain existing URL-only operator configuration
             $entry = is_array($entry) ? array_replace($default, $entry) : [];
             $url = $entry['url'] ?? null;
             $enabled = $entry['enabled'] ?? false;

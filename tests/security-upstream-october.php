@@ -78,6 +78,19 @@ namespace {
         check(Lang::getRequiredItems(ITEM_CLASS_ARMOR, 1 << 30, false) === Lang::spell('cat', -11, 1, 8), 'Unnamed armor subclasses use the nested fallback in each locale');
         check(Lang::getRequiredItems(ITEM_CLASS_WEAPON, 1 << 30, false) === Lang::spell('cat', -11, 1, 6), 'Unnamed weapon subclasses use the nested fallback in each locale');
         check(is_string(Lang::meta('description', 'profile', ['Fixture', 80, 'Race', 'Class', 'Realm', 'Region'])), 'Profile meta descriptions accept exactly six values');
+        foreach (['%' => null, '\\' => null] as $token => $expected) {
+            check(\Aowow\Filter::transformToken($token, true) === $expected, 'Sanitized empty search tokens return without indexing warnings');
+        }
+        if ($locale === Locale::EN) {
+            foreach (['1,000'=>'gems', '1.5'=>'gems', '1'=>'gem', '2'=>'gems'] as $number=>$word)
+                check(\Aowow\UIText::unescapeUISequences($number.' |4gem:gems;', Lang::FMT_RAW) === $number.' '.$word, 'Full grouped/fractional numbers select the English plural');
+            check(\Aowow\UIText::unescapeUISequences('2 |4red:reds; |4gem:gems;', Lang::FMT_RAW) === '2 reds gems', 'Cascading plural switches reuse the complete preceding number');
+            $quest = new FixtureQuest;
+            $quest->seed(['level'=>5, 'minLevel'=>1]);
+            check($quest->getColorsForCurrent()[4] === 10, 'Low-level quests use their own green range');
+            $quest->seed(['level'=>80, 'minLevel'=>75]);
+            check($quest->getColorsForCurrent()[4] === 89, 'Level-80 quests use the high-level green range');
+        }
         $ai = new FixtureAI;
         foreach ([SmartAction::ACTION_SET_CORPSE_DELAY, SmartAction::ACTION_PAUSE_MOVEMENT] as $action) {
             $rendered = [];

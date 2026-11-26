@@ -74,7 +74,7 @@ final class SchemaValidator
         return ['expected' => count($expected), 'checked' => $checked, 'issues' => $issues, 'generated' => $generated];
     }
 
-    /** Discover literal TrDBCcopy declarations without including or constructing generators. */
+    /** Discover literal DBC-copy declarations without including or constructing generators. */
     public static function generatedTables(string $directory = 'setup/tools/sqlgen', string $formats = 'setup/tools/dbc/12340.ini') : array
     {
         $definitions = parse_ini_file($formats, true, INI_SCANNER_RAW);
@@ -88,6 +88,15 @@ final class SchemaValidator
             $copy = false; $command = ''; $dbc = ''; $depth = 0; $classes = []; $pendingClass = false;
             foreach ($tokens as $i => $token)
             {
+                if (is_array($token) && $token[0] === T_NEW && ($inline = self::permanentDBCCopy($tokens, $i)))
+                {
+                    [$table, $source] = $inline;
+                    if (isset($definitions[$source]))
+                    {
+                        if (isset($out[$table])) throw new \RuntimeException('Duplicate DBC-copy declaration.');
+                        $out[$table] = $source;
+                    }
+                }
                 if ($token === '{')
                 {
                     ++$depth;
@@ -115,6 +124,44 @@ final class SchemaValidator
             $out[$command] = $dbc;
         }
         return $out;
+    }
+
+    /** Recognize only a literal permanent DBCReader destination; never evaluate PHP. */
+    private static function permanentDBCCopy(array $tokens, int $start) : ?array
+    {
+        $string = static function (mixed $token) : ?string
+        {
+            return is_array($token) && $token[0] === T_CONSTANT_ENCAPSED_STRING &&
+                preg_match('/^([\x27"])([a-z_][a-z0-9_]*)\1$/iD', $token[1], $match) ? $match[2] : null;
+        };
+        if (($tokens[$start + 1][0] ?? null) !== T_STRING || strcasecmp($tokens[$start + 1][1], 'DBCReader') ||
+            ($tokens[$start + 2] ?? null) !== '(' || !($dbc = $string($tokens[$start + 3] ?? null)) ||
+            ($tokens[$start + 4] ?? null) !== ',' || ($tokens[$start + 5] ?? null) !== '[')
+            return null;
+
+        $options = [];
+        $cursor = $start + 6;
+        while (($tokens[$cursor] ?? null) !== ']')
+        {
+            $key = $string($tokens[$cursor] ?? null);
+            if (!$key || array_key_exists($key, $options) || ($tokens[$cursor + 1][0] ?? null) !== T_DOUBLE_ARROW)
+                return null;
+            $value = $tokens[$cursor + 2] ?? null;
+            if ($key === 'temporary' && is_array($value) && $value[0] === T_STRING && strcasecmp($value[1], 'false') === 0)
+                $options[$key] = false;
+            else if ($key === 'tableName' && ($value = $string($value)))
+                $options[$key] = $value;
+            else
+                return null;
+            $cursor += 3;
+            if (($tokens[$cursor] ?? null) === ',') ++$cursor;
+            else if (($tokens[$cursor] ?? null) !== ']') return null;
+        }
+        if (($tokens[$cursor + 1] ?? null) !== ')' || count($options) !== 2 ||
+            !preg_match('/^aowow_([a-z][a-z0-9_]*)$/D', $options['tableName'], $match))
+            return null;
+
+        return [$match[1], $dbc];
     }
 
     /** Parse only structure; DROP/SET/INSERT and dump comments are never run. */

@@ -8,10 +8,6 @@ if (!defined('AOWOW_REVISION'))
 
 class Game
 {
-    public static array $resistanceFields         = array(
-        null,           'resHoly',      'resFire',      'resNature',    'resFrost',     'resShadow',    'resArcane'
-    );
-
     public static array $rarityColorStings        = array(  // zero-indexed
         '9d9d9d',       'ffffff',       '1eff00',       '0070dd',       'a335ee',       'ff8000',       'e5cc80',       'e6cc80'
     );
@@ -132,6 +128,14 @@ class Game
     public static array $sockets                  = array(  // jsStyle Strings
         'meta',                         'red',                          'yellow',                       'blue'
     );
+
+    private static array $honorPerKill = [];
+
+    public static function getHonorPerKill(int $level = MAX_LEVEL) : float
+    {
+        // default to 124.114 @ Level 80
+        return self::$honorPerKill[$level] ??= (DB::Aowow()->selectCell('SELECT `data` / 10 FROM ::teamcontributionpoints WHERE `id` = %i', $level) ?? 124.114);
+    }
 
     public static function getReputationLevelForPoints(int $pts) : int
     {
@@ -301,6 +305,7 @@ class Game
     {
         if ($skillId == SKILL_FISHING)
             return array(
+                null,                                       // red .. not set
                 round(sqrt(.25) * $reqLevel),               //  25% valid catches
                 round(sqrt(.50) * $reqLevel),               //  50% valid catches
                 round(sqrt(.75) * $reqLevel),               //  75% valid catches
@@ -318,27 +323,26 @@ class Game
             case SKILL_INSCRIPTION:
             case SKILL_MINING:
             case SKILL_ENGINEERING:
-                $points = [$reqLevel];                      // red/orange
+                $points = [null, $reqLevel];                // red, orange
 
-                if ($reqLevel + 25 <= MAX_SKILL)            // orange/yellow
+                if ($reqLevel + 25 <= MAX_SKILL)            // yellow
                     $points[] = $reqLevel + 25;
 
-                if ($reqLevel + 50 <= MAX_SKILL)            // yellow/green
+                if ($reqLevel + 50 <= MAX_SKILL)            // green
                     $points[] = $reqLevel + 50;
 
-                if ($reqLevel + 100 <= MAX_SKILL)           // green/grey
+                if ($reqLevel + 100 <= MAX_SKILL)           // grey
                     $points[] = $reqLevel + 100;
 
                 return $points;
             default:
-                return [$reqLevel];
+                return [null, $reqLevel];
         }
     }
 
     public static function getEnchantmentCondition(int $conditionId, bool $interactive = false) : string
     {
-        $gemCnd = DB::Aowow()->selectRow('SELECT * FROM ::itemenchantmentcondition WHERE `id` = %i', $conditionId);
-        if (!$gemCnd)
+        if (!($gemCnd = DB::Aowow()->selectRow('SELECT * FROM ::itemenchantmentcondition WHERE `id` = %i', $conditionId)))
             return '';
 
         $fiColors = array(
@@ -347,31 +351,51 @@ class Game
             4 => '1:3:4'                                    // blue
         );
 
-        $__makeLink = fn($str, $col) => $interactive ? sprintf('<a class="tip" href="?items=3&filter=ty=%2s">%1s</a>', $str, $fiColors[$col] ?? '') : $str;
+        $__makeLink = fn($str, $col) => $interactive ? sprintf('<a class="tip" href="?items=3&filter=ty=%2$s">%1$s</a>', $str, $fiColors[$col] ?? '') : $str;
 
         $x = '';
         for ($i = 1; $i < 6; $i++)
         {
-            if (!$gemCnd['color'.$i])
+            $leftType  = $gemCnd['ltOperandType'.$i];
+            $rightType = $gemCnd['rtOperandType'.$i];
+            $operator  = $gemCnd['operator'.$i];
+
+            if (!$leftType)
                 continue;
 
-            $bLink = $cLink = '';
+            $leftName = $__makeLink(Lang::item('gemColors', $leftType), $leftType);
 
-            if ($gemCnd['color'.$i])
-                $bLink = $__makeLink(Lang::item('gemColors', $gemCnd['color'.$i] - 1), $gemCnd['color'.$i]);
-            if ($gemCnd['cmpColor'.$i])
-                $cLink = $__makeLink(Lang::item('gemColors', $gemCnd['cmpColor'.$i] - 1), $gemCnd['cmpColor'.$i]);
-
-            switch ($gemCnd['comparator'.$i])
+            if ($rightType)
             {
-                case ENCHANT_CONDITION_LESS_VALUE:          // requires less than N <color> gems
-                case ENCHANT_CONDITION_MORE_VALUE:          // requires at least N <color> gems
-                    $x .= '<span class="q0">'.Lang::item('gemRequires').Lang::item('gemConditions', $gemCnd['comparator'.$i], [$gemCnd['value'.$i], $bLink]).'</span><br />';
-                    break;
-                case ENCHANT_CONDITION_MORE_COMPARE:        // requires more <color> gems than <comparecolor> gems
-                    $x .= '<span class="q0">'.Lang::item('gemRequires').Lang::item('gemConditions', $gemCnd['comparator'.$i], [$bLink, $cLink]).'</span><br />';
-                    break;
+                $rightName = $__makeLink(Lang::item('gemColors', $rightType), $rightType);
+                $text = match($operator)
+                {
+                    0 => Lang::item('gemConditions', ENCHANT_CONDITION_EQUAL_COMPARE,      [$leftName,  $rightName]),
+                    1 => Lang::item('gemConditions', ENCHANT_CONDITION_NOT_EQUAL_COMPARE,  [$leftName,  $rightName]),
+                    2 => Lang::item('gemConditions', ENCHANT_CONDITION_MORE_COMPARE,       [$rightName, $leftName]),
+                    3 => Lang::item('gemConditions', ENCHANT_CONDITION_MORE_COMPARE,       [$leftName,  $rightName]),
+                    4 => Lang::item('gemConditions', ENCHANT_CONDITION_MORE_EQUAL_COMPARE, [$rightName, $leftName]),
+                    5 => Lang::item('gemConditions', ENCHANT_CONDITION_MORE_EQUAL_COMPARE, [$leftName,  $rightName]),
+                    default => ''
+                };
             }
+            else
+            {
+                $value = $gemCnd['rtOperand'.$i];
+                $text = match($operator)
+                {
+                    0 => Lang::item('gemConditions', ENCHANT_CONDITION_EQUAL_VALUE,     [$value, $leftName]),
+                    1 => Lang::item('gemConditions', ENCHANT_CONDITION_NOT_EQUAL_VALUE, [$value, $leftName]),
+                    2 => Lang::item('gemConditions', ENCHANT_CONDITION_LESS_VALUE,      [$value, $leftName]),
+                    3 => Lang::item('gemConditions', ENCHANT_CONDITION_MORE_VALUE,      [$value, $leftName]),
+                    4 => Lang::item('gemConditions', ENCHANT_CONDITION_LESS_VALUE,      [$value, $leftName]),
+                    5 => Lang::item('gemConditions', ENCHANT_CONDITION_MORE_VALUE,      [$value, $leftName]),
+                    default => ''
+                };
+            }
+
+            if ($text)
+                $x .= '<span class="q0">'.Lang::item('gemRequires').$text.'</span><br />';
         }
 
         return $x;

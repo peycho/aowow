@@ -583,6 +583,7 @@ CREATE TABLE `aowow_creature` (
   `unitFlags` int(10) unsigned NOT NULL DEFAULT 0,
   `unitFlags2` int(10) unsigned NOT NULL DEFAULT 0,
   `dynamicFlags` int(10) unsigned NOT NULL DEFAULT 0,
+  `pvpFlags` int(10) unsigned NOT NULL DEFAULT 0,
   `family` tinyint(4) NOT NULL DEFAULT 0,
   `trainerType` tinyint(4) NOT NULL DEFAULT 0,
   `trainerRequirement` smallint(5) unsigned NOT NULL DEFAULT 0,
@@ -998,6 +999,7 @@ DROP TABLE IF EXISTS `aowow_factiontemplate`;
 CREATE TABLE `aowow_factiontemplate` (
   `id` smallint(5) unsigned NOT NULL,
   `factionId` smallint(5) unsigned NOT NULL,
+  `flags` int(10) unsigned NOT NULL,
   `A` tinyint(4) NOT NULL COMMENT 'Aliance: -1 - hostile, 1 - friendly, 0 - neutral',
   `H` tinyint(4) NOT NULL COMMENT 'Horde: -1 - hostile, 1 - friendly, 0 - neutral',
   PRIMARY KEY (`id`)
@@ -1746,6 +1748,7 @@ CREATE TABLE `aowow_objectdifficulty` (
   `heroic10` mediumint(8) unsigned NOT NULL,
   `heroic25` mediumint(8) unsigned NOT NULL,
   `mapType` tinyint(3) unsigned NOT NULL,
+  `comment` varchar(100) NOT NULL DEFAULT '',
   KEY `normal10` (`normal10`),
   KEY `normal25` (`normal25`),
   KEY `heroic10` (`heroic10`),
@@ -2277,6 +2280,7 @@ CREATE TABLE `aowow_quests` (
   `sourceItemId` mediumint(8) unsigned NOT NULL DEFAULT 0,
   `sourceItemCount` tinyint(3) unsigned NOT NULL DEFAULT 0,
   `sourceSpellId` mediumint(8) unsigned NOT NULL DEFAULT 0,
+  `rewardXPId` tinyint(3) unsigned NOT NULL DEFAULT 0,
   `rewardXP` mediumint(8) unsigned NOT NULL DEFAULT 0,
   `rewardOrReqMoney` int(11) NOT NULL DEFAULT 0,
   `rewardMoneyMaxLevel` int(10) unsigned NOT NULL DEFAULT 0,
@@ -2899,7 +2903,7 @@ CREATE TABLE `aowow_spell` (
   `targetAuraSpell` mediumint(8) unsigned NOT NULL,
   `casterAuraSpellNot` mediumint(8) unsigned NOT NULL,
   `targetAuraSpellNot` mediumint(8) unsigned NOT NULL,
-  `castTime` float unsigned NOT NULL,
+  `castTimeId` smallint(5) unsigned NOT NULL DEFAULT 0,
   `recoveryTime` int(10) unsigned NOT NULL,
   `recoveryCategory` int(10) unsigned NOT NULL,
   `startRecoveryTime` mediumint(8) unsigned NOT NULL,
@@ -2912,7 +2916,7 @@ CREATE TABLE `aowow_spell` (
   `baseLevel` smallint(5) unsigned NOT NULL,
   `spellLevel` smallint(5) unsigned NOT NULL,
   `talentLevel` tinyint(3) unsigned NOT NULL,
-  `duration` int(11) NOT NULL DEFAULT 0,
+  `durationId` smallint(5) unsigned NOT NULL DEFAULT 0,
   `powerType` smallint(6) NOT NULL,
   `powerCost` smallint(5) unsigned NOT NULL,
   `powerCostPerLevel` tinyint(3) unsigned NOT NULL,
@@ -3051,6 +3055,8 @@ CREATE TABLE `aowow_spell` (
   `spellFamilyFlags3` int(11) unsigned NOT NULL,
   `maxAffectedTargets` tinyint(3) unsigned NOT NULL,
   `damageClass` tinyint(3) unsigned NOT NULL,
+  `minFactionId` smallint(6) unsigned NOT NULL,
+  `minReputation` tinyint(3) unsigned NOT NULL,
   `skillLine1` smallint(6) NOT NULL DEFAULT 0,
   `skillLine2OrMask` bigint(20) NOT NULL DEFAULT 0,
   `reqRaceMask` smallint(5) unsigned NOT NULL DEFAULT 0,
@@ -3101,6 +3107,8 @@ CREATE TABLE `aowow_spell` (
   KEY `idx_typecat` (`typeCat`),
   KEY `idx_category` (`category`),
   KEY `idx_toolcategory1` (`toolCategory1`),
+  KEY `idx_casttime` (`castTimeId`),
+  KEY `idx_duration` (`durationId`),
   KEY `idx_toolcategory2` (`toolCategory2`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -3392,3 +3400,12 @@ CREATE TABLE `aowow_zones_sounds` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2025-09-22 23:29:16
+
+-- Retained timing values from installations upgraded before the DBC ID split.
+DROP TABLE IF EXISTS `aowow_spell_timing_legacy`;
+CREATE TABLE `aowow_spell_timing_legacy` (
+  `id` mediumint(8) unsigned NOT NULL,
+  `castTime` float unsigned NOT NULL,
+  `duration` int NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

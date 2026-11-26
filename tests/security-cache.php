@@ -184,9 +184,12 @@ namespace {
         // A live context normally supplies rawData; set it directly for this DB-free template fixture.
         $raw = new ReflectionProperty(Aowow\Template\PageTemplate::class, 'rawData');
         $raw->setValue($template, ['lvTabs' => $tabs, 'article' => $template->article, 'infobox' => $template->infobox, 'localized' => $localized, 'title' => 'Title']);
+        $dbProfiles = new ReflectionProperty(Aowow\Template\PageTemplate::class, 'dbProfiles');
+        $dbProfiles->setValue($template, 'PRIVATE_SQL_PROFILE_FIXTURE');
         $packed = CacheEnvelope::seal('template', $template, [[CacheFixture::class, 'hook'], 'params'], 60);
         $restored = CacheEnvelope::open('template', $packed);
         check($restored[0] instanceof Aowow\Template\PageTemplate, 'actual PageTemplate restored');
+        check(!$dbProfiles->isInitialized($restored[0]) || $dbProfiles->getValue($restored[0]) !== 'PRIVATE_SQL_PROFILE_FIXTURE', 'Per-request SQL profiling does not survive a shared page-cache round trip');
         check($restored[0]->lvTabs instanceof Aowow\Tabs && count($restored[0]->lvTabs) === 1, 'Tabs/Listview object graph survives');
         check($restored[0]->article instanceof Aowow\Markup && $restored[0]->infobox instanceof Aowow\InfoboxMarkup, 'markup components survive');
         check((string)$restored[0]->localized === 'Synthetic name', 'LocString enum/store/formatter survive');

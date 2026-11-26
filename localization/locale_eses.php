@@ -337,8 +337,8 @@ $lang = array(
         'complexFilter' => "¡Filtro complejo seleccionado! Los resultados de búsqueda están limitados a personajes en caché.",
         'customProfile' => " (Perfil personalizado)",
         'resync'        => "Resincronizar",
-        'guildRoster'   => "Lista de miembros de hermandad para &lt;%s&gt",
-        'arenaRoster'   => "Personajes del Equipo de Arena para &lt;%s&gt",
+        'guildRoster'   => "Lista de miembros de hermandad para &lt;%s&gt;",
+        'arenaRoster'   => "Personajes del Equipo de Arena para &lt;%s&gt;",
         'atCaptain'     => "Capitán de equipo de arena",
         'atSize'        => "Tamaño: ",
         'profiler'      => "Gestor de Perfiles", // Perfiles de Personaje? (character profiler)
@@ -580,6 +580,17 @@ $lang = array(
             ["Centurión", "Campeón caballero"],                             ["Campeón", "Teniente coronel"],                                ["General", "Comandante"],
             ["Gran general", "Mariscal"],                                   ["Señor de la Guerra", "Mariscal de campo"],                    ["Gran Señor de la Guerra", "Gran mariscal"]
         ),
+        'cityRank'      => array(                           // PVP_MEDAL\d
+            null,
+            "Protector de Ventormenta",
+            "Señor Supremo de Orgrimmar",
+            "Señor feudal de Forjaz",
+            "Gran Centinela de Darnassus",
+            "Señor de la Muerte de Entrañas",
+            "Cacique de Cima del Trueno",
+            "Vengador de Gnomeregan",
+            "Jefe vudú de Sen'jin"
+        ),
         'orientation'   => ['Norte', 'Noreste', 'Este', 'Sureste', 'Sur', 'Suroeste', 'Oeste', 'Noroeste']
     ),
     'unit' => array(
@@ -790,7 +801,7 @@ $lang = array(
         'actionTT'      => '[b class=q1]Tipo de Acción %d[/b][br][table][tr][td]Parámetro1[/td][td=header]%d[/td][/tr][tr][td]Parámetro2[/td][td=header]%d[/td][/tr][tr][td]Parámetro3[/td][td=header]%d[/td][/tr][tr][td]Parámetro4[/td][td=header]%d[/td][/tr][tr][td]Parámetro5[/td][td=header]%d[/td][/tr][tr][td]Parámetro6[/td][td=header]%d[/td][/tr][/table]',
         'actions'       => array(                           // [body, footer]
             null,
-            SmartAction::ACTION_TALK                               => ['(%3$d)?Decir:#target# dice; (%11$s)?Grupo de texto:[span class=q10]texto desconocido[/span]; #[b]%1$d[/b] a (%3$d)?#target#:invocador;%11$s', 'Duración: %s'],
+            SmartAction::ACTION_TALK                               => ['(%3$d)?Decir:#target# dice; (%11$d)?Grupo de texto:[span class=q10]texto desconocido[/span]; #[b]%1$d[/b] a (%3$d)?#target#:invocador;%12$s', 'Duración: %s'],
             SmartAction::ACTION_SET_FACTION                        => ['(%1$d)?Establecer la facción de #target# a [faction=%11$d]:Restablecer la facción de #target#;.', ''],
             SmartAction::ACTION_MORPH_TO_ENTRY_OR_MODEL            => ['(%11$d)?Restablecer apariencia.:Tomar la apariencia de;(%1$d)? [npc=%1$d].:;(%2$d)?[model npc=%2$d border=1 float=right][/model]:;', ''],
             SmartAction::ACTION_SOUND                              => ['Reproducir sonido a (%2$d)?jugador invocador:todos los jugadores a la vista;:[div][sound=%1$d][/div]', 'Reproducido por el entorno.'],
@@ -801,7 +812,7 @@ $lang = array(
             SmartAction::ACTION_ACTIVATE_GOBJECT                   => ['#target# es activado.', ''],
 /* 10*/     SmartAction::ACTION_RANDOM_EMOTE                       => ['Emote %11$s a #target#.', ''],
             SmartAction::ACTION_CAST                               => ['Lanzar [spell=%1$d] a #target#.', '%1$s'],
-            SmartAction::ACTION_SUMMON_CREATURE                    => ['Invocar [npc=%1$d](%3$d)? para %11$s:;(%4$d)?, atacando al invocador.:;', '%1$s'],
+            SmartAction::ACTION_SUMMON_CREATURE                    => ['Invocar [npc=%1$d](%3$d)? para %11$s:;(%4$d)?, atacando al invocador:; a #target#.', '%1$s'],
             SmartAction::ACTION_THREAT_SINGLE_PCT                  => ['Modificar la amenaza de #target# en %11$+d%%.', ''],
             SmartAction::ACTION_THREAT_ALL_PCT                     => ['Modificar la amenaza de todos los oponentes en %11$+d%%.', ''],
             SmartAction::ACTION_CALL_AREAEXPLOREDOREVENTHAPPENS    => ['Satisfacer evento de exploración de [quest=%1$d] para #target#.', ''],
@@ -873,7 +884,7 @@ $lang = array(
             SmartAction::ACTION_SET_NPC_FLAG                       => ['Establecer las banderas npc de #target# en %11$s.', ''],
             SmartAction::ACTION_ADD_NPC_FLAG                       => ['Agregar %11$s banderas npc a #target#.', ''],
             SmartAction::ACTION_REMOVE_NPC_FLAG                    => ['Eliminar %11$s banderas npc de #target#.', ''],
-            SmartAction::ACTION_SIMPLE_TALK                        => ['#target# dice (%11$s)?Grupo de texto:[span class=q10]texto desconocido[/span]; #[b]%1$d[/b] %11$s', ''],
+            SmartAction::ACTION_SIMPLE_TALK                        => ['#target# dice (%11$d)?Grupo de texto:[span class=q10]texto desconocido[/span]; #[b]%1$d[/b] %12$s', ''],
             SmartAction::ACTION_SELF_CAST                          => ['#target# lanza [spell=%1$d] a #target#.(%4$d)? (máx. %4$d |4objetivo:objetivos;):;', '%1$s'],
             SmartAction::ACTION_CROSS_CAST                         => ['%11$s lanza [spell=%1$d] a #target#.', '%1$s'],
             SmartAction::ACTION_CALL_RANDOM_TIMED_ACTIONLIST       => ['Llamar a la lista de acciones cronometradas al azar: %11$s', ''],
@@ -1317,6 +1328,7 @@ $lang = array(
         'mechanicimmune'=> 'No afectado por la mecánica: %s',
         '_extraFlags'   => 'Banderas extra: ',
         'versions'      => 'Versiones de dificultad: ',
+        'pvpLeader'     => 'Líder',
         'level'         => array(
             "Nivel %s",
             "Nivel %s %s",
@@ -1355,7 +1367,7 @@ $lang = array(
         ),
         'extraFlags'    => array(
             CREATURE_FLAG_EXTRA_INSTANCE_BIND                   => 'Vincula al atacante a la instancia al morir',
-            CREATURE_FLAG_EXTRA_CIVILIAN                        => "[tooltip name=civilian]- no agrede\n- su muerte cuesta Honor[/tooltip][span class=tip tooltip=civilian]Civil[/span]",
+            CREATURE_FLAG_EXTRA_CIVILIAN                        => "[tooltip name=civilian]no agrede[/tooltip][span class=tip tooltip=civilian]Civil[/span]",
             CREATURE_FLAG_EXTRA_NO_PARRY                        => 'No puede usar [spell=3127]',
             CREATURE_FLAG_EXTRA_NO_PARRY_HASTEN                 => 'No tiene Parry Haste',
             CREATURE_FLAG_EXTRA_NO_BLOCK                        => 'No puede usar [spell=107]',
@@ -1525,7 +1537,7 @@ $lang = array(
         'notFound'      => "Esta misión no existe.",
         '_transfer'     => 'Esta misión será convertido a <a href="?quest=%d" class="q1">%s</a> si lo transfieres a la <span class="icon-%s">%s</span>.',
         'questLevel'    => 'Nivel %s',
-        'requirements'  => 'Requisitos',
+        'requirements'  => 'Requisitos:',
         'reqMoney'      => 'Dinero necesario: %s',
         'money'         => 'Dinero',
         'additionalReq' => "Requerimientos adicionales para obtener esta misión",
@@ -1568,8 +1580,8 @@ $lang = array(
         'gainsDesc'     => "Cuando completes esta misión ganarás",
         'unavailable'   => "Esta misión fue marcada como obsoleta y no puede ser obtenida o completada.",
         'experience'    => "experiencia",
-        'expConvert'    => "(o %s si se completa al nivel %d)",
-        'expConvert2'   => "%s si se completa al nivel %d",
+     // 'expConvert'    => "(o %s si se completa al nivel %d)",
+     // 'expConvert2'   => "%s si se completa al nivel %d",
         'rewardChoices' => "Podrás elegir una de estas recompensas:",                 // REWARD_CHOICES
         'rewardItems'   => "Recibirás:",                                              // REWARD_ITEMS_ONLY
         'rewardAlso'    => "También recibirás:",                                      // REWARD_ITEMS
@@ -1673,6 +1685,7 @@ $lang = array(
     'skill' => array(
         'id'            => "ID de Habilidad: ",
         'notFound'      => "Esta habilidad no existe.",
+        'tiers'         => ["Aprendiz", "Oficial", "Experto", "Artesano", "Maestro", "Gran maestro"],
         'cat'           => array(
             -6 => "Compañeros",         -5 => "Monturas",           -4 => "Habilidades de raza", 5 => "Atributos",          6 => "Habilidades con armas", 7 => "Habilidades de clase", 8 => "Armaduras disponibles",
              9 => "Habilidades secundarias", 10 => "Idiomas",       11 => "Profesiones",        12 => "No se muestra"
@@ -1770,14 +1783,14 @@ $lang = array(
         '_cooldown'     => "Reutilización",
         '_distUnit'     => " metros",
         '_regenPer5Sec' => array(                           // GlobalStrings.lua ITEM_MOD_POWER_REGEN<n>_SHORT, ITEM_MOD_HEALTH_REGEN_SHORT; keyed as 'powerTypes'
-             0 => "%s Maná cada 5 s",
-             1 => "%s Ira cada 5 s",
-             2 => "%s Enfoque cada 5 s",
-             3 => "%s Energía cada 5 s",
-             4 => "%s Felicidad cada 5 s",
-             5 => "%s Runas cada 5 s",
-             6 => "%s Poder rúnico cada 5 s",
-            -2 => "%s Salud cada 5 s",
+            POWER_MANA        => "%s Maná cada 5 s",
+            POWER_RAGE        => "%s Ira cada 5 s",
+            POWER_FOCUS       => "%s Enfoque cada 5 s",
+            POWER_ENERGY      => "%s Energía cada 5 s",
+            POWER_HAPPINESS   => "%s Felicidad cada 5 s",
+            POWER_RUNE        => "%s Runas cada 5 s",
+            POWER_RUNIC_POWER => "%s Poder rúnico cada 5 s",
+            POWER_HEALTH      => "%s Salud cada 5 s",
         ),
         '_forms'        => "Formas",
         '_aura'         => "Aura",
@@ -1791,6 +1804,13 @@ $lang = array(
         '_speedZ'       => "Velocidad vertical",
         '_speedUnit'    => " m/s",
         '_radius'       => "Radio: ",
+        '_maxTargetLevel' => "Nivel máx. del objetivo",     // charm / possess level cap
+        '_seat'         => "Asiento",                       // control vehicle
+        '_ppmUnit'      => " activaciones por minuto",      // flat procs per minute modifier
+        '_totemBarSlots' => "Huecos de la barra de tótems", // cast button
+        '_arcHeight'    => "Altura del arco",               // jump effects
+        '_honorKills'   => "%d Muertes con honor",          // HONORABLE_KILLS
+        '_honorPoints'  => "%d Honor @ L%d",                // HONOR
         '_interval'     => "Intérvalo: ",
         '_inSlot'       => "en la casilla: ",
         '_collapseAll'  => "Contraer todo",
@@ -1800,12 +1820,16 @@ $lang = array(
         '_seeMore'      => "Más información",
         '_rankRange'    => "Rango:&nbsp;%d&nbsp;-&nbsp;%d",
         '_showXmore'    => "Mostrar %d más",
+        'chanceToBlock' => "Probabilidad de bloquear: %.2f%%",
+        'chanceToCrit'  => "Probabilidad de dar un golpe crítico: %.2f%%",
+        'chanceToDodge' => "Probabilidad de esquivar: %.2f%%",
+        'chanceToParry' => "Probabilidad de parar: %.2f%%",
         'casterAura'    => "Aura del lanzador",
         'targetAura'    => "Aura del objetivo",
-
         'normal'        => "Normal",
         'special'       => "Especial",
-
+        'onNextMelee'   => "Siguiente cuerpo a cuerpo",
+        'onNextRanged'  => "Velocidad de ataque",
         'currentArea'   => '&lt;área actual&gt;',
         'durabilityItems' => [-2 => '&lt;todos los objetos, equipados y en bolsas&gt;', -1 => '&lt;todos los objetos equipados&gt;'],
         'discovered'    => "Aprendido via descubrimiento",
@@ -1813,6 +1837,8 @@ $lang = array(
         'procChance'    => "Probabilidad de que accione: %.4g%%",
         'starter'       => "Hechizo inicial",
         'trainingCost'  => "Costo de enseñanza: ",
+        'reqEquipItem'  => "Requiere %s",
+        'reqForm'       => "Requiere %s",
         'channeled'     => "Canalizado",
         'range'         => "Alcance de %s m",
         'meleeRange'    => "Alcance de ataques cuerpo a cuerpo",
@@ -1857,14 +1883,14 @@ $lang = array(
             "%d |4día restante:días restantes;"
         ),
         'powerCost'     => array(
-            -2 => ["Salud %d",         "%d p. de salud, más %d p. por segundo"],
-             0 => ["%d p. de maná",    "%d p. de maná, más %d por s"],
-             1 => ["%d p. de ira",     "%d Ira, más %d por s"],
-             2 => ["%d p. de enfoque", "%d enfoque, más %d por s"],
-             3 => ["%d p. de energía", "%d energía, más %d por s"],
-             6 => ["%d Poder rúnico",  "%d poder rúnico, más %d por segundo"]
+            POWER_HEALTH      => ["Salud %d",         "%d p. de salud, más %d p. por segundo", "Usa 100% salud"        ],
+            POWER_MANA        => ["%d p. de maná",    "%d p. de maná, más %d por s",           "Usa 100% de maná"      ],
+            POWER_RAGE        => ["%d p. de ira",     "%d Ira, más %d por s",                  "Usa 100% ira"          ],
+            POWER_FOCUS       => ["%d p. de enfoque", "%d enfoque, más %d por s",              "Usa 100% de enfoque"   ],
+            POWER_ENERGY      => ["%d p. de energía", "%d energía, más %d por s",              "Usa el 100% de energía"],
+            POWER_RUNIC_POWER => ["%d Poder rúnico",  "%d poder rúnico, más %d por segundo",   ""                      ]
         ),
-        'powerDisplayCost' => ["%d %s", "%d %s, más %d por seg."],
+        'powerDisplayCost' => ["%d %s", "%d %s, más %d por seg.", "Usa el 100% de %s"],
         'powerCostRunes'=> ["%d sangre", "%d Profano", "%d Escarcha"],
         'powerRunes'    => ["Sangre", "Profano", "Escarcha", "Muerte"],
         'powerTypes'    => array(                           // POWER_TYPE_*
@@ -1966,6 +1992,14 @@ $lang = array(
         'summonControl' => ["Sin control", "Guardián", "Mascota", "Embelesado", "Vehículo poseído", "Vehículo sin control"],
         'summonSlot'    => ["Mascota", "Tótem de Fuego", "Tótem de Tierra", "Tótem de Agua", "Tótem de Aire", "Mascota mansa", "Misión"],
         'unkEffect'     => 'Efecto desconocido (%1$d)',
+        // AuraStateType, as checked by SPELL_AURA_MOD_DAMAGE_DONE_VERSUS_AURASTATE; labels are English in all locales
+        'auraStates'    => array(
+             1 => "Dodged, parried or blocked",     2 => "Health below 20%",               3 => "Berserking",                     4 => "Frozen",
+             5 => "Judgement",                      7 => "Hunter parry",                  10 => "Victory Rush",                  12 => "Faerie Fire",
+            13 => "Health below 35%",              14 => "Immolate (Conflagrate)",        15 => "Rejuvenation / Regrowth (Swiftmend)", 16 => "Deadly Poison",
+            17 => "Enraged",                       18 => "Bleeding",                      23 => "Health above 75%"
+        ),
+        'destructibleState' => ["Intacto", "Dañado", "Destruido", "En reconstrucción"], // GameObjectDestructibleState
         'effects'       => array(
 /*0-5    */ "Ninguno",                       "Matar al instante",                    "Daño de escuela",                   "Ficticio",                       "Teletransporte por portal", "Teletransportar unidades",
 /*6+     */ "Aplicar aura",                  "Daño ambiental",                       "Drenar poder",                      "Drenar salud",                   "Sanar",                     "Vincular",
@@ -2051,7 +2085,7 @@ $lang = array(
 /*250+ */   "Modificar salud máxima - Fijo (acumulable)",               "Modificar probabilidad de esquiva enemiga",                         "Modificar celeridad % (pérdida)",                                "Modificar probabilidad de bloqueo crítico",                  "Desarmar mano secundaria",
             "Modificar daño de mecánica %",                             "Sin coste de reagente",                                             "Modificar resistencia objetivo por clase de hechizo",            "Modificar visual de hechizo",                                "Modificar sanación periódica recibida %",
             "Efecto de pantalla",                                       "Fase",                                                              "Ignorar estado de aura de habilidad",                            "Permitir solo habilidad",                                    "",
-            "",                                                         "",                                                                  "Cancelar buffer de aura al % de salud del lanzador",             "Modificar poder de ataque con % de estadística",             "Ignorar resistencia del objetivo",
+            "",                                                         "",                                                                  "Inmunidad a auras perjudiciales de la escuela",                  "Modificar poder de ataque con % de estadística",             "Ignorar resistencia del objetivo",
             "Ignorar resistencia del objetivo para habilidad",          "Modificar daño recibido % del lanzador",                            "Ignorar reinicio de temporizador de golpe",                      "Rayos X",                                                    "Habilidad no consume munición",
 /*275+ */   "Ignorar cambio de forma para habilidad",                   "Modificar daño de mecánica hecho %",                                "Modificar máximo de objetivos afectados",                        "Desarmar arma a distancia",                                  "Efecto de aparición",
             "Modificar penetración de armadura %",                      "Modificar ganancia de honor %",                                     "Modificar salud base %",                                         "Modificar sanación recibida % del lanzador",                 "Aura vinculada",
@@ -2371,19 +2405,25 @@ $lang = array(
         'block'         => "%s bloqueo",
         'charges'       => "%d |4carga:cargas;",
         'locked'        => "Cerrado",
+        'lockedByItem'  => "Requiere %s",
+        'lockedBySpell' => "Requiere %s",
+        'encrypted'     => "Encriptado",
         'ratingString'  => '<!--rtg%%%1$d-->%2$s&nbsp;@&nbsp;L<!--lvl-->%3$d',
         'heroic'        => "Heroico",
         'startQuest'    => "Este objeto inicia una misión",
         'containerSlots'=> '%2$s de %1$d casillas',
-        'fap'           => "poder de ataque feral",
+     // 'fap'           => "poder de ataque feral",
+        'feralItemAP'   => "Aumenta el poder de ataque <!--fap-->%d p. solo con las formas de gato, oso, oso temible y lechúcico lunar.",
         'durability'    => "Durabilidad %d / %d",
         'realTime'      => "tiempo real",
         'conjured'      => "Objeto mágico",
         'sellPrice'     => "Precio de venta",
         'itemLevel'     => "Nivel de objeto %d",
-        'randEnchant'   => "&lt;Encantamiento aleatorio&gt",
-        'readClick'     => "&lt;Click derecho para leer&gt",
-        'openClick'     => "&lt;Click derecho para abrir&gt",
+        'randEnchant'   => "&lt;Encantamiento aleatorio&gt;",
+        'readClick'     => "&lt;Haz clic derecho para leer&gt;",
+        'openClick'     => "&lt;Haz clic derecho para abrir&gt;",
+        'signClick'     => "&lt;Haz clic derecho para ver detalles&gt;",
+        'socketClick'   => "&lt;Mayús clic derecho para insertar&gt;",
         'setBonus'      => "(%d) Bonif.: %s",
         'setName'       => "%s (%d/%d)",
         'partyLoot'     => "Despojo de grupo",
@@ -2418,8 +2458,11 @@ $lang = array(
         'buyout'        => "Precio de venta en subasta",
         'each'          => "cada uno",
         'tabOther'      => "Otros",
+        'reqReputation' => "Requiere %s: %s",
         'reqMinLevel'   => "Necesitas ser de nivel %d",
         'reqLevelRange' => "Requiere un nivel entre %d y %d (%s)",
+        'reqSkillValue' => "Requiere %s (%d)",
+        'reqSkill'      => "Requiere %s",
         'unique'        => ["Único",          "Único (%d)", "Único: %s (%d)"         ],
         'uniqueEquipped'=> ["Único-Equipado", null,         "Único-Equipado: %s (%d)"],
         'speed'         => "Veloc.",
@@ -2429,6 +2472,9 @@ $lang = array(
         'purchasedIn'   => "Este objeto se puede comprar en",
         'fishingLoc'    => "Lugares de pesca",
         'fishedIn'      => "Este objeto se puede pescar en",
+        'resistAll'     => "%c%d a todas las resistencias",
+        'resistSingle'  => "%c%d resistencia a %s",
+        'itemSuffixTpl' => '%s %$s',
         'duration'      => array(
             '',
             "Duración: %d s",
@@ -2455,7 +2501,7 @@ $lang = array(
             "Ranura meta",          "Ranura roja",      "Ranura amarilla",          "Ranura azul",            -1 => "Ranura prismática"
         ),
         'gemColors'     => array(                           // *_GEM
-            "meta",                 "roja(s)",          "amarilla(s)",              "azul(es)"
+            null,                   "meta",             "|4roja:rojas;",            "|4amarilla:amarillas;",    "|4azul:azules;"
         ),
         'gemRequires'   => "Requiere ",                     // ENCHANT_CONDITION_REQUIRES
         'gemConditions' => array(                           // ENCHANT_CONDITION_*
@@ -2495,23 +2541,23 @@ $lang = array(
             "Arrojadiza",           null, /*Ranged2*/   "Carcaj",                   "Reliquia"
         ),
         'subClass'      => array(
-            ITEM_CLASS_CONSUMABLE => ["Consumible", "Poción", "Elixir", "Frasco", "Pergamino", "Comida y bebida", "Mejora de objetos", "Venda", "Otros"],
-            ITEM_CLASS_CONTAINER  => ["Bolsa", "Bolsa de almas", "Bolsa de hierbas", "Bolsa de encantamiento", "Bolsa de ingeniería", "Bolsa de gemas", "Bolsa de minería", "Bolsa de peletería", "Bolsa de inscripción"],
-            ITEM_CLASS_WEAPON     => ["Hacha", "Hacha", "Arco", "Arma de fuego", "Maza", "Maza", "Arma de asta", "Espada", "Espada", "Obsoleto", "Bastón", "Arma exótica", "Arma exótica", "Arma de puño", "Miscelánea", "Daga", "Arma arrojadiza", "Lanza", "Ballesta", "Varita", "Caña de pescar"],
-            ITEM_CLASS_GEM        => ["Rojo", "Azul", "Amarillo", "Morado", "Verde", "Naranja", "Meta", "Simple", "Centelleante"],
-            ITEM_CLASS_ARMOR      => ["Miscelánea", "Tela", "Cuero", "Malla", "Placas", "Rodela (OBSOLETO)", "Escudo", "Tratado", "Ídolo", "Tótem", "Sigilo"],
-            ITEM_CLASS_REAGENT    => ["Componente"],
-            ITEM_CLASS_AMMUNITION => ["Varita (OBSOLETO)", "Rayo (OBSOLETO)", "Flecha", "Bala", "Arma arrojadiza (OBSOLETO)"],
-            ITEM_CLASS_TRADEGOOD  => ["Objetos comerciables", "Piezas", "Explosivos", "Instrumentos", "Joyería", "Tela", "Cuero", "Metal y piedra", "Carne", "Hierbas", "Elemental", "Otros", "Encantamiento", "Materiales", "Encantamiento de armaduras", "Encantamiento de armas"],
-            ITEM_CLASS_GENERIC    => ["Genérico (OBSOLETO)"],
-            ITEM_CLASS_RECIPE     => ["Libro", "Peletería", "Sastrería", "Ingeniería", "Herrería", "Cocina", "Alquimia", "Primeros auxilios", "Encantamiento", "Pesca", "Joyería", "Inscripción"],
-            ITEM_CLASS_MONEY      => ["Dinero (OBSOLETO)"],
-            ITEM_CLASS_QUIVER     => ["Carcaj (OBSOLETO)", "Carcaj (OBSOLETO)", "Carcaj", "Bolsa de munición"],
-            ITEM_CLASS_QUEST      => ["Misión"],
-            ITEM_CLASS_KEY        => ["Llave", "Ganzúa"],
-            ITEM_CLASS_PERMANENT  => ["Permanente"],
-            ITEM_CLASS_MISC       => ["Chatarra", "Componente", "Mascota", "Vacaciones", "Otros", "Montura"],
-            ITEM_CLASS_GLYPH      => [null, "Guerrero", "Paladín", "Cazador", "Pícaro", "Sacerdote", "Caballero de la Muerte", "Chamán", "Mago", "Brujo", null, "Druida"]
+            ITEM_CLASS_CONSUMABLE => ["Consumible",            ["Consumible", "Poción", "Elixir", "Frasco", "Pergamino", "Comida y bebida", "Mejora de objetos", "Venda", "Otros"]],
+            ITEM_CLASS_CONTAINER  => ["Contenedor",            ["Bolsa", "Bolsa de almas", "Bolsa de hierbas", "Bolsa de encantamiento", "Bolsa de ingeniería", "Bolsa de gemas", "Bolsa de minería", "Bolsa de peletería", "Bolsa de inscripción"]],
+            ITEM_CLASS_WEAPON     => ["Arma",                  ["Hacha", "Hacha", "Arco", "Arma de fuego", "Maza", "Maza", "Arma de asta", "Espada", "Espada", "Obsoleto", "Bastón", "Arma exótica", "Arma exótica", "Arma de puño", "Miscelánea", "Daga", "Arma arrojadiza", "Lanza", "Ballesta", "Varita", "Caña de pescar"]],
+            ITEM_CLASS_GEM        => ["Gema",                  ["Rojo", "Azul", "Amarillo", "Morado", "Verde", "Naranja", "Meta", "Simple", "Centelleante"]],
+            ITEM_CLASS_ARMOR      => ["Armadura",              ["Miscelánea", "Tela", "Cuero", "Malla", "Placas", "Rodela (OBSOLETO)", "Escudo", "Tratado", "Ídolo", "Tótem", "Sigilo"]],
+            ITEM_CLASS_REAGENT    => ["Componente",            ["Componente"]],
+            ITEM_CLASS_AMMUNITION => ["Proyectil",             ["Varita (OBSOLETO)", "Rayo (OBSOLETO)", "Flecha", "Bala", "Arma arrojadiza (OBSOLETO)"]],
+            ITEM_CLASS_TRADEGOOD  => ["Objeto comerciable",    ["Objetos comerciables", "Piezas", "Explosivos", "Instrumentos", "Joyería", "Tela", "Cuero", "Metal y piedra", "Carne", "Hierbas", "Elemental", "Otros", "Encantamiento", "Materiales", "Encantamiento de armaduras", "Encantamiento de armas"]],
+            ITEM_CLASS_GENERIC    => ["Genérico (OBSOLETO)",   ["Genérico (OBSOLETO)"]],
+            ITEM_CLASS_RECIPE     => ["Receta",                ["Libro", "Peletería", "Sastrería", "Ingeniería", "Herrería", "Cocina", "Alquimia", "Primeros auxilios", "Encantamiento", "Pesca", "Joyería", "Inscripción"]],
+            ITEM_CLASS_MONEY      => ["Dinero",                ["Dinero (OBSOLETO)"]],
+            ITEM_CLASS_QUIVER     => ["Carcaj",                ["Carcaj (OBSOLETO)", "Carcaj (OBSOLETO)", "Carcaj", "Bolsa de munición"]],
+            ITEM_CLASS_QUEST      => ["Misión",                ["Misión"]],
+            ITEM_CLASS_KEY        => ["Llave",                 ["Llave", "Ganzúa"]],
+            ITEM_CLASS_PERMANENT  => ["Permanente (OBSOLETO)", ["Permanente"]],
+            ITEM_CLASS_MISC       => ["Miscelánea",            ["Chatarra", "Componente", "Mascota", "Vacaciones", "Otros", "Montura"]],
+            ITEM_CLASS_GLYPH      => ["Glifo",                 [null, "Guerrero", "Paladín", "Cazador", "Pícaro", "Sacerdote", "Caballero de la Muerte", "Chamán", "Mago", "Brujo", null, "Druida"]]
         ),
         'cat'           => array(
              2 => array("Armas", []),                       // filled with self::$spell['weaponSubClass'] on load

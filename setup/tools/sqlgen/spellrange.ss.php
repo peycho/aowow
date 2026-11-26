@@ -9,7 +9,7 @@ if (!CLI)
     die('not in cli mode');
 
 
-CLISetup::registerSetup("sql", new class extends SetupScript
+CLISetup::registerSetup('sql', new class extends SetupScript
 {
     use TrDBCcopy;
 

@@ -13,7 +13,7 @@ vm.runInNewContext(source.slice(start, end), context);
 // This fixture expects one numeric result between two known metadata comments.
 // Parse that exact protocol instead of trying to strip or sanitize arbitrary HTML.
 function renderedAmount(tooltip) {
-    const match = /^<!--(?:ppl\d+:\d+:\d+(?:\.\d+)?:\d+(?:\.\d+)?|pts\d+:\d+(?:\.\d+)?)(?::[+*/-]:\d+)?(?::f:[01])?-->(\d+(?:\.\d+)?)<!--\?\d+:\d+:\d+:\d+(?::\d+:\d+)?-->$/.exec(tooltip);
+    const match = /^<!--(?:ppl\d+:\d+:-?\d+(?:\.\d+)?:-?\d+(?:\.\d+)?|pts\d+:-?\d+(?:\.\d+)?)(?::[+*/-]:\d+)?(?::f:[01])?-->(\d+(?:\.\d+)?)<!--\?\d+:\d+:\d+:\d+(?::\d+:\d+)?-->$/.exec(tooltip);
     assert.ok(match, 'Expected exactly one scaling marker, numeric amount and level marker');
     assert.equal(match[0], tooltip, 'Scaling output contains no trailing content');
     return Number(match[1]);
@@ -32,6 +32,13 @@ for (const [tooltip, expected] of [
     assert.equal(renderedAmount(context.$WH.g_setTooltipLevel(tooltip, 21)), expected);
     ++checks;
 }
+context.$WH.g_convertRatingToPercent = (level, rating, amount) => Number(amount) / 10;
+const ratingTooltip = '<!--rtg20--><!--ppl1:80:100:200-->120 <small><!--rtg%20-->12</small><!--?1:1:80:11-->';
+const ratingOutput = context.$WH.g_setTooltipLevel(ratingTooltip, 21);
+assert.ok(ratingOutput.includes('<!--ppl1:80:100:200-->140'));
+assert.ok(ratingOutput.includes('<!--rtg%20-->14'));
+assert.equal(context.$WH.g_setTooltipLevel(ratingOutput, 21), ratingOutput, 'Rating conversion retains reusable scaling metadata');
+checks += 3;
 // Malformed comments and HTML must fail the assertion rather than disappear.
 const valid = '<!--ppl1:80:100:200-->120<!--?1:1:80:11-->';
 for (const malformed of [

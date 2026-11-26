@@ -47,7 +47,7 @@ class ObjectBaseResponse extends TemplateResponse implements ICache
         $this->gPageInfo += array(
             'type'   => $this->type,
             'typeId' => $this->typeId,
-            'name'   => $this->h1
+            'name'   => UIText::unescapeUISequences($this->subject->getField('name', true), Lang::FMT_RAW)
         );
 
 
@@ -147,25 +147,34 @@ class ObjectBaseResponse extends TemplateResponse implements ICache
                 $infobox[] = Lang::game('requires', [Lang::main('parensFmt', [Lang::spell('lockType', 1), $this->subject->getField('reqSkill')])]);
                 $infobox[] = Lang::formatSkillBreakpoints(Game::getBreakpointsForSkill(SKILL_LOCKPICKING, $this->subject->getField('reqSkill')));
                 break;
-            default:                                        // requires key .. maybe
+        }
+
+        // requires key .. maybe
+        $ids = [];
+        if (($lockId = $this->subject->getField('lockId')) && ($locks = Lang::getLocks($lockId, $ids, $_, true, Lang::FMT_MARKUP)))
+        {
+            foreach ($ids as $type => $typeIds)
+                $this->extendGlobalIds($type, ...$typeIds);
+
+            $l = [];
+            foreach ($locks as [$type, $property, $str, $reqSkill])
             {
-                $ids = $l = [];
-                $locks = Lang::getLocks($this->subject->getField('lockId'), $ids, true, Lang::FMT_MARKUP);
-
-                foreach ($ids as $type => $typeIds)
-                    $this->extendGlobalIds($type, ...$typeIds);
-
-                foreach ($locks as $idx => $str)
+                switch($type)
                 {
-                    if ($idx > 0)
+                    case LOCK_TYPE_ITEM:
                         $l[] = Lang::gameObject('key').Lang::main('colon').$str;
-                    else if ($idx < 0)
-                        $l[] = Lang::game('requires', [$str]);
+                        break;
+                    case LOCK_TYPE_SKILL:                   // don't display lockpicking twice
+                        if ($this->subject->getField('typeCat') != -5 || $property != 1)
+                            $l[] = Lang::item($reqSkill ? 'reqSkillValue' : 'reqSkill', [$str, $reqSkill]);
+                        break;
+                    default:
+                        $l[] = Lang::item('reqSkill', [$str]);
                 }
-
-                if ($l)
-                    $infobox[] = implode('[br]', $l);
             }
+
+            if ($l)
+                $infobox[] = implode('[br]', $l);
         }
 
         // linked trap
@@ -641,10 +650,12 @@ class ObjectBaseResponse extends TemplateResponse implements ICache
 
     protected function generateMetadata(bool $useArticle = true) : void
     {
-        $this->metaTags[] = ['property' => 'og:title', 'content' => $this->h1];
+        $title = UIText::unescapeUISequences($this->subject->getField('name', true), Lang::FMT_RAW);
+
+        $this->metaTags[] = ['property' => 'og:title', 'content' => $title];
         $this->metaTags[] = ['property' => 'og:type',  'content' => 'article'];
 
-        $keywords = [$this->h1, Util::ucFirst(Lang::game('object'))];
+        $keywords = [$title, Util::ucFirst(Lang::game('object'))];
 
         $desc = '';
         if ($zSpawns = $this->subject->getSpawns(SPAWNINFO_ZONES))
@@ -659,7 +670,7 @@ class ObjectBaseResponse extends TemplateResponse implements ICache
                 if ($zSpawns)
                     $zones[] = Lang::meta('foundInExt', [count($zSpawns)]);
 
-                $desc = Lang::meta('objFoundIn', [$this->h1, Lang::concat($zones)]);
+                $desc = Lang::meta('objFoundIn', [$title, Lang::concat($zones)]);
             }
         }
 

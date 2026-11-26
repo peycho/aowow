@@ -23,7 +23,12 @@ namespace Aowow {
         public function selectCol(string $sql,mixed ...$args) : array { self::$calls[]=$args; return array_shift(self::$locks); }
         public function selectCell(string $sql,int $id) : ?int { return self::$skills[$id]??null; }
     }
-    class SpellList { public function getField(string $field) : int { return $field==='effect1Id'?SPELL_EFFECT_OPEN_LOCK:633; } }
+    class SpellList {
+        public bool $error=true;
+        public static array $conditions=[];
+        public function __construct(array $conditions=[]) { self::$conditions=$conditions; }
+        public function getField(string $field) : int { return $field==='effect1Id'?SPELL_EFFECT_OPEN_LOCK:633; }
+    }
     class GameObjectList {
         public bool $error=true;
         public static array $conditions=[];
@@ -67,6 +72,16 @@ namespace {
     check(array_values(GameObjectList::$conditions[0][1])===[10,20,30],'overlapping numeric result keys retain all distinct spell and skill locks');
     check(GameObjectList::$conditions===ItemList::$conditions,'object and item tabs receive the same merged locks');
     check(DB::$calls[0][0]===LOCK_TYPE_SPELL && DB::$calls[1][0]===LOCK_TYPE_SKILL,'spell and skill queries retain distinct parameterized types');
+    (new ReflectionProperty($page,'firstRank'))->setValue($page,1804);
+    $exclusive=new ReflectionMethod($page,'tabExclusiveWith');
+    DB::$skills=[1804=>1];
+    // Include group zero, a mutual cycle, a self-reference and a missing group.
+    DB::$locks=[[0=>[1804,-1],1=>[-2,2000],2=>[1804,-1,-2,-999,3000]], [0=>1,1=>1,2=>1]];
+    DB::$calls=[];
+    check($exclusive->invoke($page)===[],'Cyclic/missing spell groups terminate with an unavailable spell dataset');
+    check(DB::$calls[1] === [[0,1,2]],'Every group containing the first rank is retained, including group zero');
+    $members=array_values(array_unique(SpellList::$conditions[0][1])); sort($members);
+    check($members===[1804,2000,3000],'Nested spell-group expansion preserves unique positive spell IDs');
     $zone=(new ReflectionClass(ZoneBaseResponse::class))->newInstanceWithoutConstructor(); $zone->typeId=2;
     $fishing=new ReflectionMethod($zone,'tabFishing');
     $row=['id'=>1,'name'=>'$(globalThis.fishMarker=1)</script>','percent'=>100];

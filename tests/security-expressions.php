@@ -158,6 +158,11 @@ namespace {
     $result=$amount->invoke($spell,1,'*','3');
     check($result[0]===303, 'fractional per-level growth keeps its precision');
     $scalingFixtures[]=['tooltip'=>$result[2].$result[0].'<!--?1:1:80:9-->', 'level'=>17, 'expected'=>306];
+    $row['effect1RealPointsPerLevel']=-2;
+    $rowProperty->setValue($spell,$row); $levelProperty->setValue($spell,11);
+    $result=$amount->invoke($spell,1);
+    check($result[0]===80, 'Negative per-level growth reduces the complete amount');
+    $scalingFixtures[]=['tooltip'=>$result[2].$result[0].'<!--?1:1:80:11-->', 'level'=>21, 'expected'=>60];
     $row['effect1RealPointsPerLevel']=0;
     $row['effect1Id']=SPELL_EFFECT_SCHOOL_DAMAGE;
     $row['attributes0']=SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION;
@@ -191,7 +196,7 @@ namespace {
         $rowProperty->setValue($spell,$row);
         check($resolve->invoke($spell,null,null,null,'o',1,null)[0] == $expected, 'Zero-period fallback remains aura-specific');
     }
-    $castRow=['attributes0'=>SPELL_ATTR0_PASSIVE,'attributes1'=>0,'castTime'=>0,'damageClass'=>SPELL_DAMAGE_CLASS_MAGIC];
+    $castRow=['attributes0'=>SPELL_ATTR0_PASSIVE,'attributes1'=>0,'castTime'=>0,'damageClass'=>SPELL_DAMAGE_CLASS_MAGIC,'effect1Id'=>0,'minCastTime'=>0,'castTimePerLevel'=>0,'maxLevel'=>80,'baseLevel'=>1,'powerType'=>POWER_MANA,'powerCost'=>0];
     $rowProperty->setValue($spell,$castRow);
     check($spell->createCastTimeForCurrent()==='', 'passive talents omit cast time');
     $castRow['attributes0']=0; $castRow['damageClass']=SPELL_DAMAGE_CLASS_MELEE;

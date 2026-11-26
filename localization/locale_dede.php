@@ -337,7 +337,7 @@ $lang = array(
         'customProfile' => " (Benutzerprofil)",
         'resync'        => "Resynchronisieren",
         'guildRoster'   => "Gildenliste für &lt;%s&gt;",
-        'arenaRoster'   => "Arena-Teamliste für &lt;%s&gt",
+        'arenaRoster'   => "Arena-Teamliste für &lt;%s&gt;",
         'atCaptain'     => "Teamkapitän",
         'atSize'        => "Größe: ",
         'profiler'      => "Charakter-Profiler",
@@ -579,6 +579,17 @@ $lang = array(
             ["Klinge der Horde", "Ritter der Allianz"],                     ["Feldherr", "Feldkommandant"],                                 ["Sturmreiter", "Rittmeister"],
             ["Kriegsherr", "Marschall"],                                    ["Kriegsfürst", "Feldmarschall"],                               ["Oberster Kriegsfürst", "Großmarschall"]
         ),
+        'cityRank'      => array(                           // PVP_MEDAL\d
+            null,
+            "Beschützer von Sturmwind",
+            "Oberanführer von Orgrimmar",
+            "Than von Eisenschmiede",
+            "Hochschildwache von Darnassus",
+            "Todeslord von Unterstadt",
+            "Häuptling von Donnerfels",
+            "Rächer von Gnomeregan",
+            "Voodooboss von Senjin"
+        ),
         'orientation'   => ['Nord', 'Nordost', 'Ost', 'Südost', 'Süd', 'Südwest', 'West', 'Nordwest']
     ),
     'unit' => array(
@@ -656,7 +667,7 @@ $lang = array(
                 UNIT_STAND_STATE_SIT_MEDIUM_CHAIR => 'Auf mittlerem Stuhl sitzend',
                 UNIT_STAND_STATE_SIT_HIGH_CHAIR   => 'Auf hohem Stuhl sitzend',
                 UNIT_STAND_STATE_DEAD             => 'Tot',
-                UNIT_STAND_STATE_KNEEL            => 'Kniehend',
+                UNIT_STAND_STATE_KNEEL            => 'Kniend',
                 UNIT_STAND_STATE_SUBMERGED        => 'Untergetaucht'
             ),
             null,
@@ -789,7 +800,7 @@ $lang = array(
         'actionTT'      => '[b class=q1]ActionType %d[/b][br][table][tr][td]Param1[/td][td=header]%d[/td][/tr][tr][td]Param2[/td][td=header]%d[/td][/tr][tr][td]Param3[/td][td=header]%d[/td][/tr][tr][td]Param4[/td][td=header]%d[/td][/tr][tr][td]Param5[/td][td=header]%d[/td][/tr][tr][td]Param6[/td][td=header]%d[/td][/tr][/table]',
         'actions'       => array(                           // [body, footer]
             null,
-            SmartAction::ACTION_TALK                               => ['(%3$d)?Gib:#target# gibt; (%11$s)?TextGroup:[span class=q10]unbekannten Text[/span]; #[b]%1$d[/b] (%3$d)?für #target#:für den Auslöser; wieder%11$s', 'Dauer: %s'],
+            SmartAction::ACTION_TALK                               => ['(%3$d)?Gib:#target# gibt; (%11$d)?TextGroup:[span class=q10]unbekannten Text[/span]; #[b]%1$d[/b] (%3$d)?für #target#:für den Auslöser; wieder%12$s', 'Dauer: %s'],
             SmartAction::ACTION_SET_FACTION                        => ['Setze Fraktion von #target# (%1$d)?auf [faction=%11$d]:zurück;.', ''],
             SmartAction::ACTION_MORPH_TO_ENTRY_OR_MODEL            => ['(%11$d)?Setze Aussehen zurück.:Nimm Erscheinungsbild an:;(%1$d)? [npc=%1$d]:;(%2$d)?[model npc=%2$d border=1 float=right][/model]:;', ''],
             SmartAction::ACTION_SOUND                              => ['Spiele Audio für (%2$d)?auslösenden Spieler:alle Spieler im Sichtfeld;:[div][sound=%1$d][/div]', 'Wiedergabe durch Umwelt'],
@@ -800,7 +811,7 @@ $lang = array(
             SmartAction::ACTION_ACTIVATE_GOBJECT                   => ['#target# wird aktiviert.', ''],
 /* 10*/     SmartAction::ACTION_RANDOM_EMOTE                       => ['Emote %11$s zu #target#.', ''],
             SmartAction::ACTION_CAST                               => ['Wirke [spell=%1$d] auf #target#.', '%1$s'],
-            SmartAction::ACTION_SUMMON_CREATURE                    => ['Beschwöre [npc=%1$d](%4$d)?, den Auslöser angreifend:;(%3$d)? für %11$s:.;', '%1$s'],
+            SmartAction::ACTION_SUMMON_CREATURE                    => ['Beschwöre [npc=%1$d](%4$d)?, den Auslöser angreifend:;(%3$d)? für %11$s:; bei #target#.', '%1$s'],
             SmartAction::ACTION_THREAT_SINGLE_PCT                  => ['Ändere Bedrohung von #target# um %11$+d%%.', ''],
             SmartAction::ACTION_THREAT_ALL_PCT                     => ['Ändere Bedrohung aller Gegner um %11$+d%%.', ''],
             SmartAction::ACTION_CALL_AREAEXPLOREDOREVENTHAPPENS    => ['Erfülle Entdeckungsereignis von [quest=%1$d] für #target#.', ''],
@@ -872,7 +883,7 @@ $lang = array(
             SmartAction::ACTION_SET_NPC_FLAG                       => ['Setze NpcFlags von #target# auf %11$s.', ''],
             SmartAction::ACTION_ADD_NPC_FLAG                       => ['Füge NpcFlags %11$s #target# hinzu.', ''],
             SmartAction::ACTION_REMOVE_NPC_FLAG                    => ['Entferne NpcFlags %11$s von #target#.', ''],
-            SmartAction::ACTION_SIMPLE_TALK                        => ['#target# gibt (%11$s)?TextGroup:[span class=q10]unbekannten Text[/span]; #[b]%1$d[/b] für #target# wieder%11$s', ''],
+            SmartAction::ACTION_SIMPLE_TALK                        => ['#target# gibt (%11$d)?TextGroup:[span class=q10]unbekannten Text[/span]; #[b]%1$d[/b] für #target# wieder%12$s', ''],
             SmartAction::ACTION_SELF_CAST                          => ['#target# wirkt [spell=%1$d] auf #target#.(%4$d)? (max. %4$d |4Ziel:Ziele;):;', '%1$s'],
             SmartAction::ACTION_CROSS_CAST                         => ['%11$s wirkt [spell=%1$d] auf #target#.', '%1$s'],
             SmartAction::ACTION_CALL_RANDOM_TIMED_ACTIONLIST       => ['Rufe zufällige Timed Actionlist auf: %11$s', ''],
@@ -1316,6 +1327,7 @@ $lang = array(
         'mechanicimmune'=> 'Nicht anfällig für Mechanik: %s',
         '_extraFlags'   => 'Extra Flags: ',
         'versions'      => 'Schwierigkeitsgrade: ',
+        'pvpLeader'     => 'Anführer',
         'level'         => array(
             'Stufe %s',
             'Stufe %s - %s',
@@ -1354,7 +1366,7 @@ $lang = array(
         ),
         'extraFlags'    => array(
             CREATURE_FLAG_EXTRA_INSTANCE_BIND                   => 'Bindet Angreifer im Tod an die Instanz',
-            CREATURE_FLAG_EXTRA_CIVILIAN                        => "[tooltip name=civilian]- hat keine Aggro\n- Tod kostet Ehre[/tooltip][span class=tip tooltip=civilian]Zivilist[/span]",
+            CREATURE_FLAG_EXTRA_CIVILIAN                        => "[tooltip name=civilian]hat keine Aggro[/tooltip][span class=tip tooltip=civilian]Zivilist[/span]",
             CREATURE_FLAG_EXTRA_NO_PARRY                        => 'Kann nicht [spell=3127]',
             CREATURE_FLAG_EXTRA_NO_PARRY_HASTEN                 => 'Erhält keine Eile nach [spell=3127]',
             CREATURE_FLAG_EXTRA_NO_BLOCK                        => 'Kann nicht [spell=107]',
@@ -1524,7 +1536,7 @@ $lang = array(
         'notFound'      => "Diese Quest existiert nicht.",
         '_transfer'     => 'Dieses Quest wird mit <a href="?quest=%d" class="q1">%s</a> vertauscht, wenn Ihr zur <span class="icon-%s">%s</span> wechselt.',
         'questLevel'    => "Stufe %s",
-        'requirements'  => "Anforderungen",
+        'requirements'  => "Anforderungen:",
         'reqMoney'      => "Benötigtes Geld: %s",
         'money'         => "Geld",
         'additionalReq' => "Zusätzliche Anforderungen um das Quest zu erhalten",
@@ -1567,8 +1579,8 @@ $lang = array(
         'gainsDesc'     => "Bei Abschluss dieser Quest erhaltet Ihr",
         'unavailable'   => "Diese Quest wurde als nicht genutzt markiert und kann weder erhalten noch vollendet werden.",
         'experience'    => "Erfahrung",
-        'expConvert'    => "(oder %s, wenn auf Stufe %d vollendet)",
-        'expConvert2'   => "%s, wenn auf Stufe %d vollendet",
+     // 'expConvert'    => "(oder %s, wenn auf Stufe %d vollendet)",
+     // 'expConvert2'   => "%s, wenn auf Stufe %d vollendet",
         'rewardChoices' => "Auf Euch wartet eine dieser Belohnungen:",                          // REWARD_CHOICES
         'rewardItems'   => "Ihr bekommt:",                                                      // REWARD_ITEMS_ONLY
         'rewardAlso'    => "Ihr bekommt außerdem:",                                             // REWARD_ITEMS
@@ -1672,6 +1684,7 @@ $lang = array(
     'skill' => array(
         'id'            => "Fertigkeits-ID: ",
         'notFound'      => "Diese Fertigkeit existiert nicht.",
+        'tiers'         => ["Lehrling", "Geselle", "Experte", "Fachmann", "Meister", "Großmeister"],
         'cat'           => array(
             -6 => "Haustiere",          -5 => "Reittiere",          -4 => "Völkerfertigkeiten", 5 => "Attribute",           6 => "Waffenfertigkeiten",  7 => "Klassenfertigkeiten", 8 => "Rüstungssachverstand",
              9 => "Nebenberufe",        10 => "Sprachen",           11 => "Berufe",            12 => "Nicht angezeigt"
@@ -1769,14 +1782,14 @@ $lang = array(
         '_cooldown'     => "Abklingzeit",
         '_distUnit'     => " Meter",
         '_regenPer5Sec' => array(                           // GlobalStrings.lua ITEM_MOD_POWER_REGEN<n>_SHORT, ITEM_MOD_HEALTH_REGEN_SHORT; keyed as 'powerTypes'
-             0 => "%s Mana pro 5 Sek.",
-             1 => "%s Wut pro 5 Sek.",
-             2 => "%s Fokus pro 5 Sek.",
-             3 => "%s Energie pro 5 Sek.",
-             4 => "%s Zufriedenheit pro 5 Sek.",
-             5 => "%s Runen pro 5 Sek.",
-             6 => "%s Runenmacht pro 5 Sek.",
-            -2 => "%s Gesundheit pro 5 Sek.",
+            POWER_MANA        => "%s Mana pro 5 Sek.",
+            POWER_RAGE        => "%s Wut pro 5 Sek.",
+            POWER_FOCUS       => "%s Fokus pro 5 Sek.",
+            POWER_ENERGY      => "%s Energie pro 5 Sek.",
+            POWER_HAPPINESS   => "%s Zufriedenheit pro 5 Sek.",
+            POWER_RUNE        => "%s Runen pro 5 Sek.",
+            POWER_RUNIC_POWER => "%s Runenmacht pro 5 Sek.",
+            POWER_HEALTH      => "%s Gesundheit pro 5 Sek.",
         ),
         '_forms'        => "Gestalten",
         '_aura'         => "Aura",
@@ -1790,6 +1803,13 @@ $lang = array(
         '_speedZ'       => "Vertikale Geschwindigkeit",
         '_speedUnit'    => " m/s",
         '_radius'       => "Radius: ",
+        '_maxTargetLevel' => "Max. Zielstufe",              // charm / possess level cap
+        '_seat'         => "Sitz",                          // control vehicle
+        '_ppmUnit'      => " Auslösungen pro Minute",       // flat procs per minute modifier
+        '_totemBarSlots' => "Totemleistenplätze",           // cast button
+        '_arcHeight'    => "Bogenhöhe",                     // jump effects
+        '_honorKills'   => "%d Ehrenhafte Siege",           // HONORABLE_KILLS
+        '_honorPoints'  => "%d Ehre @ L%d",                 // HONOR
         '_interval'     => "Interval: ",
         '_inSlot'       => "im Platz: ",
         '_collapseAll'  => "Alle einklappen",
@@ -1799,12 +1819,16 @@ $lang = array(
         '_seeMore'      => "Mehr anzeigen",
         '_rankRange'    => "Rang:&nbsp;%d&nbsp;-&nbsp;%d",
         '_showXmore'    => "Zeige %d weitere",
+        'chanceToBlock' => "%.2f%% Chance zu blocken",
+        'chanceToCrit'  => "%.2f%% Chance auf kritischen Treffer",
+        'chanceToDodge' => "%.2f%% Chance auszuweichen",
+        'chanceToParry' => "%.2f%% Chance zu parieren",
         'casterAura'    => "Aura auf Zauberer",
         'targetAura'    => "Aura auf Ziel",
-
         'normal'        => "Normal",
         'special'       => "Besonders",
-
+        'onNextMelee'   => "Nächster Nahkampf",
+        'onNextRanged'  => "Angriffstempo",
         'currentArea'   => '&lt;Momentanes Gebiet&gt;',
         'durabilityItems' => [-2 => '&lt;Alle Gegenstände, angelegt und in Taschen&gt;', -1 => '&lt;Alle angelegten Gegenstände&gt;'],
         'discovered'    => "Durch Geistesblitz erlernt",
@@ -1812,12 +1836,14 @@ $lang = array(
         'procChance'    => "Procchance: %.4g%%",
         'starter'       => "Basiszauber",
         'trainingCost'  => "Trainingskosten: ",
+        'reqEquipItem'  => "Benötigt %s",
+        'reqForm'       => "Benötigt %s",
         'channeled'     => "Kanalisiert",
         'range'         => "%s Meter Reichweite",
         'meleeRange'    => "Nahkampfreichweite",
         'unlimRange'    => "Unbegrenzte Reichweite",
         'reagents'      => "Reagenzien",
-        'tools'         => "Extras",
+        'tools'         => "Benötigt",
         'home'          => "&lt;Gasthaus&gt;",
         'pctCostOf'     => "vom Grund%s",
         'costPerSec'    => ", plus %s pro Sekunde",
@@ -1856,14 +1882,14 @@ $lang = array(
             "Noch %d |4Tag:Tage;"
         ),
         'powerCost'     => array(
-           -2 => ["%d Gesundheit", '%1$d Gesundheit und %2$d pro Sek.'],
-            0 => ["%d Mana",       '%1$d Mana und %2$d pro Sek.'      ],
-            1 => ["%d Wut",        '%1$d Wut und %2$d pro Sek.'       ],
-            2 => ["%d Fokus",      "%d Fokus und %d pro Sek."         ],
-            3 => ["%d Energie",    "%d Energie und %d pro Sek."       ],
-            6 => ["%d Runenmacht", "%d Runenmacht, plus %d pro Sek."  ],
+            POWER_HEALTH      => ["%d Gesundheit", '%1$d Gesundheit und %2$d pro Sek.', 'Verbraucht 100% Gesundheit.'],
+            POWER_MANA        => ["%d Mana",       '%1$d Mana und %2$d pro Sek.',       'Verbraucht 100% Mana.'      ],
+            POWER_RAGE        => ["%d Wut",        '%1$d Wut und %2$d pro Sek.',        'Verbraucht 100% Wut.'       ],
+            POWER_FOCUS       => ["%d Fokus",      "%d Fokus und %d pro Sek.",          'Verbraucht 100% Fokus.'     ],
+            POWER_ENERGY      => ["%d Energie",    "%d Energie und %d pro Sek.",        'Verbraucht 100% Energie.'   ],
+            POWER_RUNIC_POWER => ["%d Runenmacht", "%d Runenmacht, plus %d pro Sek.",   ''                           ]
         ),
-        'powerDisplayCost' => ["%d %s", "%d %s, plus %d pro Sek"],
+        'powerDisplayCost' => ["%d %s", "%d %s, plus %d pro Sek", "Nutzt 100% %s"],
         'powerCostRunes'=> ["%d Blut", "%d Unheilig", "%d Frost"],
         'powerRunes'    => ["Blut", "Unheilig", "Frost", "Tod"],
         'powerTypes'    => array(                           // POWER_TYPE_*
@@ -1965,6 +1991,14 @@ $lang = array(
         'summonControl' => ["Ungesteuert", "Wächter", "Begleiter", "Bezaubert", "Gesteuertes Fahrzeug", "Ungesteuertes Fahrzeug"],
         'summonSlot'    => ["Begleiter", "Feuertotem", "Erdtotem", "Wassertotem", "Lufttotem", "Haustier", "Quest"],
         'unkEffect'     => 'Unknown Effect (%1$d)',
+        // AuraStateType, as checked by SPELL_AURA_MOD_DAMAGE_DONE_VERSUS_AURASTATE; labels are English in all locales
+        'auraStates'    => array(
+             1 => "Dodged, parried or blocked",     2 => "Health below 20%",               3 => "Berserking",                     4 => "Frozen",
+             5 => "Judgement",                      7 => "Hunter parry",                  10 => "Victory Rush",                  12 => "Faerie Fire",
+            13 => "Health below 35%",              14 => "Immolate (Conflagrate)",        15 => "Rejuvenation / Regrowth (Swiftmend)", 16 => "Deadly Poison",
+            17 => "Enraged",                       18 => "Bleeding",                      23 => "Health above 75%"
+        ),
+        'destructibleState' => ["Intakt", "Beschädigt", "Zerstört", "Im Wiederaufbau"], // GameObjectDestructibleState
         'effects'       => array(
 /*0-5    */ 'None',                     'Instakill',                'School Damage',            'Dummy',                    'Portal Teleport',          'Teleport Units',
 /*6+     */ 'Apply Aura',               'Environmental Damage',     'Drain Power',              'Drain Health',             'Heal',                     'Bind',
@@ -2050,7 +2084,7 @@ $lang = array(
 /*250+ */   'Mod Maximum Health - Flat (stacking)', 'Mod Enemy Dodge Chance',               'Mod Haste % (loss)',                   'Mod Critical Block Chance',            'Disarm Offhand',
             'Mod Mechanic Damage Taken %',          'No Reagent Cost',                      'Mod Target Resistance by Spell Class', 'Mod Spell Visual',                     'Mod Periodic Healing Taken %',
             'Screen Effect',                        'Phase',                                'Ability Ignore Aurastate',             'Allow Only Ability',                   '',
-            '',                                     '',                                     'Cancel Aura Buffer at % of Caster Health','Mod Attack Power by % of Stat',     'Ignore Target Resistance',
+            '',                                     '',                                     'Immune to Harmful Auras of School','Mod Attack Power by % of Stat',     'Ignore Target Resistance',
             'Ignore Target Resistance for Ability', 'Mod Damage Taken % from Caster',       'Ignore Swing Timer Reset',             'X-Ray',                                'Ability Consume No Ammo',
 /*275+ */   'Mod Ability Ignore Shapeshift',        'Mod Mechanic Damage Done %',           'Mod Max Affected Targets',             'Disarm Ranged Weapon',                 'Spawn Effect',
             'Mod Armor Penetration %',              'Mod Honor Gain %',                     'Mod Base Health %',                    'Mod Healing Taken % from Caster',      'Linked Aura',
@@ -2370,19 +2404,25 @@ $lang = array(
         'block'         => "%s Blocken",
         'charges'       => "%d |4Aufladung:Aufladungen;",
         'locked'        => "Verschlossen",
+        'lockedByItem'  => "Benötigt %s",
+        'lockedBySpell' => "Benötigt %s",
+        'encrypted'     => "Verschlüsselt",
         'ratingString'  => '<!--rtg%%%1$d-->%2$s&nbsp;@&nbsp;Lvl<!--lvl-->%3$d',
         'heroic'        => "Heroisch",
         'startQuest'    => "Dieser Gegenstand startet eine Quest",
         'containerSlots'=> '%1$d Platz %2$s',
-        'fap'           => "Angriffskraft in Tiergestalt",
+     // 'fap'           => "Angriffskraft in Tiergestalt",  // superseded by feralItemAP
+        'feralItemAP'   => "Erhöht die Angriffskraft um <!--fap-->%d nur in Katzen-, Bären-, Terrorbären- und Mondkingestalt.",
         'durability'    => 'Haltbarkeit %1$d / %2$d',
         'realTime'      => "Realzeit",
         'conjured'      => "Herbeigezauberter Gegenstand",
         'sellPrice'     => "Verkaufspreis",
         'itemLevel'     => "Gegenstandsstufe %d",
-        'randEnchant'   => "&lt;Zufällige Verzauberung&gt",
-        'readClick'     => "&lt;Zum Lesen rechtsklicken&gt",
-        'openClick'     => "&lt;Zum Öffnen rechtsklicken&gt",
+        'randEnchant'   => "&lt;Zufällige Verzauberung&gt;",
+        'readClick'     => "&lt;Zum Lesen rechtsklicken&gt;",
+        'openClick'     => "&lt;Zum Öffnen rechtsklicken&gt;",
+        'signClick'     => "&lt;Für Details rechtsklicken&gt;",
+        'socketClick'   => "&lt;Zum Sockeln Shift-Rechtsklick&gt;",
         'setBonus'      => "(%d) Set: %s",
         'setName'       => '%1$s (%2$d/%3$d)',
         'partyLoot'     => "Gruppenloot",
@@ -2417,8 +2457,11 @@ $lang = array(
         'buyout'        => "Sofortkaufpreis",
         'each'          => "Stück",
         'tabOther'      => "Anderes",
+        'reqReputation' => "Benötigt %s - %s",
         'reqMinLevel'   => "Benötigt Stufe %d",
         'reqLevelRange' => "Benötigt Stufe %d bis %d (%s)",
+        'reqSkillValue' => 'Benötigt %1$s (%2$d)',          // ITEM_MIN_SKILL
+        'reqSkill'      => 'Benötigt %1$s',                 // ITEM_REQ_SKILL
         'unique'        => ["Einzigartig",          "Limitiert (%d)", "Einzigartig: %s (%d)"         ],
         'uniqueEquipped'=> ["Einzigartig anlegbar", null,             "Einzigartig angelegt: %s (%d)"],
         'speed'         => "Tempo",
@@ -2428,6 +2471,9 @@ $lang = array(
         'purchasedIn'   => "Dieser Gegenstand kann gekauft werden in",
         'fishingLoc'    => "Angelplätze",
         'fishedIn'      => "Dieser Gegenstand kann geangelt werden in",
+        'resistAll'     => '%1$c%2$d zu allen Widerstandsarten',
+        'resistSingle'  => '%c%d %swiderstand',
+        'itemSuffixTpl' => '%1$s %2$s',                     // ITEM_SUFFIX_TEMPLATE
         'duration'      => array(                           // ITEM_DURATION_*
             '',
             "Dauer: %d Sek.",
@@ -2454,7 +2500,7 @@ $lang = array(
             "Metasockel",           "Roter Sockel",     "Gelber Sockel",        "Blauer Sockel",          -1 => "Prismatischer Sockel"
         ),
         'gemColors'     => array(                           // *_GEM
-            "Meta",                 "Rot",              "Gelb",                 "Blau"
+            null,                   "Meta",             "Rot",                      "Gelb",                     "Blau"
         ),
         'gemRequires'   => "Benötigt ",                     // ENCHANT_CONDITION_REQUIRES
         'gemConditions' => array(                           // ENCHANT_CONDITION_*
@@ -2485,11 +2531,6 @@ $lang = array(
             "Accountgebunden",                          "Wird beim Aufheben gebunden",                          "Wird beim Anlegen gebunden",
             "Wird bei Benutzung gebunden",              "Questgegenstand",                                      "Questgegenstand"
         ),
-        'bagFamily'     => array(
-            "Tasche",               "Köcher",           "Munitionsbeutel",      "Seelentasche",                 "Lederertasche",
-            "Schreibertasche",      "Kräutertasche",    "Verzauberertasche",    "Ingenieurstasche",             null, /*Schlüssel*/
-            "Edelsteintasche",      "Bergbautasche"
-        ),
         'inventoryType' => array(
             null,                   "Kopf",             "Hals",                 "Schulter",                     "Hemd",
             "Brust",                "Taille",           "Beine",                "Füße",                         "Handgelenke",
@@ -2499,23 +2540,23 @@ $lang = array(
             "Wurfwaffe",            null, /*Ranged2*/   "Köcher",               "Relikt"
         ),
         'subClass'      => array(
-            ITEM_CLASS_CONSUMABLE => ["Verbrauchbar", "Trank", "Elixier", "Fläschchen", "Rolle", "Speis & Trank", "Gegenstandsverbesserung", "Verband", "Sonstige"],
-            ITEM_CLASS_CONTAINER  => ["Behälter", "Seelentasche", "Kräutertasche", "Verzauberertasche", "Ingenieurstasche", "Edelsteintasche", "Bergbautasche", "Lederertasche", "Schreibertasche"],
-            ITEM_CLASS_WEAPON     => ["Axt", "Axt", "Bogen", "Schusswaffe", "Streitkolben", "Streitkolben", "Stangenwaffe", "Schwert", "Schwert", "Überflüssig", "Stab", "Exotika", "Exotika", "Faustwaffe", "Verschiedenes", "Dolch", "Wurfwaffe", "Speer", "Armbrust", "Zauberstab", "Angelrute"],
-            ITEM_CLASS_GEM        => ["Rot", "Blau", "Gelb", "Violett", "Grün", "Orange", "Meta", "Einfach", "Prismatisch"],
-            ITEM_CLASS_ARMOR      => ["Verschiedenes", "Stoff", "Leder", "Schwere Rüstung", "Platte", "Rundschild(OBSOLETE)", "Schild", "Buchbände", "Götze", "Totems", "Siegel"],
-            ITEM_CLASS_REAGENT    => ["Reagenz"],
-            ITEM_CLASS_AMMUNITION => ["Zauberstab(OBSOLETE)", "Bolzen(OBSOLETE)", "Pfeil", "Kugel", "Wurfwaffen (ÜBERFLÜSSIG)"],
-            ITEM_CLASS_TRADEGOOD  => ["Handwerkswaren", "Teile", "Sprengstoff", "Geräte", "Juwelenschleifen", "Stoff", "Leder", "Metall & Stein", "Fleisch", "Kräuter", "Elementar", "Sonstige", "Verzauberkunst", "Materialien", "Rüstungsverzauberung", "Waffenverzauberung"],
-            ITEM_CLASS_GENERIC    => ["Generic(OBSOLETE)"],
-            ITEM_CLASS_RECIPE     => ["Buch", "Lederverarbeitung", "Schneiderei", "Ingenieurskunst", "Schmiedekunst", "Kochkunst", "Alchemie", "Erste Hilfe", "Verzauberkunst", "Angeln", "Juwelenschleifen", "Inschrift"],
-            ITEM_CLASS_MONEY      => ["Money(OBSOLETE)"],
-            ITEM_CLASS_QUIVER     => ["Quiver(OBSOLETE)", "Quiver(OBSOLETE)", "Köcher", "Munitionsbeutel"],
-            ITEM_CLASS_QUEST      => ["Quest"],
-            ITEM_CLASS_KEY        => ["Schlüssel", "Nachschlüssel"],
-            ITEM_CLASS_PERMANENT  => ["Dauerhaft"],
-            ITEM_CLASS_MISC       => ["Plunder", "Reagenz", "Haustier", "Festtag", "Sonstige", "Reittier"],
-            ITEM_CLASS_GLYPH      => [null, "Krieger", "Paladin", "Jäger", "Schurke", "Priester", "Todesritter", "Schamane", "Magier", "Hexenmeister", null, "Druide"]
+            ITEM_CLASS_CONSUMABLE => ["Verbrauchbar",           ["Verbrauchbar", "Trank", "Elixier", "Fläschchen", "Rolle", "Speis & Trank", "Gegenstandsverbesserung", "Verband", "Sonstige"]],
+            ITEM_CLASS_CONTAINER  => ["Behälter",               ["Behälter", "Seelentasche", "Kräutertasche", "Verzauberertasche", "Ingenieurstasche", "Edelsteintasche", "Bergbautasche", "Lederertasche", "Schreibertasche"]],
+            ITEM_CLASS_WEAPON     => ["Waffe",                  ["Axt", "Axt", "Bogen", "Schusswaffe", "Streitkolben", "Streitkolben", "Stangenwaffe", "Schwert", "Schwert", "Überflüssig", "Stab", "Exotika", "Exotika", "Faustwaffe", "Verschiedenes", "Dolch", "Wurfwaffe", "Speer", "Armbrust", "Zauberstab", "Angelrute"]],
+            ITEM_CLASS_GEM        => ["Edelstein",              ["Rot", "Blau", "Gelb", "Violett", "Grün", "Orange", "Meta", "Einfach", "Prismatisch"]],
+            ITEM_CLASS_ARMOR      => ["Rüstung",                ["Verschiedenes", "Stoff", "Leder", "Schwere Rüstung", "Platte", "Rundschild(OBSOLETE)", "Schild", "Buchbände", "Götze", "Totems", "Siegel"]],
+            ITEM_CLASS_REAGENT    => ["Reagenz",                ["Reagenz"]],
+            ITEM_CLASS_AMMUNITION => ["Projektil",              ["Zauberstab(OBSOLETE)", "Bolzen(OBSOLETE)", "Pfeil", "Kugel", "Wurfwaffen (ÜBERFLÜSSIG)"]],
+            ITEM_CLASS_TRADEGOOD  => ["Handwerkswaren",         ["Handwerkswaren", "Teile", "Sprengstoff", "Geräte", "Juwelenschleifen", "Stoff", "Leder", "Metall & Stein", "Fleisch", "Kräuter", "Elementar", "Sonstige", "Verzauberkunst", "Materialien", "Rüstungsverzauberung", "Waffenverzauberung"]],
+            ITEM_CLASS_GENERIC    => ["Generic(OBSOLETE)",      ["Generic(OBSOLETE)"]],
+            ITEM_CLASS_RECIPE     => ["Rezept",                 ["Buch", "Lederverarbeitung", "Schneiderei", "Ingenieurskunst", "Schmiedekunst", "Kochkunst", "Alchemie", "Erste Hilfe", "Verzauberkunst", "Angeln", "Juwelenschleifen", "Inschrift"]],
+            ITEM_CLASS_MONEY      => ["Money",                  ["Money(OBSOLETE)"]],
+            ITEM_CLASS_QUIVER     => ["Köcher",                 ["Quiver(OBSOLETE)", "Quiver(OBSOLETE)", "Köcher", "Munitionsbeutel"]],
+            ITEM_CLASS_QUEST      => ["Quest",                  ["Quest"]],
+            ITEM_CLASS_KEY        => ["Schlüssel",              ["Schlüssel", "Nachschlüssel"]],
+            ITEM_CLASS_PERMANENT  => ["Dauerhaft(ÜBERFLÜSSIG)", ["Dauerhaft"]],
+            ITEM_CLASS_MISC       => ["Verschiedenes",          ["Plunder", "Reagenz", "Haustier", "Festtag", "Sonstige", "Reittier"]],
+            ITEM_CLASS_GLYPH      => ["Glyphe",                 [null, "Krieger", "Paladin", "Jäger", "Schurke", "Priester", "Todesritter", "Schamane", "Magier", "Hexenmeister", null, "Druide"]]
         ),
         'cat'           => array(
              2 => array("Waffen", []),                      // filled with self::$spell['weaponSubClass'] on load

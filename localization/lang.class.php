@@ -268,19 +268,32 @@ class Lang
         return $tmp;
     }
 
-    public static function getLocks(int $lockId, ?array &$ids = [], bool $interactive = false, int $fmt = self::FMT_HTML) : array
+    /**
+     * Preformat lock information from Lock.dbc.
+     *
+     * @param int       $lockId         lock entry
+     * @param ?array    $ids            js global ids referenced by the lock
+     * @param ?bool     $isEncrypted    sets whether the entity is encrypted (Inscription) or locked (everything else)
+     * @param bool      $interactive    whether to generate interactive links for HTML/markup output
+     * @param int       $fmt            set output format
+     *
+     * @return array{int, int, string, array|int}[]  [lockType, lockProperty, label, miscInfo]
+     *  miscInfo per type:
+     *  * `Type::SKILL` - required skill value
+     *  * `Type::SPELL` - required reagents as `[itemId, qty]` pairs
+     *  * `Type::ITEM`  - 0
+     */
+    public static function getLocks(int $lockId, ?array &$ids = [], ?bool &$isEncrypted = false, bool $interactive = false, int $fmt = self::FMT_HTML) : array
     {
         $locks = [];
         $ids   = [];
-        $lock  = DB::Aowow()->selectRow('SELECT * FROM ::lock WHERE `id` = %i', $lockId);
-        if (!$lock)
-            return $locks;
 
-        for ($i = 1; $i <= 5; $i++)
+        if (!$lockId || !($lock  = DB::Aowow()->selectRow('SELECT * FROM ::lock WHERE `id` = %i', $lockId)))
+            return [];
+
+        for ($i = 1; $i <= 5; $i++)                         // cols 6-8 are empty in default dbc and have been left out
         {
             $prop = $lock['properties'.$i];
-            $rank = $lock['reqSkill'.$i];
-            $name = '';
 
             switch ($lock['type'.$i])
             {
@@ -296,6 +309,7 @@ class Lang
                         $ids[Type::ITEM][] = $prop;
                     }
 
+                    $locks[] = [LOCK_TYPE_ITEM, $prop, $name, 0];
                     break;
                 case LOCK_TYPE_SKILL:
                     if (!($name = self::spell('lockType', $prop)))
@@ -308,6 +322,9 @@ class Lang
                         20 => SKILL_INSCRIPTION
                     );
 
+                    if ($prop == 20)
+                        $isEncrypted = true;
+
                     // resolve as skill
                     if (isset($skills[$prop]))
                     {
@@ -319,7 +336,7 @@ class Lang
                             $ids[Type::SKILL][] = $skills[$prop];
                         }
                         else
-                            $name = SkillList::getName($prop);
+                            $name = SkillList::getName($skills[$prop]) ?? $name;
                     }
                     // resolve as spell (mostly generic player spells; also: we know effect open lock only exists on effect idx 0)
                     else if ($spellId = DB::Aowow()->selectCell('SELECT `id` FROM ::spell WHERE `effect1Id` = %i AND `effect1MiscValue` = %i AND `skillLine1` <> 0 ORDER BY `id` ASC', SPELL_EFFECT_OPEN_LOCK, $prop))
@@ -333,30 +350,31 @@ class Lang
                         }
                     }
                     else
-                        continue 2;
+                        break;
 
-                    if ($rank > 0)
-                        $name = self::main('parensFmt', [$name, $rank]);
-
+                    $locks[] = [LOCK_TYPE_SKILL, $prop, $name, $lock['reqSkill'.$i]];
                     break;
                 case LOCK_TYPE_SPELL:
-                    if (!($name = SpellList::getName($prop)))
+                    if (($spell = new SpellList(array(['id', $prop])))->error)
                         continue 2;
 
+                    $name = $spell->getField('name', true);
+
                     if ($fmt == self::FMT_HTML)
-                        $name = $interactive ? '<a class="q1" href="?spell='.$prop.'">'.$name.'</a>' : '<span class="q1">'.$name.'</span>';
+                        $name = $interactive ? '<a class="q1" href="?spell='.$prop.'">'.$spell->getField('name', true).'</a>' : '<span class="q1">'.$spell->getField('name', true).'</span>';
                     else if ($interactive && $fmt == self::FMT_MARKUP)
                     {
                         $name = '[spell='.$prop.']';
                         $ids[Type::SPELL][] = $prop;
                     }
 
+                    $locks[] = [LOCK_TYPE_SPELL, $prop, $name, $spell->getReagentsForCurrent()];
                     break;
-                default:
-                    continue 2;
             }
 
-            $locks[$lock['type'.$i] == LOCK_TYPE_ITEM ? $prop : -$prop] = $name;
+            // return first result for regular users
+            if (!User::isInGroup(U_GROUP_STAFF) && $locks)
+                return $locks;
         }
 
         return $locks;
@@ -400,17 +418,18 @@ class Lang
 
         if (!$tmp && $class == ITEM_CLASS_ARMOR)
             return self::spell('cat', -11, 1, 8);
-        else if (!$tmp && $class == ITEM_CLASS_WEAPON)
+
+        if (!$tmp && $class == ITEM_CLASS_WEAPON)
             return self::spell('cat', -11, 1, 6);
-        else
-            return implode(self::main('comma'), $tmp);
+
+        return self::concat($tmp, self::CONCAT_NONE);
     }
 
     public static function getStances(int $stanceMask) : string
     {
         $stanceMask &= 0xFF37F6FF;                          // clamp to available stances/forms..
 
-        return implode(self::main('comma'), array_intersect_key(self::game('st'), Util::mask2bits($stanceMask, 1)));
+        return self::concat(array_intersect_key(self::game('st'), Util::mask2bits($stanceMask, 1)), self::CONCAT_NONE);
     }
 
     public static function getMagicSchools(int $schoolMask, bool $short = false) : string
@@ -423,7 +442,7 @@ class Lang
         if ($short && $schoolMask == SPELL_MAGIC_SCHOOLS)
             return self::main('parensFmt', [self::main('all'), self::game('dt', 1)]);;
 
-        return implode(self::main('comma'), array_intersect_key(self::game('sc'), Util::mask2bits($schoolMask)));
+        return self::concat(array_intersect_key(self::game('sc'), Util::mask2bits($schoolMask)), self::CONCAT_NONE);
     }
 
     public static function getClassString(int $classMask, array &$ids = [], int $fmt = self::FMT_HTML) : string
@@ -447,7 +466,7 @@ class Lang
 
         $ids = array_keys($tmp);
 
-        return implode(self::main('comma'), $tmp);
+        return self::concat($tmp, self::CONCAT_NONE);
     }
 
     public static function getRaceString(int $raceMask, array &$ids = [], int $fmt = self::FMT_HTML) : string
@@ -477,26 +496,26 @@ class Lang
 
         $ids = array_keys($tmp);
 
-        return implode(self::main('comma'), $tmp);
+        return self::concat($tmp, self::CONCAT_NONE);
     }
 
     public static function formatSkillBreakpoints(array $bp, int $fmt = self::FMT_MARKUP) : string
     {
-        $tmp = self::game('difficulty');
+        $buff = [];
 
-        $base = match ($fmt)
+        [$base, $spacer] = match ($fmt)
         {
-            self::FMT_HTML   => '<span class="r%1$d">%2$s</span> ',
-            self::FMT_MARKUP => '[color=r%1$d]%2$s[/color] ',
-            self::FMT_RAW    => '%2$s ',
-            default          => '%2$s '
+            self::FMT_HTML   => ['<span class="%1$s">%2$s</span>', '<small> &nbsp;</small>'],
+            self::FMT_MARKUP => ['[color=%1$s]%2$s[/color]', '[small] &nbsp;[/small]'],
+            self::FMT_RAW    => ['%2$s', ' '],
+            default          => ['%2$s', ' ']
         };
 
-        for ($i = 0; $i < 4; $i++)
-            if (!empty($bp[$i]))
-                $tmp .= sprintf($base, $i + 1, $bp[$i]);
+        for ($i = 0; $i < 5; $i++)
+            if (isset($bp[$i]))
+                $buff[] = sprintf($base, $i ? 'r'.$i : 'q10', $bp[$i]);
 
-        return trim($tmp);
+        return self::game('difficulty').implode($spacer, $buff);
     }
 
     public static function makeLink(int $type, int $typeId, string $name, int $fmt = self::FMT_HTML, string $cssClass = '') : string
@@ -507,6 +526,21 @@ class Lang
             self::FMT_MARKUP => '[url=?'.Type::getFileString($type).'='.$typeId.($cssClass ? ' class='.$cssClass : '').']'.$name.'[/url]',
             self::FMT_RAW    => $name,
             default          => $name
+        };
+    }
+
+    public static function zoneFromMap(int $mapId) : string
+    {
+        return match($mapId)
+        {
+            0       => self::maps('EasternKingdoms'),
+            1       => self::maps('Kalimdor'),
+            530     => self::maps('Outland'),
+            571     => self::maps('Northrend'),
+            default => (function(int $mapId) {
+                $z = DB::Aowow()->selectRow('SELECT `id`, `name_loc0`, `name_loc2`, `name_loc3`, `name_loc4`, `name_loc6`, `name_loc8` FROM ::zones WHERE `mapId` = %i', $mapId);
+                return $z ? '<a href="?zone='.$z['id'].'">'.Util::localizedString($z, 'name', true).'</a>' : '';
+            })($mapId)
         };
     }
 

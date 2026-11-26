@@ -11,6 +11,9 @@ if (!defined('AOWOW_REVISION'))
  */
 final class UIText
 {
+    private const array LETTER_HAS_FINAL_CONSONANT = [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    private const array DIGIT_HAS_FINAL_CONSONANT  = [1, 1, 0, 1, 0, 0, 1, 1, 1, 0];
+
     private const array LINE_BREAK = array(
         -1               => ' ',
         Lang::FMT_RAW    => "\n",
@@ -117,14 +120,74 @@ final class UIText
     }
 
     /**
+     * Validates a parsed UI tag against the supported tag set and required attributes.
+     *
+     * @param string $full     Full tag text. (not used, required to spread regex match into function)
+     * @param string $closing  Whether the tag is a closing tag.
+     * @param string $tag      Tag name to validate.
+     * @param string $attrStr  Raw attribute string for the tag.
+     *
+     * @return bool True when the tag is allowed and valid, otherwise false.
+     */
+    private static function validateTag(string $full, string $closing, string $tag, string $attrStr) : bool
+    {
+        if ($closing && trim($attrStr))
+            return false;
+
+        $tag = strtolower($tag);
+
+        if ($tag == 'img' || $tag == 'a')
+        {
+            // Closing anchors have no href; images are void elements.
+            if ($closing)
+                return $tag == 'a';
+
+            $attrStr = trim($attrStr);
+            if (str_ends_with($attrStr, '/'))
+                $attrStr = rtrim(substr($attrStr, 0, -1));
+
+            // Parse whole attributes so quoted spaces or embedded "src=" text
+            // cannot be mistaken for an attribute name. Keep value casing intact.
+            preg_match_all('~\G\s*([a-z_:][a-z0-9:_.-]*)\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s"\'=<>`]+))(?=\s|$)~i', $attrStr, $matches, PREG_SET_ORDER | PREG_UNMATCHED_AS_NULL);
+
+            $attr = [];
+            $parsed = '';
+            foreach ($matches as $match)
+            {
+                $name = strtolower($match[1]);
+                if (array_key_exists($name, $attr))
+                    return false;
+
+                $attr[$name] = $match[2] ?? $match[3] ?? $match[4];
+                $parsed .= $match[0];
+            }
+
+            $required = $tag == 'img' ? 'src' : 'href';
+            return $parsed === $attrStr && trim($attr[$required] ?? '') !== '';
+        }
+
+        return match ($tag)
+        {
+            'h1', 'h2', 'h3',
+            'span', 'br', 'p' => true,
+            default           => false
+        };
+    }
+
+    /**
      * for `$`-prefix variables. Most frames bar tooltips seem to accept these
-     * * `$g` gender
-     * * `$t` pvp rank
-     * * `$w` world state
-     * * `$c` player class
-     * * `$r` player race
-     * * `$n` player name
+     * Client QuestTextParser : QuestParserParseToken()
+     * * `$a` achievement hyperlink
      * * `$b` line break
+     * * `$c` unit class
+     * * `$d` WorldState duration
+     * * `$e` WorldState int value
+     * * `$g` gender conditional
+     * * `$k` WorldState countdown
+     * * `$n` unit name
+     * * `$r` unit race
+     * * `$t` pvp rank conditional
+     * * `$w` WorldState int value
      *
      * @param string    $text   text to format
      * @param int       $fmt    target output format
@@ -137,47 +200,74 @@ final class UIText
     private static function replaceTextVariables(string $text, int $fmt = Lang::FMT_HTML) : string
     {
         $from = array(
-            '/\$g *([^:;]*) *: *([^:;]*) *(:?[^:;]*);/ui',  // $g<male>:<female>:<refVariable>
-            '/\$t([^;]+);/ui',                              // $t<male>:<female>; (maybe male/female if pvp unranked? Gets replaced with current HK rank.)
-            '/\$(\d+)w/ui',                                 // $<id>w
+            // only triggered by System Chat Messages; achievemntId provided by chat context
+            '/\$a/i',
+            //
+            '/\$b/i',
+            // lowercase *c* casts unit class name to lowercase
             '/\$c/i',
-            '/\$r/i',
+            // uses negated world state id for hash table lookup. not used?
+            '/\$(\d+)d/i',
+            // uses negated world state id for hash table lookup. not used?
+            '/\$(\d+)e/i',
+            // $g<male>:<female>:<refVariable>; (refVar is optional and can be *C*lass or *R*ace)
+            '/\$g *([^:;]*?) *: *([^:;]*?) *(?::[^:;]*)?;/ui',
+            // uses negated world state id for hash table lookup. not used?
+            '/\$(\d+)k/i',
+            //
             '/\$n/i',
-            '/\$b/i'
+            // lowercase *r* casts unit race name to lowercase
+            '/\$r/i',
+            // $t<male>:<female>; male/female if pvp unranked, otherwise replaced with current PVP rank; lowercase *t* casts PVP rank to lowercase
+            '/\$t *([^:;]*?) *: *([^:;]*?) *;/ui',
+            //
+            '/\$(\d+)w/i',
         );
 
         $to[Lang::FMT_MARKUP] = array(
-            '<\1/\2>',
-            '<'.implode('/', Lang::game('pvpRank', 1)).'>',
-            '[span class=q0]WorldState #\1[/span]',
+            '<'.Lang::game('achievement').'>',
+            '[br]',
             '<'.Lang::game('class').'>',
-            '<'.Lang::game('race').'>',
+            '[span class=q0]'.Lang::main('parensFmt', ['WorldState -#\1', Lang::game('duration')]).'[/span]',
+            '[span class=q0]WorldState -#\1[/span]',
+            '<\1/\2>',
+            '[span class=q0]'.Lang::main('parensFmt', ['WorldState -#\1', 'Countdown']).'[/span]',
             '<'.Lang::main('name').'>',
-            '[br]'
+            '<'.Lang::game('race').'>',
+            '<\1/\2>',
+            '[span class=q0]WorldState #\1[/span]'
         );
 
         $to[Lang::FMT_HTML] = array(
-            '&lt;\1/\2&gt;',
-            '&lt;'.implode('/', Lang::game('pvpRank', 1)).'&gt;',
-            '<span class="q0">WorldState #\1</span>',
+            '&lt;'.Lang::game('achievement').'&gt;',
+            '<br />',
             '&lt;'.Lang::game('class').'&gt;',
-            '&lt;'.Lang::game('race').'&gt;',
+            '<span class="q0">'.Lang::main('parensFmt', ['WorldState -#\1', Lang::game('duration')]).'</span>',
+            '<span class="q0">WorldState -#\1</span>',
+            '&lt;\1/\2&gt;',
+            '<span class="q0">'.Lang::main('parensFmt', ['WorldState -#\1', 'Countdown']).'</span>',
             '&lt;'.Lang::main('name').'&gt;',
-            '<br />'
+            '&lt;'.Lang::game('race').'&gt;',
+            '&lt;\1/\2&gt;',
+            '<span class="q0">WorldState #\1</span>'
         );
 
         $to[Lang::FMT_RAW] =
         $to[-1] = array(
-            '<\1/\2>',
-            '<'.implode('/', Lang::game('pvpRank', 1)).'>',
-            'WorldState #\1',
+            '<'.Lang::game('achievement').'>',
+            "\n",
             '<'.Lang::game('class').'>',
-            '<'.Lang::game('race').'>',
+            Lang::main('parensFmt', ['WorldState -#\1', Lang::game('duration')]),
+            'WorldState -#\1',
+            '<\1/\2>',
+            Lang::main('parensFmt', ['WorldState -#\1', 'Countdown']),
             '<'.Lang::main('name').'>',
-            "\n"
+            '<'.Lang::game('race').'>',
+            '<\1/\2>',
+            'WorldState #\1'
         );
 
-        return preg_replace($from, $to[$fmt], $text);
+        return preg_replace($from, $to[$fmt] ?? $to[Lang::FMT_RAW], $text);
     }
 
     /**
@@ -319,137 +409,171 @@ final class UIText
                 }
             }, $text);
 
-        // |1 - digit singular/plural          <number>|1<singular;<plural>; - Will choose a word depending on whether the digit preceding it is 0/1 or not (i.e. 1,11,21 return the first string, as will 0,10,40). Note that unlike |4 singular and plural forms are separated by semi-colon.
-        $text = preg_replace_callback('/(\d+) *(?<!\|)\|1([^;]+);([^;]+);/is', function ($m)
+        // |1 - particle selector: <lastChar> <padding> |1 <consonant> ; <vowel> ;
+        // Will choose a word depending on the last character
+        $text = preg_replace_callback('/(\p{L})(\P{L}*(?: *<[^>]+> *)*)(?<!\|)\|1(\D[^;]+);([^;]+);/uis', function ($m)
             {
-                [$_, $num, $singular, $plural] = $m;
+                [, $char, $pad, $cf, $vf] = $m;
 
-                switch ($num[-1])
-                {
-                    case 0:
-                    case 1:
-                        return $num . ' ' . $singular;
-                    default:
-                        return $num . ' ' . $plural;
-                }
+                return $char . $pad . self::languageRule1ChooseParticle(mb_ord($char), $cf, $vf);
             }, $text);
 
-        // |2 - frFR preposition: de            |2 <word> - Before vowels outputs d' (with apostrophe) and removes any leading spaces from text, otherwise outputs de (with trailing space)
-        $text = preg_replace_callback('/(?<!\|)\|2 ?(.)/i', function ($m)
+        // |2 - frFR preposition (de): |2 <padding> <word>
+        $text = preg_replace_callback('/(?<!\|)\|2((?: *<[^>]+> *)*)([^ ]{4})/i', function ($m)
             {
-                [$_, $char] = $m;
+                [, $pad, $word] = $m;
 
-                switch (strtolower($char))
-                {
-                    case 'h':
-                        if (Lang::getLocale() != Locale::FR)
-                            return 'de ' . $char;
-                    case 'a':
-                    case 'e':
-                    case 'i':
-                    case 'o':
-                    case 'u':
-                        return "d'" . $char;
-                    default:
-                        return 'de ' . $char;
-                }
+                $pairs = array(
+                    "L'"   => "de l'",  "Le "  => "du ",
+                    "La "  => "de la ", "Les " => "des ",
+                );
+
+                foreach ($pairs as $find => $replace)
+                    if (str_starts_with($word, $find))
+                        return $pad . substr_replace($word, $replace, 0, strlen($find));
+
+                if (self::languageRule2IsVowel(mb_substr($word, 0, 1)) || $word[0] == 'h' || $word[0] == 'H' ||
+                    ($word[0] == 'y' && self::languageRule2IsVowel($word[1])) ||
+                    ($word[0] == 'Y' && self::languageRule2IsVowel($word[1])))
+                    return "d'" . $pad . $word;
+
+                return "de " . $pad . $word;
             }, $text);
 
-        // |3 - ruRU declinations               |3-<caseIdx>(<word>) - Displays text declined to the specified form (index ranges from 1 to GetNumDeclensionSets()).
-        $text = preg_replace_callback('/(?<!\|)\|3-(\d+)\(([^\)]+)\)/iu', function ($m)
+        // |3 - ruRU declinations: |3- <caseIdx> ( <padding> <word> <padding> )
+        // Displays text declined to the specified form (index ranges from 1 to GetNumDeclensionSets()).
+        $text = preg_replace_callback('/(?<!\|)\|3-(\d+)\((.*?)(\p{Cyrillic}[ \p{Cyrillic}]+)(.*?)\)/iu', function ($m)
             {
-                [$_, $caseIdx, $word] = $m;
+                [, $caseIdx, $padPre, $word, $padPost] = $m;
 
                 if ($caseIdx > 11 || $caseIdx < 1)          // max caseIdx seen in DeclinedWordCases.dbc
-                    return $word;
-
-                if (preg_match('/\P{Cyrillic}/iu', $word))  // not in cyrillic script
-                    return $word;
+                    return $padPre . $word . $padPost;
 
                 if ($declWord = DB::Aowow()->selectCell('SELECT dwc.`word` FROM ::declinedwordcases dwc JOIN ::declinedword dc ON dwc.`wordId` = dc.`id` WHERE dwc.`caseIdx` = %i AND dc.`word` = %s', $caseIdx, $word))
-                    return $declWord;
+                    return $padPre . $declWord . $padPost;
 
-                return $word;
+                return $padPre . $word . $padPost;
             }, $text);
 
-        // |4 - numeric switch           <number>                  |4<singular>:<plural>[:<plural2>]; - Will choose a form based on the number preceding it. More than two forms (separated by colons) may be required by locale 8 (ruRU).
-        $text = preg_replace_callback('/([\d\.\,]+)([^\d]*)(?<!\|)\|4([^:]*):([^:;]+)(?::([^;]+))?;/is', function ($m)
-            {
-                [$_, $num, $pad, $singular, $plural1, $plural2] = array_pad($m, 6, null);
+        // |4 - numeric switch: <number> <padding> |4 <singular> : <plural>[ : <plural2>] ;
+        // Will choose a form based on the number preceding it. More than two forms (separated by colons) may be required by locale 8 (ruRU).
+        $n = 0;
+        do
+        {
+            $text = preg_replace_callback('/(?<![\d.,])(\d+(?:[.,]\d+)*)([^\d|]*)(?<!\|)\|4([^:]*):([^:;]+)(?::([^;]+))?;/is', function ($m)
+                {
+                    [, $num, $pad, $singular, $plural1, $plural2] = array_pad($m, 6, null);
 
-                if (Lang::getLocale() != Locale::RU || !$plural2)
-                    return $num . $pad . ($num == 1 ? $singular : $plural1);
-
-                // singular - ends in 1, but not teen number
-                if ($num[-1] == 1 && $num != 11)
-                    return $num . $pad . $singular;
-
-                // genitive singular - ends in 2, 3, 4, but not teen number
-                if (($num[-1] == 2 && $num != 12) || ($num[-1] == 3 && $num != 13) || ($num[-1] == 4 && $num != 14))
-                    return $num . $pad . $plural1;
-
-                // genitive plural - everything else
-                return $num . $pad . $plural2;
-            }, $text);
+                    return $num . $pad . match(self::getPluralIndex($num))
+                    {
+                        0 => $singular,
+                        1 => $plural1,                          // ruRU: genitive singular
+                        2 => $plural2 ?? $plural1               // ruRU: genitive plural
+                    };
+                }, $text, count: $n);
+        }
+        while ($n);
 
         // unescape escaped ui sequences
         return strtr($text, ['||' => '|']);
     }
 
-    /**
-     * Validates a parsed UI tag against the supported tag set and required attributes.
-     *
-     * @param string $full     Full tag text. (not used, required to spread regex match into function)
-     * @param string $closing  Whether the tag is a closing tag.
-     * @param string $tag      Tag name to validate.
-     * @param string $attrStr  Raw attribute string for the tag.
-     *
-     * @return bool True when the tag is allowed and valid, otherwise false.
-     */
-    private static function validateTag(string $full, string $closing, string $tag, string $attrStr) : bool
+
+    private static function getPluralIndex(string $num) : int
     {
-        if ($closing && trim($attrStr))
-            return false;
-
-        $tag = strtolower($tag);
-
-        if ($tag == 'img' || $tag == 'a')
+        // Preserve the full number: grouped thousands and decimal fractions must
+        // not select a form using only the first digit.
+        $num = (float)str_replace(',', '.', preg_replace('/[.,](?=\d{3}(?:[.,]|$))/', '', $num));
+        $pluralRule = match (Lang::getLocale())
         {
-            // Closing anchors have no href; images are void elements.
-            if ($closing)
-                return $tag == 'a';
+            Locale::KR, Locale::FR,
+            Locale::CN, Locale::TW => 1,
+            Locale::RU             => 2,
+            default                => 0
+        };
 
-            $attrStr = trim($attrStr);
-            if (str_ends_with($attrStr, '/'))
-                $attrStr = rtrim(substr($attrStr, 0, -1));
+        if ($pluralRule == 0)
+            return $num != 1;
 
-            // Parse whole attributes so quoted spaces or embedded "src=" text
-            // cannot be mistaken for an attribute name. Keep value casing intact.
-            preg_match_all('~\G\s*([a-z_:][a-z0-9:_.-]*)\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s"\'=<>`]+))(?=\s|$)~i', $attrStr, $matches, PREG_SET_ORDER | PREG_UNMATCHED_AS_NULL);
+        if ($pluralRule == 1)
+            return $num > 1;
 
-            $attr = [];
-            $parsed = '';
-            foreach ($matches as $match)
-            {
-                $name = strtolower($match[1]);
-                if (array_key_exists($name, $attr))
-                    return false;
+        if ($num != floor($num))
+            return 2;
 
-                $attr[$name] = $match[2] ?? $match[3] ?? $match[4];
-                $parsed .= $match[0];
-            }
+        $num = (int)$num;
+        if ($num % 100 >= 11 && $num % 100 <= 14)
+            return 2;
 
-            $required = $tag == 'img' ? 'src' : 'href';
-            return $parsed === $attrStr && trim($attr[$required] ?? '') !== '';
+        if ($num % 10 == 1)
+            return 0;
+
+        if ($num % 10 >= 2 && $num % 10 <= 4)
+            return 1;
+
+        return 2;
+    }
+
+    private static function languageRule1ChooseParticle(int $lastChar, string $consonantForm, string $vowelForm) : string
+    {
+        if ($lastChar & 0xFF00)
+        {
+            // CN/TW characters
+            if ((($lastChar + 0x5400) & 0xFFFF) > 0x2BA3)
+                return $consonantForm;
+
+            $syllable = $lastChar & 0xFFFF;
+
+            // KR
+            if (($syllable - 0xAC08) % 28 == 0 && $consonantForm == '으')
+                return $vowelForm;
+
+            return ($syllable - 0xAC00) % 28 ? $consonantForm : $vowelForm;
         }
 
-        return match ($tag)
-        {
-            'h1', 'h2', 'h3',
-            'span', 'br', 'p' => true,
-            default           => false
-        };
+        // ASCII number offset
+        if ($lastChar >= 48 && $lastChar <= 57)
+            return self::DIGIT_HAS_FINAL_CONSONANT[$lastChar - 48] ? $consonantForm : $vowelForm;
+
+        // ASCII letter offsets lc
+        if ($lastChar >= 97 && $lastChar <= 122)
+            return self::LETTER_HAS_FINAL_CONSONANT[$lastChar - 97] ? $consonantForm : $vowelForm;
+
+        // ASCII letter offsets uc
+        if ($lastChar >= 65 && $lastChar <= 90)
+            return self::LETTER_HAS_FINAL_CONSONANT[$lastChar - 65] ? $consonantForm : $vowelForm;
+
+        return $consonantForm;
     }
+
+    private static function languageRule2IsVowel(string $char) : bool
+    {
+        switch ($char)
+        {
+            case 'A':
+            case 'E':
+            case 'I':
+            case 'O':
+            case 'U':
+            case 'a':
+            case 'e':
+            case 'i':
+            case 'o':
+            case 'u':
+                return true;
+        }
+
+        $ch = mb_ord($char);
+        return ($ch >= 0xC0 && $ch <= 0xC6) ||              // À Á Â Ã Ä Å Æ
+               ($ch >= 0xC8 && $ch <= 0xCF) ||              // È É Ê Ë Ì Í Î Ï
+               ($ch >= 0xD2 && $ch <= 0xD6) ||              // Ò Ó Ô Õ Ö
+               ($ch >= 0xD8 && $ch <= 0xDC) ||              // Ø Ù Ú Û Ü
+               ($ch >= 0xE0 && $ch <= 0xE6) ||              // à á â ã ä å æ
+               ($ch >= 0xE8 && $ch <= 0xEF) ||              // è é ê ë ì í î ï
+               ($ch >= 0xF2 && $ch <= 0xF6) ||              // ò ó ô õ ö
+               ((($ch - 0xF8) & 0xFFFF)) <= 4;              // ø ù ú û ü
+    }
+
 }
 
 ?>

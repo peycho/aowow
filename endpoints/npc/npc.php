@@ -47,7 +47,7 @@ class NpcBaseResponse extends TemplateResponse implements ICache
             $this->generateNotFound(Lang::game('npc'), Lang::npc('notFound'));
 
         $this->h1      = Util::htmlEscape($this->subject->getField('name', true));
-        $this->subname = $this->subject->getField('subname', true);
+        $this->subname = Util::htmlEscape($this->subject->getField('subname', true));
 
         $this->gPageInfo += array(
             'type'   => $this->type,
@@ -1154,10 +1154,10 @@ class NpcBaseResponse extends TemplateResponse implements ICache
 
     protected function generateMetadata(bool $useArticle = true) : void
     {
-        $this->metaTags[] = ['property' => 'og:title', 'content' => $this->h1];
+        $this->metaTags[] = ['property' => 'og:title', 'content' => $this->subject->getField('name', true)];
         $this->metaTags[] = ['property' => 'og:type',  'content' => 'article'];
 
-        $keywords = [$this->h1, Util::ucFirst(Lang::game('npc'))];
+        $keywords = [$this->subject->getField('name', true), Util::ucFirst(Lang::game('npc'))];
 
         if ($t = $this->subject->getField('type'))
             if ($t != 10 && ($k = Lang::npc('cat', $t)))    // not 'uncategorized'

@@ -772,14 +772,18 @@ class PageTemplate
         foreach ($this->scripts as [$type, $str, $flags, $tpl])
         {
             $app = [];
+            $appendix = '';
 
             if (($flags & SC_FLAG_APPEND_LOCALE) && $this->locale != \Aowow\Locale::EN)
                 $app[] = 'lang='.$this->locale->domain();
 
-            // append anti-cache timestamp
+            // Refresh the whole release even when deployment preserves file timestamps.
             if (!($flags & SC_FLAG_NO_TIMESTAMP))
                 if ($type == SC_JS_FILE || $type == SC_CSS_FILE)
+                {
+                    $app[] = 'v='.AOWOW_REVISION;
                     $app[] = filemtime('static/'.$str) ?: 0;
+                }
 
             if ($app)
                 $appendix = '?'.implode('&', $app);
@@ -790,16 +794,16 @@ class PageTemplate
             if ($flags & SC_FLAG_PREFIX)
             {
                 if ($type == SC_JS_FILE || $type == SC_JS_STRING)
-                    array_unshift($this->js, sprintf($tpl, $str, $appendix ?? ''));
+                    array_unshift($this->js, sprintf($tpl, $str, $appendix));
                 else
-                    array_unshift($this->css, sprintf($tpl, $str, $appendix ?? ''));
+                    array_unshift($this->css, sprintf($tpl, $str, $appendix));
             }
             else
             {
                 if ($type == SC_JS_FILE || $type == SC_JS_STRING)
-                    array_push($this->js, sprintf($tpl, $str, $appendix ?? ''));
+                    array_push($this->js, sprintf($tpl, $str, $appendix));
                 else
-                    array_push($this->css, sprintf($tpl, $str, $appendix ?? ''));
+                    array_push($this->css, sprintf($tpl, $str, $appendix));
             }
         }
 
@@ -903,10 +907,11 @@ class PageTemplate
         unset(                                              // must be recreated on __wakeup
             $this->gStaticUrl,
             $this->gHost,
-            $this->hasAnalytics,
             $this->gServerTime,
             $this->gUser,
-            $this->gFavorites
+            $this->gFavorites,
+            $this->hasAnalytics,
+            $this->dbProfiles
         );
 
         if ($this->lvTabs)                                  // do not store lvErrors in cache

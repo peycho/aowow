@@ -15,6 +15,8 @@ class QuestList extends DBTypeList
     public        array  $rewards   = [];
     public        array  $choices   = [];
 
+    private ?array $somData = null;
+
     protected string $queryBase = 'SELECT q.*, q.`id` AS ARRAY_KEY FROM ::quests q';
     protected array  $queryOpts = array(
                         'q'   => [],
@@ -162,32 +164,40 @@ class QuestList extends DBTypeList
         return $data;
     }
 
-    public function getSOMData(int $side = SIDE_BOTH) : array
+    public function getSOMData(array $questIds, int $side = SIDE_BOTH) : array
     {
-        $data = [];
-
-        foreach ($this->iterate() as $__)
+        $this->somData ??= (function()
         {
-            if (!(ChrRace::sideFromMask($this->curTpl['reqRaceMask']) & $side))
-                continue;
-
-            [$series, $first] = DB::Aowow()->SelectRow(
-               'SELECT IF(prev.`id` OR cur.`nextQuestIdChain`, 1, 0) AS "0", IF(prev.`id` IS NULL AND cur.`nextQuestIdChain`, 1, 0) AS "1" FROM ::quests cur LEFT JOIN ::quests prev ON prev.`nextQuestIdChain` = cur.`id` WHERE cur.`id` = %i',
-                $this->id
+            $data   = [];
+            $series = DB::Aowow()->selectAssoc(
+               'SELECT cur.`id` AS ARRAY_KEY, IF(prev.`id` OR cur.`nextQuestIdChain`, 1, 0) AS "series", IF(prev.`id` IS NULL AND cur.`nextQuestIdChain`, 1, 0) AS "first" FROM ::quests cur LEFT JOIN ::quests prev ON prev.`nextQuestIdChain` = cur.`id` WHERE cur.`id` IN %in',
+                $this->getFoundIds()
             );
 
-            $data[$this->id] = array(
-                'level'     => $this->curTpl['level'] < 0 ? MAX_LEVEL : $this->curTpl['level'],
-                'name'      => $this->getField('name', true),
-                'category'  => $this->curTpl['cat1'],
-                'category2' => $this->curTpl['cat2'],
-                'series'    => $series,
-                'first'     => $first
-            );
+            foreach ($this->iterate() as $id => $entry)
+            {
+                $data[$id] = array(
+                    'level'     => $this->curTpl['level'] < 0 ? MAX_LEVEL : $this->curTpl['level'],
+                    'name'      => Util::localizedString($this->curTpl, 'name'),
+                    'category'  => $this->curTpl['cat1'],
+                    'category2' => $this->curTpl['cat2'],
+                    '__side'    => ChrRace::sideFromMask($this->curTpl['reqRaceMask'])
+                ) + $series[$id];
 
-            if ($this->isDaily())
-                $data[$this->id]['daily'] = 1;
-        }
+                if ($this->isDaily())
+                    $data[$id]['daily'] = 1;
+            }
+
+            return $data;
+        })();
+
+        $data = array_intersect_key($this->somData, array_flip($questIds));
+
+        if ($side != SIDE_BOTH)
+            $data = array_filter($data, fn($x) => $x['__side'] & $side);
+
+        foreach ($data as &$d)
+            unset($d['__side']);
 
         return $data;
     }
@@ -372,14 +382,23 @@ class QuestList extends DBTypeList
             $xReq .= '<br /> - '.Lang::quest('money').Lang::main('colon').Util::formatMoney(abs($_));
 
         if ($xReq)
-            $xReq = '<br /><br /><span class="q">'.Lang::quest('requirements').Lang::main('colon').'</span>'.$xReq;
-
+            $xReq = '<br /><br /><span class="q">'.Lang::quest('requirements').'</span>'.$xReq;
 
         $tooltip = '';
+
+        # Title #
+
+        // level is non-standard
         if ($level)
             $tooltip .= '<table><tr><td><table width="100%"><tr><td><b class="q">'.$title.'</b></td><th><b class="q0">'.$level.'</b></th></tr></table></td></tr></table>';
         else
             $tooltip .= '<table><tr><td><b class="q">'.$title.'</b></td></tr></table>';
+
+        # Description #
+
+        // fallback to requestItems and offerReward texts is non-standard
+
+        # Requirements #
 
         if ($text || $xReq)
             $tooltip .= '<table><tr><td>'.$text.$xReq.'</td></tr></table>';
@@ -434,6 +453,29 @@ class QuestList extends DBTypeList
         }
 
         return $data;
+    }
+
+    public function getColorsForCurrent() : array
+    {
+        if (($lvl = $this->curTpl['level']) < 0)            // -1: always at player level
+            return [];
+
+        static $questGreenRange = [4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8];
+
+        $minLvl = $this->curTpl['minLevel'];
+
+        return array(
+            // red
+            $minLvl < $lvl - 4 ?               $minLvl  : null,
+            // orange
+            $minLvl < $lvl - 2 ? max($lvl - 4, $minLvl) : null,
+            // yellow
+            $minLvl < $lvl + 3 ? max($lvl - 2, $minLvl) : null,
+            // green
+            $lvl + 3,
+            // grey
+            $lvl + 1 + $questGreenRange[min(19, max(0, intval($lvl / 5)))]
+        );
     }
 }
 
@@ -720,11 +762,11 @@ class QuestListFilter extends Filter
         if (!$this->int2Bool($crs))
             return null;
 
-        $missing = DB::Aowow()->selectCol('SELECT `questId`, BIT_OR(`method`) AS "se" FROM ::quests_startend GROUP BY `questId` HAVING "se" <> 3');
+        $hasBoth = DB::Aowow()->selectCol('SELECT `questId` FROM ::quests_startend GROUP BY `questId` HAVING BIT_OR(`method`) = 3');
         if ($crs)
-            return ['id', $missing];
+            return ['id', $hasBoth, '!'];
         else
-            return ['id', $missing, '!'];
+            return ['id', $hasBoth];
     }
 }
 

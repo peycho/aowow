@@ -4,31 +4,6 @@ if (typeof $WH == "undefined") { // Local
     var $WH = {};
 }
 
-$WH.$E = function (e) {
-    if (!e) {
-        if (typeof event != 'undefined') {
-            e = event;
-        }
-        else {
-            return null;
-        }
-    }
-
-    // Netscape standard (1 = Left, 2 = Middle, 3 = Right)
-    if (e.which) {
-        e._button = e.which;
-    }
-    else {
-        e._button = e.button + 1;
-    }
-
-    e._target = e.target ? e.target : e.srcElement;
-
-    e._wheelDelta = e.wheelDelta ? e.wheelDelta : -e.detail;
-
-    return e;
-};
-
 $WH.$A = function (a) {
     var r = [];
     for (var i = 0, len = a.length; i < len; ++i) {
@@ -455,8 +430,6 @@ $WH.rf = function() {
 
 // Return false only if no control key is pressed
 $WH.rf2 = function(e) {
-    e = $WH.$E(e);
-
     if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) {
         return;
     }
@@ -487,15 +460,6 @@ $WH.dE = function(z, y, x) {
     else if (z.detachEvent) {
         z.detachEvent('on' + y, x);
     }
-}
-
-// Stop propagation
-$WH.sp = function(z) {
-    if (!z) {
-        z = event;
-    }
-
-    z.stopPropagation();
 }
 
 // Set cookie
@@ -1480,7 +1444,9 @@ $WH.g_setTooltipLevel = function(tooltip, level) {
             });
 
             // Update fap
-            tooltip = tooltip.replace(/<span class="c11"><!--fap-->(\D*?)(\d+)(\D*?)<\/span>(<br \/>)?/i, function(_all, prefix, value, statText, br) {
+            // aowow - moved separate fap line to greentext
+            // tooltip = tooltip.replace(/<span class="c11"><!--fap-->(\D*?)(\d+)(\D*?)<\/span>(<br \/>)?/i, function(_all, prefix, value, statText, br) {
+            tooltip = tooltip.replace(/<span class="q2">(\D*?)<!--fap-->(\d+)(\D*?)<\/span>(<br \/>)?/i, function(_all, prefix, value, statText, br) {
                 var style;
                 value = Math.floor((json.dps - 54.8) * 14);
                 if (json.dps > 54.8 && value > 0) {
@@ -1492,7 +1458,7 @@ $WH.g_setTooltipLevel = function(tooltip, level) {
                     style = ' style="display: none"';
                     br = (br ? '<!--br-->': '');
                 }
-                return '<span class="c11"' + style + '><!--fap-->' + prefix + value + statText + '</span>' + br;
+                return '<span class="q2"' + style + '><!--fap-->' + prefix + value + statText + '</span>' + br;
             });
 
             // Update armor
@@ -1551,14 +1517,14 @@ $WH.g_setTooltipLevel = function(tooltip, level) {
 
             // Spell effects
             // aowow - custom: spell level damage calculation
-            tooltip = tooltip.replace(/(<!--pts(\d+):(\d+(?:\.\d+)?)(?::([+*/-]):(\d+))?(?::f:([01]))?-->)\s*\d+(?:\.\d+)?/gi, function(_all, marker, spellLvl, base, op, operand, precision) {
+            tooltip = tooltip.replace(/(<!--pts(\d+):(-?\d+(?:\.\d+)?)(?::([+*/-]):(\d+))?(?::f:([01]))?-->)\s*-?\d+(?:\.\d+)?/gi, function(_all, marker, spellLvl, base, op, operand, precision) {
                 return marker + formatSpellAmount(modifySpellAmount($WH.g_convertScalingSpell(Number(base), Number(spellLvl), level), op, operand), precision);
             });
         }
     }
 
     // Points per level
-    tooltip = tooltip.replace(/(<!--ppl(\d+):(\d+):(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)(?::([+*/-]):(\d+))?(?::f:([01]))?-->)\s*\d+(?:\.\d+)?/gi, function(_all, marker, minLvl, maxLvl, base, ppl, op, operand, precision) {
+    tooltip = tooltip.replace(/(<!--ppl(\d+):(\d+):(-?\d+(?:\.\d+)?):(-?\d+(?:\.\d+)?)(?::([+*/-]):(\d+))?(?::f:([01]))?-->)\s*-?\d+(?:\.\d+)?/gi, function(_all, marker, minLvl, maxLvl, base, ppl, op, operand, precision) {
         var amount = Number(base) + (Math.min(Math.max(level, minLvl), maxLvl) - minLvl) * Number(ppl) / 100;
         return marker + formatSpellAmount(modifySpellAmount(amount, op, operand), precision);
     });
@@ -1577,12 +1543,13 @@ $WH.g_setTooltipLevel = function(tooltip, level) {
         if (!nMatch[ratingId])
             nMatch[ratingId] = 0;
 
-        _ = tooltip.match(new RegExp('<!--rtg' + ratingId + '-->(\\d+)', 'g'))[nMatch[ratingId]++];
+        var matches = tooltip.match(new RegExp('<!--rtg' + ratingId + '-->(?:<!--(?:ppl|pts)[^>]*-->)*(-?\\d+(?:\\.\\d+)?)', 'g')) || [];
+        _ = matches[nMatch[ratingId]++];
         if (!_) {
             return _all;
         }
 
-        return prefix + Math.round($WH.g_convertRatingToPercent(level, ratingId, _.split('>')[1]) * 100) / 100;
+        return prefix + Math.round($WH.g_convertRatingToPercent(level, ratingId, _.match(/-?\d+(?:\.\d+)?$/)[0]) * 100) / 100;
     });
 
     // Level
@@ -1676,9 +1643,12 @@ $WH.g_enhanceTooltip = function(tooltip, isStatic, useGets, showSlider, buff, kn
         });
 
         // Add links (scaling items and ratings)
-        tooltip = tooltip.replace(/\(([^\)]*?<!--lvl-->[^\(]*?)\)/gi, function(_all, inner) {
-            return '(<a href="javascript:;" onmousedown="return false" class="tip" style="color: white; cursor: pointer" onclick="$WH.g_staticTooltipLevelClick(this, null, 0)" onmouseover="$WH.Tooltip.showAtCursor(event, \'<span class=\\\'q2\\\'>\' + LANG.tooltip_changelevel + \'</span>\')" onmousemove="$WH.Tooltip.cursorUpdate(event)" onmouseout="$WH.Tooltip.hide()">' + inner + '</a>)';
-        });
+        var levelRange = tooltip.match(/<!--\?\d+:(\d+):(\d+):\d+/);
+        if (levelRange && Number(levelRange[1]) < Number(levelRange[2])) {
+            tooltip = tooltip.replace(/\(([^\)]*?<!--lvl-->[^\(]*?)\)/gi, function(_all, inner) {
+                return '(<a href="javascript:;" onmousedown="return false" class="tip" style="color: white; cursor: pointer" onclick="$WH.g_staticTooltipLevelClick(this, null, 0)" onmouseover="$WH.Tooltip.showAtCursor(event, \'<span class=\\\'q2\\\'>\' + LANG.tooltip_changelevel + \'</span>\')" onmousemove="$WH.Tooltip.cursorUpdate(event)" onmouseout="$WH.Tooltip.hide()">' + inner + '</a>)';
+            });
+        }
     }
 
     if (showSlider && Slider) { // Make sure the class exists
@@ -1689,7 +1659,8 @@ $WH.g_enhanceTooltip = function(tooltip, isStatic, useGets, showSlider, buff, kn
             // Retrieve tooltip's global information
             var _ = tooltip.match(/<!--\?(\d+):(\d+):(\d+):(\d+)/);
             if (_ && _[2] != _[3]) {
-                this.slider = Slider.init(showSlider, { minValue: parseInt(_[2]), maxValue: parseInt(_[3]), onMove: $WH.g_tooltipSliderMove.bind(this) });
+                this.slider = Slider.init(showSlider, { minValue: parseInt(_[2]), maxValue: parseInt(_[3]), onMove: $WH.g_tooltipSliderMove.bind(this), title: LANG.level });
+
                 Slider.setValue(this.slider, parseInt(_[4]));
 
                 this.slider.onmousemove = $WH.Tooltip.cursorUpdate;
@@ -1697,6 +1668,7 @@ $WH.g_enhanceTooltip = function(tooltip, isStatic, useGets, showSlider, buff, kn
                 this.slider.onmouseover = function(e) {
                     $WH.Tooltip.showAtCursor(e, LANG.tooltip_changelevel2, 0, 0, 'q2');
                 };
+                $WH.Tooltip.simple(Slider.getInput(this.slider), LANG.tooltip_changelevel, 'q2', true);
             }
         }
     }
@@ -2161,7 +2133,6 @@ $WH.Tooltip = {
             }
         }
 
-        e = $WH.$E(e);
         var pos = $WH.g_getCursorPos(e);
 
         $WH.Tooltip.prepare();
@@ -2189,8 +2160,6 @@ $WH.Tooltip = {
         if ($WH.Tooltip.disabled || !$WH.Tooltip.tooltip) {
             return;
         }
-
-        e = $WH.$E(e);
 
         if (!x || x < 10) {
             x = 10;

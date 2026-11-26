@@ -1857,18 +1857,12 @@ Listview.templates = {
                         lenA = 0,
                         lenB = 0;
 
-                    if (a.currencyrewards && a.currencyrewards.length) {
-                        for (i in a.currencyrewards) {
-                            var c = (a.currencyrewards)[i];
-                            lenA += c[1];
-                        }
-                    }
-                    if (b.currencyrewards && b.currencyrewards.length) {
-                        for (a in b.currencyrewards) {
-                            var c = (b.currencyrewards)[i];
-                            lenB += c[1];
-                        }
-                    }
+                    if (a.currencyrewards && a.currencyrewards.length)
+                        $.each(a.currencyrewards, (i, x) => lenA += x[1])
+
+                    if (b.currencyrewards && b.currencyrewards.length)
+                        $.each(b.currencyrewards, (i, x) => lenB += x[1])
+
                     return $WH.strcmp(lenA, lenB) || $WH.strcmp(a.money, b.money);
                 }
             },
@@ -4085,7 +4079,7 @@ Listview.templates = {
             if (comment.deleted || comment.rating < -4) {
                 comment.headerCell.css('cursor', 'pointer');
                 comment.headerCell.bind('click', function(e) {
-                    if ($WH.$E(e)._target.nodeName == 'A') {
+                    if (e.target.nodeName == 'A') {
                         return;                             // aowow - custom: prevent toggle if using function buttons
                     }
 
