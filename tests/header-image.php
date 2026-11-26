@@ -55,8 +55,10 @@ namespace {
     };
     $scratch = sys_get_temp_dir().'/aowow-header-image-'.bin2hex(random_bytes(6));
     mkdir($scratch.'/template/bricks', 0700, true);
-    foreach (['head','headerMenu','announcement','pageTemplate','serverNavigation','serverBreadcrumb'] as $brick)
+    foreach (['head','headerMenu','announcement','pageTemplate','serverNavigation','serverBreadcrumb',
+              'infobox','headIcons','redButtons','tooltip','markup','mapper','book','lvTabs','contribute','guideHub','footer'] as $brick)
         file_put_contents($scratch.'/template/bricks/'.$brick.'.tpl.php', '');
+    copy($root.'/template/bricks/header.tpl.php', $scratch.'/template/bricks/header.tpl.php');
     copy($root.'/template/bricks/headerImage.tpl.php', $scratch.'/template/bricks/headerImage.tpl.php');
     $cwd = getcwd();
     try {
@@ -71,6 +73,7 @@ namespace {
         $dom = new DOMDocument();
         $dom->loadHTML($html, LIBXML_NOERROR | LIBXML_NOWARNING);
         $xpath = new DOMXPath($dom);
+        check($xpath->query('//h1')->length === 0, 'Shared header does not inject a second page heading');
         $link = $xpath->query('//a[@class="header-image"]')->item(0);
         $image = $xpath->query('//a[@class="header-image"]/img')->item(0);
         check($link !== null && $image !== null, 'Standard header renders one linked image');
@@ -81,7 +84,20 @@ namespace {
         check(!$image->hasAttribute('width') && !$image->hasAttribute('height'), 'Image dimensions come from CSS without standard advertising-size attributes');
         check($image->getAttribute('alt') === 'Fixture & site', 'Image has escaped alternative text');
         check(!preg_match('/(?:class|id)="[^"]*(?:banner|advert|ad-slot)/i', $html), 'Placement uses neutral markup names');
-        check(!str_contains($render->call(unserialize($cached), $root.'/template/pages/home.tpl.php'), 'header-image'), 'Homepage excludes image even when enabled');
+        $home = $render->call(unserialize($cached), $root.'/template/pages/home.tpl.php');
+        check(!str_contains($home, 'header-image'), 'Homepage excludes image even when enabled');
+        $dom->loadHTML($home, LIBXML_NOERROR | LIBXML_NOWARNING);
+        $headings = (new DOMXPath($dom))->query('//h1');
+        check($headings->length === 1 && $headings->item(0)->textContent === 'Fixture', 'Homepage retains its own main heading');
+        foreach (['item', 'detail-page-generic', 'list-page-generic', 'text-page-generic'] as $template) {
+            $contentPage = unserialize($cached);
+            $contentPage->h1 = 'Fixture page title';
+            $content = $render->call($contentPage, $root.'/template/pages/'.$template.'.tpl.php');
+            $dom->loadHTML($content, LIBXML_NOERROR | LIBXML_NOWARNING);
+            $headings = (new DOMXPath($dom))->query('//h1');
+            check($headings->length === 1 && $headings->item(0)->textContent === 'Fixture page title', 'Cached '.$template.' renders its main heading exactly once with the real header');
+            if ($template === 'item') $itemHtml = $content;
+        }
         foreach (['header_image_url','header_image_link'] as $key) {
             $saved = Cfg::$values[$key];
             foreach (['', null, [], 'javascript:alert(1)', 'data:image/png;base64,AAAA', 'ftp://example.test/image',
@@ -112,7 +128,7 @@ namespace {
         check(!$input->hasAttribute('autofocus') && !$input->hasAttribute('onfocus'), 'Settings input escapes URL attribute injection');
         if (in_array('--browser', $argv, true)) {
             $css = file_get_contents($root.'/static/css/aowow.css');
-            $fixture = str_replace('</head>', '<style>'.$css.'</style></head>', $html);
+            $fixture = str_replace('</head>', '<style>'.$css.'</style></head>', $itemHtml);
             // Avoid external requests in the local browser fixture, retaining the real rendered element.
             $fixture = preg_replace('/<img src="[^"]*"/', '<img src="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'468\' height=\'60\'%3E%3Crect width=\'468\' height=\'60\' fill=\'%232b5270\'/%3E%3C/svg%3E"', $fixture);
             echo $fixture, <<<'HTML'
@@ -124,9 +140,12 @@ window.addEventListener('load', function () {
     var image = document.querySelector('.header-image img').getBoundingClientRect();
     var header = document.querySelector('.header').getBoundingClientRect();
     var logo = document.querySelector('.header-logo').getBoundingClientRect();
+    var heading = document.querySelector('h1');
     var valid = image.width === 468 && image.height === 60 && placement.right === header.right &&
                 placement.top - header.top === 22 && placement.left >= logo.right && placement.bottom <= header.bottom;
-    document.querySelector('#result').textContent = valid ? 'PASS: 6 header image layout checks' : 'FAIL: header image layout';
+    valid = valid && document.querySelectorAll('h1').length === 1 && heading.textContent === 'Fixture page title' &&
+            heading.getBoundingClientRect().left >= 0 && heading.getBoundingClientRect().width > 0;
+    document.querySelector('#result').textContent = valid ? 'PASS: 8 header image and page heading layout checks' : 'FAIL: header image or page heading layout';
 });
 </script>
 </body></html>

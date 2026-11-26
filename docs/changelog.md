@@ -8,6 +8,23 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-11-26 — Remove the duplicate header heading
+
+The shared header no longer inserts an offscreen `<h1>` containing the full page
+title. Item, detail, list and text pages retain their own main heading, and the
+homepage retains its separate heading. The obsolete CSS that positioned the
+header heading offscreen has also been removed.
+
+Deploy the updated header template and `static/css/aowow.css`. The shared header
+is read when rendering cached page templates, so no application cache clear,
+SQL migration, generated JavaScript rebuild or setup command is required.
+
+Validation passed with `make dev-test ARGS=php` in the local development
+containers, including 48 header/template checks. The focused Chromium fixture
+passed eight header-image and visible page-heading layout checks. The new
+regression failed against the earlier header before the fix. `git diff --check`
+passed. No deployed files or retained data were changed.
+
 ## 2026-11-25 — Refresh scripts together after updates (revision 79)
 
 Returning visitors could retain the old generated `power.js` alongside the new

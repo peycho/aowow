@@ -1461,3 +1461,6 @@ preserved operator choices, checksummed migration accounting and the normal
 `--update` command on disposable databases.
 The browser gate renders `php tests/header-image.php --browser` with the real CSS,
 checking the 468×60 geometry, top-right alignment and separation from the logo.
+The same fixture verifies that the shared header adds no extra `<h1>`, cached
+item/detail/list/text templates retain one main heading, the homepage keeps its
+heading, and the item page title remains visible in Chromium.

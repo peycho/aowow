@@ -26,7 +26,6 @@
     <div class="header" id="header">
         <div id="header-logo">
             <a class="header-logo" href="."></a>
-            <h1><?=$this->concat('title', ' - '); ?></h1>
         </div>
 <?php $this->brick('headerImage'); ?>
     </div>

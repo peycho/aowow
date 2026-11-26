@@ -2496,12 +2496,6 @@ span.menu-buttons span.hassubmenu {
     z-index: 1;
 }
 
-.header h1 { /* SEO */
-    position: absolute;
-    left: -2323px;
-    top: -2323px;
-}
-
 .header a.header-logo {
     position: absolute;
     display: block;
