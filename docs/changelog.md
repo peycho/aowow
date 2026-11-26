@@ -8,6 +8,26 @@ The [test guide](../tests/README.md) covers regression checks, and the
 [security review](aowow-security-review.md) records implementation details and
 remaining deployment acceptance work. Commands below run from the checkout root.
 
+## 2026-11-26 — Wait for the complete Chromium debugging endpoint
+
+The shared browser-test helper now waits for a valid port and browser endpoint
+in Chrome's `DevToolsActivePort` file. Previously it waited only for the file to
+exist, so an empty file could produce a request to `127.0.0.1:80` and fail a
+browser gate intermittently with `ECONNREFUSED`. Startup remains bounded and an
+early browser exit still fails immediately.
+
+The new startup regression forces empty and partial endpoint files before
+launching real Chromium. The original helper reproduces the reported port-80
+error; the updated helper passes all five startup checks and the 42 image/map
+performance checks that followed the failure in the reported run. This affects
+test infrastructure only; no application setup, database or asset rebuild is
+required.
+
+The complete `make dev-test ARGS=browser` gate passed in the local development
+containers, including the startup regression, 1,077 responsive checks, image/map
+performance, navigation, tooltips and root/subdirectory widget fixtures.
+`git diff --check` passed.
+
 ## 2026-11-26 — Remove the duplicate header heading
 
 The shared header no longer inserts an offscreen `<h1>` containing the full page

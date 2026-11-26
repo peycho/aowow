@@ -132,6 +132,12 @@ application database is needed. These synthetic checks supplement populated-site
 screenshots and physical-device acceptance; they do not measure field performance.
 For manual populated-site sampling, see the [performance guide](../docs/performance.md).
 
+`node tests/browser-cdp-startup.mjs` forces Chrome's debugging-port file to exist
+while empty or partially written, then starts real Chromium. It verifies that
+the helper waits for a valid port and browser endpoint, accepts DevTools commands
+after startup, and still reports an early browser exit. This prevents an empty
+port from becoming an unintended connection to `127.0.0.1:80`.
+
 `node tests/browser-cdp-navigation.mjs` runs before the responsive suite. Its
 15 real-browser checks cover a previous document finishing while the next
 request waits for headers, delayed destination scripts, redirects, same-document

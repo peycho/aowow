@@ -109,6 +109,7 @@ PY
     done
     python3 tests/seo-rendering-browser.py "$fixture_root/seo-rendering.html" "$browser"
     python3 tests/seo-rendering-browser.py "$fixture_root/seo-home-navigation.html" "$browser" home
+    node tests/browser-cdp-startup.mjs
     node tests/browser-cdp-navigation.mjs
     node tests/upstream-slider.mjs
     node tests/tooltip-cache.mjs
